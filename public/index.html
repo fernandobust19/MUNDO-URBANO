@@ -1,0 +1,281 @@
+<!DOCTYPE html> 
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+<title>Mundo urbano — Gobierno Central y Nuevos Edificios (Multiplayer)</title>
+<link rel="stylesheet" href="/css/public_css_estilos.css">
+<style>
+  :root{
+    --bg:#0b1220; --text:#e5e7eb; --ui:#0c1430f0; --edge:#2b3553; --brand:#60a5fa;
+    --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444; --muted:#94a3b8;
+  }
+  html,body{height:100%;margin:0;background:linear-gradient(180deg,#0a0f1d,#0b1220);color:var(--text);font-family:system-ui,Segoe UI,Roboto,Arial;overflow:hidden}
+  html, body {touch-action: none; -webkit-user-select: none; -ms-user-select: none; user-select: none;}
+  *{box-sizing:border-box}
+
+
+  #formBar{position:fixed;top:0;left:0;right:0;z-index:2000;background:var(--ui);border-bottom:1px solid var(--edge);backdrop-filter:blur(6px)}
+  #formInner{width:min(1100px,98vw);margin:0 auto;padding:12px;display:grid;grid-template-columns:repeat(12,1fr);gap:10px}
+  #formInner h2{grid-column:1/-1;margin:0 0 4px 0;color:var(--brand);font-size:18px}
+  .field{display:flex;flex-direction:column;gap:6px}
+  .field label{font-size:12px;opacity:.95}
+  .input,.select{padding:10px 12px;border:1px solid var(--edge);border-radius:10px;background:#0a1128;color:var(--text);min-height:38px}
+  .btn{all:unset;cursor:pointer;padding:10px 12px;border:1px solid var(--edge);border-radius:12px;background:#101938;font-weight:700;text-align:center}
+  .btn.primary{border-color:var(--brand);background:#0e2b63}
+  .btn.good{border-color:#16a34a;background:#0b2b1a}
+  .hint{font-size:12px;opacity:.8}
+  .err{color:#fecaca;font-size:12px;display:none}
+  .col-3{grid-column:span 3}.col-4{grid-column:span 4}.col-6{grid-column:span 6}.col-12{grid-column:span 12}
+  @media (max-width:960px){.col-3,.col-4,.col-6{grid-column:1/-1}}
+
+
+  #likesWrap{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:8px;max-height:240px;overflow:auto;padding:8px;border:1px dashed #2a3455;border-radius:12px;background:#0a1128}
+  @media (max-width:960px){#likesWrap{grid-template-columns:repeat(2,minmax(150px,1fr));max-height:280px}}
+  .chip{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #334155;border-radius:999px;background:#0a132f;font-size:13px;white-space:nowrap}
+  .chip input{accent-color:#60a5fa;width:18px;height:18px}
+  .chip.disabled{opacity:.45;filter:grayscale(40%)}
+  .chip.disabled input{pointer-events:none}
+  .limitNote{font-size:12px;margin-top:4px;color:#93c5fd}
+
+
+  #world{display:none;width:100vw;height:100vh;position:fixed;inset:0;z-index:10}
+  .card{background:var(--ui);border:1px solid var(--edge);border-radius:12px;padding:10px 12px;backdrop-filter:blur(6px);position:relative}
+  #uiDock, #docDock, #govDock{position:fixed;top:10px;z-index:24;display:none;width:min(340px,92vw);display:flex;flex-direction:column;gap:10px;pointer-events:auto}
+  #uiDock{left:10px;}
+  #docDock{left:10px;}
+  #marriedDock{position:fixed; top:10px; left:10px; z-index:24; width:min(340px,92vw); display:none; flex-direction:column; gap:10px; pointer-events:auto;}
+  #govDock{left:10px;}
+  #uiHideBtn{position:absolute;right:6px;top:-14px;width:34px;height:34px;border-radius:999px;border:1px solid var(--edge);background:#0e1a3f;color:#e5e7eb;display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.5);font-size:18px;line-height:0}
+  #uiShowBtn{position:fixed;left:12px;top:10px;z-index:25;width:38px;height:38px;border-radius:999px;border:1px solid var(--edge);background:#111b3a;color:#e5e7eb;display:none;place-items:center;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.4);}
+
+
+  .actions{display:flex;gap:8px;flex-wrap:wrap}
+  pre{white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:12px;max-height:40vh;overflow:auto;margin:0}
+
+
+  #zoomFab{position:fixed;right:12px;bottom:12px;z-index:26;display:none;flex-direction:column;gap:10px;pointer-events:auto}
+  .fab{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:#111b3a;border:1px solid #2b3553;box-shadow:0 8px 28px rgba(0,0,0,.55);font-size:22px;cursor:pointer;user-select:none;color:#e5e7eb}
+  .fab:active{transform:scale(.96)}
+  
+  #modal,#builderModal,#shopModal{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.5);display:none;align-items: flex-start;justify-content:center;padding-top: 5vh;}
+  .modalBox{width:min(560px,94vw);background:#0e1328;border:1px solid #334155;border-radius:14px;padding:14px}
+  .modalBox h3{margin:0 0 8px 0}
+  .modalBox h4{margin:8px 0 6px 0}
+
+
+  .balance-amount { color: var(--ok); font-size: 1.2em; font-weight: bold; }
+  #top-bar{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:25;display:none;gap:10px;}
+  #top-bar button{all:unset;cursor:pointer;padding:8px 16px;border-radius:12px;background:var(--ui);border:1px solid var(--edge);font-weight:700;box-shadow:0 4px 20px rgba(0,0,0,.4);}
+
+
+  #shopList{display:grid;grid-template-columns:1fr;gap:8px;max-height:260px;overflow-y:auto;padding:8px;border:1px solid var(--edge);border-radius:10px;background:#0a1128}
+
+
+  #mini{position:fixed;right:12px;top:12px;z-index:26;display:none;width:200px;height:130px;border:1px solid #334155;border-radius:10px;background:#0a1128;box-shadow:0 6px 22px rgba(0,0,0,.45);cursor:crosshair;pointer-events:auto}
+  #mini canvas{width:100%;height:100%;display:block}
+  #mini .hint{position:absolute;left:6px;bottom:4px;font-size:10px;opacity:.7}
+
+
+  #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:40;display:none;background:#0b0f1cee;border:1px solid #6b7280;color:#e5e7eb;padding:8px 12px;border-radius:10px;font-size:13px}
+</style>
+</head> 
+<body>
+
+<div id="formBar" role="dialog" aria-modal="true">
+  <form id="formInner" autocomplete="off">
+    <h2>Crear tu persona (24h = 1 año · fallece a los 90)</h2>
+    <div class="field col-3">
+      <label>Género</label>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <select id="fGender" class="select"><option value="M">Masculino (azul)</option><option value="F">Femenino (rosado)</option></select>
+        <img id="fGenderPreview" src="https://i.postimg.cc/x8cc0drr/20250820-102743.png" alt="preview" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid #2b3553;background:#fff" />
+      </div>
+    </div>
+    <div class="field col-3"><label>Nombre</label><input id="fName" type="text" maxlength="12" class="input" placeholder="Ej: Fer"/></div>
+    <div class="field col-3"><label>Edad</label><input id="fAge" type="number" min="0" max="120" value="20" class="input"/></div>
+  <div class="field col-3"><label>Créditos iniciales</label><input id="fUsd" type="number" min="0" max="0" step="1" value="0" class="input" disabled/><div class="hint">Todos comienzan con 400 créditos gratis.</div></div>
+    <div class="field col-12">
+      <label>Elige exactamente 5 gustos</label>
+      <div id="likesWrap" aria-label="Lista de gustos">
+        <label class="chip"><input type="checkbox" value="música"><span>música</span></label>
+        <label class="chip"><input type="checkbox" value="arte"><span>arte</span></label>
+        <label class="chip"><input type="checkbox" value="deporte"><span>deporte</span></label>
+        <label class="chip"><input type="checkbox" value="naturaleza"><span>naturaleza</span></label>
+        <label class="chip"><input type="checkbox" value="lectura"><span>lectura</span></label>
+        <label class="chip"><input type="checkbox" value="cocina"><span>cocina</span></label>
+        <label class="chip"><input type="checkbox" value="baile"><span>baile</span></label>
+        <label class="chip"><input type="checkbox" value="tecnología"><span>tecnología</span></label>
+        <label class="chip"><input type="checkbox" value="cine"><span>cine</span></label>
+        <label class="chip"><input type="checkbox" value="viajes"><span>viajes</span></label>
+        <label class="chip"><input type="checkbox" value="jardinería"><span>jardinería</span></label>
+        <label class="chip"><input type="checkbox" value="fotografía"><span>fotografía</span></label>
+        <label class="chip"><input type="checkbox" value="animales"><span>animales</span></label>
+        <label class="chip"><input type="checkbox" value="playa"><span>playa</span></label>
+        <label class="chip"><input type="checkbox" value="montaña"><span>montaña</span></label>
+        <label class="chip"><input type="checkbox" value="videojuegos"><span>videojuegos</span></label>
+        <label class="chip"><input type="checkbox" value="yoga"><span>yoga</span></label>
+        <label class="chip"><input type="checkbox" value="meditación"><span>meditación</span></label>
+        <label class="chip"><input type="checkbox" value="correr"><span>correr</span></label>
+        <label class="chip"><input type="checkbox" value="ciclismo"><span>ciclismo</span></label>
+        <label class="chip"><input type="checkbox" value="fútbol"><span>fútbol</span></label>
+        <label class="chip"><input type="checkbox" value="baloncesto"><span>baloncesto</span></label>
+        <label class="chip"><input type="checkbox" value="natación"><span>natación</span></label>
+        <label class="chip"><input type="checkbox" value="astronomía"><span>astronomía</span></label>
+        <label class="chip"><input type="checkbox" value="historia"><span>historia</span></label>
+        <label class="chip"><input type="checkbox" value="poesía"><span>poesía</span></label>
+        <label class="chip"><input type="checkbox" value="teatro"><span>teatro</span></label>
+        <label class="chip"><input type="checkbox" value="idiomas"><span>idiomas</span></label>
+        <label class="chip"><input type="checkbox" value="programación"><span>programación</span></label>
+        <label class="chip"><input type="checkbox" value="pintura"><span>pintura</span></label>
+        <label class="chip"><input type="checkbox" value="café"><span>café</span></label>
+        <label class="chip"><input type="checkbox" value="helado"><span>helado</span></label>
+        <label class="chip"><input type="checkbox" value="pan"><span>pan</span></label>
+        <label class="chip"><input type="checkbox" value="pizza"><span>pizza</span></label>
+        <label class="chip"><input type="checkbox" value="libros"><span>libros</span></label>
+        <label class="chip"><input type="checkbox" value="electrónica"><span>electrónica</span></label>
+        <label class="chip"><input type="checkbox" value="juguetes"><span>juguetes</span></label>
+        <label class="chip"><input type="checkbox" value="comida"><span>comida</span></label>
+        <label class="chip"><input type="checkbox" value="jugos"><span>jugos</span></label>
+        <label class="chip"><input type="checkbox" value="kiosco"><span>kiosco</span></label>
+      </div>
+      <div class="limitNote">Seleccionados: <span id="likesCount">0</span>/5</div><div class="hint">Puedes pulsar “Elegir 5 al azar”.</div>
+    </div>
+    <div class="col-12" style="display:flex;gap:10px;flex-wrap:wrap">
+      <button id="btnRandLikes" type="button" class="btn">Elegir 5 al azar</button>
+      <button id="btnStart" type="button" class="btn primary">Comenzar</button>
+      <span id="errBox" class="err">Falta el nombre o no elegiste exactamente 5 gustos.</span>
+    </div>
+  </form>
+</div>
+
+
+<div id="top-bar">
+  <button id="btnShowDoc">📄 Documento</button>
+  <button id="btnShowMarried">👨‍👩‍👧‍👦 Casados</button>
+  <button id="btnShowGov">🏛️ Gobierno</button>
+</div>
+
+<canvas id="world"></canvas>
+
+<button id="uiShowBtn" title="Mostrar panel">▼</button>
+<div id="uiDock">
+  <div class="card">
+    <button id="uiHideBtn" title="Ocultar panel">▲</button>
+    <b>Mundo activo</b><br/><small>Trabajo 60s = +15 → 💰 banco</small>
+    <div style="display:flex;gap:10px;align-items:center;margin-top:6px">
+      <img id="uiAvatar" src="https://i.postimg.cc/x8cc0drr/20250820-102743.png" style="width:56px;height:56px;border-radius:8px;border:1px solid #2b3553;background:#fff;object-fit:cover" alt="avatar" />
+      <div>
+        <div id="stats" style="font-size:12px"></div>
+        <div id="userName" style="font-size:12px;opacity:.9;margin-top:2px">Sin iniciar</div>
+      </div>
+    </div>
+    <div class="actions" style="margin-top:8px">
+      <button id="toggleLines" class="btn">Líneas ON/OFF</button>
+      <button id="btnHouse" class="btn good">Comprar Casa</button>
+      <button id="btnShop" class="btn">Comprar Negocio</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h4 style="margin:0 0 6px 0">Concesionario</h4>
+    <div class="field">
+      <select id="carTypeSelect" class="select">
+        <option value="">-- Elige un vehículo --</option>
+        <option value="bicicleta">Bicicleta (50)</option>
+        <option value="moto">Motocicleta (200)</option>
+        <option value="auto_compacto">Auto Compacto (800)</option>
+        <option value="auto_deportivo">Auto Deportivo (2500)</option>
+      </select>
+    </div>
+    <div class="actions" style="margin-top:8px"><button id="btnBuyCar" class="btn primary">Comprar vehículo</button></div>
+    <div id="carMsg" class="hint" style="margin-top:8px">Aumenta tu velocidad de movimiento.</div>
+  </div>
+
+  <div class="card">
+    <h4 style="margin:0 0 6px 0">💰 Banco</h4>
+    <div class="actions" style="margin-bottom:6px"><button id="panelDepositAll" class="btn">Depositar todo</button></div>
+    <pre id="bankBody">Consulta aquí tu saldo personal.</pre>
+  </div>
+</div>
+
+<div id="docDock" style="display:none;">
+  <div class="card" id="docCard">
+    <h4 style="margin:0 0 6px 0">📄 Documento</h4>
+    <pre id="docBody">Pulsa “Documento” para generar el informe.</pre>
+  </div>
+</div>
+
+<div id="marriedDock">
+  <div class="card">
+    <h4 style="margin:0 0 6px 0">💍 Familias</h4>
+    <pre id="marriedList">No hay familias casadas todavía.</pre>
+  </div>
+</div>
+
+<div id="govDock" style="display:none;">
+  <div class="card">
+    <h4 style="margin:0 0 6px 0">🏛️ Panel de Gobierno</h4>
+    <div id="govDesc" class="hint" style="margin-bottom:6px"></div>
+    <div id="govFunds" class="hint" style="margin:6px 0">Fondo: 0</div>
+
+    <h4>Instituciones (25 tipos)</h4>
+    <div class="field">
+      <label>Selecciona institución</label>
+      <select id="govSelect" class="select"></select>
+    </div>
+    <div class="actions" style="margin-top:8px">
+      <button id="btnGovPlace" class="btn primary">Colocar institución</button>
+    </div>
+    <div class="hint" id="govHint" style="margin-top:6px">Elige y luego haz clic en el mapa.</div>
+  </div>
+</div>
+
+<div id="zoomFab" aria-label="Controles de zoom">
+  <div id="zoomIn" class="fab" title="Acercar">＋</div>
+  <div id="zoomOut" class="fab" title="Alejar">−</div>
+</div>
+
+<div id="mini">
+  <canvas id="miniCanvas" width="200" height="130"></canvas>
+  <div class="hint">Toca para mover</div>
+</div>
+
+<div id="builderModal">
+  <div class="modalBox">
+    <h3>🏗️ Comprar Casa Propia</h3>
+    <p style="margin-top:0">Las casas propias se pueden construir en cualquier espacio libre de la zona urbana que no cruce calles o edificios.</p>
+    <div class="actions" style="margin-top:8px">
+      <button id="btnBuy" class="btn good">Comprar (3000)</button>
+      <button id="btnBuilderClose" class="btn">Cerrar</button>
+    </div>
+    <div id="builderMsg" class="hint" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<div id="shopModal">
+  <div class="modalBox">
+    <h3>🏪 Comprar Negocio</h3>
+    <p style="margin-top:0">Paga y luego colócalo en el mapa. No se permiten cruces con calles.</p>
+    <div id="shopList"></div>
+    <div class="hint" id="shopMsg" style="margin-top:8px"></div>
+    <div class="actions" style="margin-top:8px"><button id="btnShopClose" class="btn">Cerrar</button></div>
+  </div>
+</div>
+
+<div id="modal">
+  <div class="modalBox">
+    <h3 id="modalTitle">Nombre del bebé</h3>
+    <div class="actions"><button id="btnBabyOk" class="btn">OK</button></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- Multijugador: socket.io cliente y wrapper -->
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/socket.js"></script>
+<!-- Lógica del mundo (usa el estado compartido si está disponible) -->
+<script src="/js/original.js"></script>
+</body>
+</html>

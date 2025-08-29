@@ -1,0 +1,22 @@
+{
+  "name": "mundo-urbano-multiplayer",
+  "version": "0.1.0",
+  "description": "Mundo urbano — versión básica multijugador (Express + Socket.IO)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "engines": {
+    "node": ">=20 <23"
+  },
+  "author": "upcons",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^5.1.0",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
