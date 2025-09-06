@@ -1,0 +1,10 @@
+/* Archivo placeholder para evitar errores de MIME. */
+:root{
+  /* Valores mínimos que complementan el tema actual */
+  --otra-bg: transparent;
+}
+
+/* No forzar cambios visuales: solo definiciones seguras */
+html, body { background: transparent; }
+
+/* Si deseas añadir estilos extras, edita este archivo. */

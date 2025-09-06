@@ -1,0 +1,8 @@
+# Entornos locales y secretos
+.env
+.env.*
+
+# Archivos generados por la app
+pagos/
+memoria/
+node_modules/

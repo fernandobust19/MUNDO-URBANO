@@ -1,0 +1,38 @@
+{
+  "name": "mundo-urbano-multiplayer",
+  "version": "0.1.0",
+  "description": "Mundo urbano — versión básica multijugador (Express + Socket.IO)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+  "dev": "nodemon server.js",
+  "smoke": "node tests/smoke.js",
+  "assets:download": "node ./tools/download-assets.js",
+  "reset": "node ./tools/reset-game.js"
+  },
+  "engines": {
+    "node": ">=20 <23"
+  },
+  "author": "upcons",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^5.1.0",
+  "socket.io": "^4.8.1",
+  "bcryptjs": "^2.4.3",
+  "cookie-parser": "^1.4.6",
+  "nodemailer": "^6.9.13",
+  "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fernandobust19/mundourbano.git"
+  },
+  "keywords": [],
+  "bugs": {
+    "url": "https://github.com/fernandobust19/mundourbano/issues"
+  },
+  "homepage": "https://github.com/fernandobust19/mundourbano#readme"
+}

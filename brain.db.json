@@ -1,0 +1,743 @@
+{
+  "users": [
+    {
+      "id": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "username": "fernando1",
+      "passHash": "$2a$10$zS76j1syl1rvohBU.XPXcOhUNN4CKKBAImrDHHrX1b7DGT7COUXF2",
+      "createdAt": 1757106628791,
+      "lastLoginAt": 1757190826088
+    }
+  ],
+  "progress": {
+    "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa": {
+      "money": 365,
+      "bank": 0,
+      "vehicle": "bicicleta",
+      "vehicles": [
+        "bicicleta"
+      ],
+      "shops": [],
+      "houses": [],
+      "name": "FERNANDO",
+      "avatar": "/assets/avatar1.png",
+      "likes": [
+        "lectura",
+        "viajes",
+        "playa",
+        "programación",
+        "café"
+      ],
+      "gender": "U",
+      "age": 20
+    },
+    "03252554-fb0a-433a-a24b-db848040bf91": {
+      "money": 400,
+      "bank": 0,
+      "vehicle": null,
+      "vehicles": [],
+      "shops": [],
+      "houses": [],
+      "name": null,
+      "avatar": null,
+      "likes": [],
+      "gender": null,
+      "age": null
+    }
+  },
+  "activityLog": [
+    {
+      "ts": 1757106628791,
+      "type": "register",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757106653951,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "avatar"
+        ]
+      }
+    },
+    {
+      "ts": 1757106679315,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757106693979,
+      "type": "login",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757107316670,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757107319643,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "money"
+        ]
+      }
+    },
+    {
+      "ts": 1757107432776,
+      "type": "login",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757107679557,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757107780457,
+      "type": "login",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757107783133,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "avatar"
+        ]
+      }
+    },
+    {
+      "ts": 1757107783612,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "avatar"
+        ]
+      }
+    },
+    {
+      "ts": 1757107784588,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "avatar"
+        ]
+      }
+    },
+    {
+      "ts": 1757107785068,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "avatar"
+        ]
+      }
+    },
+    {
+      "ts": 1757107807763,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757108237744,
+      "type": "login",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757108274732,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757109624178,
+      "type": "login",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757109657476,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757109898666,
+      "type": "login",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757109963857,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "avatar"
+        ]
+      }
+    },
+    {
+      "ts": 1757109964846,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "avatar"
+        ]
+      }
+    },
+    {
+      "ts": 1757109965470,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "avatar"
+        ]
+      }
+    },
+    {
+      "ts": 1757109965888,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "avatar"
+        ]
+      }
+    },
+    {
+      "ts": 1757109971050,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "avatar"
+        ]
+      }
+    },
+    {
+      "ts": 1757109974459,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757109996898,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "money"
+        ]
+      }
+    },
+    {
+      "ts": 1757109997702,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "money"
+        ]
+      }
+    },
+    {
+      "ts": 1757110006271,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "money",
+          "vehicle",
+          "vehicles"
+        ]
+      }
+    },
+    {
+      "ts": 1757110020096,
+      "type": "login",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757110022679,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757110037680,
+      "type": "login",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757110636381,
+      "type": "login",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757110938641,
+      "type": "login",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757111549503,
+      "type": "login",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757114392949,
+      "type": "login",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757114801942,
+      "type": "login",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757115002164,
+      "type": "login",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757116229533,
+      "type": "login",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757116406884,
+      "type": "login",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757117306743,
+      "type": "login",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757117316166,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757117323385,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757117399371,
+      "type": "login",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757117429084,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757117540325,
+      "type": "login",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757117549017,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757117550653,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757117569291,
+      "type": "login",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757117571771,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757117575513,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757117588222,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757117617018,
+      "type": "login",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757117928792,
+      "type": "login",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757118057324,
+      "type": "login",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757118330728,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757118340411,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757190826088,
+      "type": "login",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757190829290,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757190832631,
+      "type": "progress_update",
+      "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    }
+  ]
+}
