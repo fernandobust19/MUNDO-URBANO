@@ -12,7 +12,7 @@
       "username": "fernando2000b@hotmail.co",
       "passHash": "$2a$10$ksVBv6F3nX3LJQv1d3odD.zQ5kSOoL7C8opObA5sm2Ur2.dhQAwLW",
       "createdAt": 1757201570350,
-      "lastLoginAt": 1757203849532
+      "lastLoginAt": 1757204959302
     }
   ],
   "progress": {
@@ -51,11 +51,20 @@
       "age": null
     },
     "db1ef90b-7763-4f2a-93e7-381cdfc751c5": {
-      "money": 400,
+      "money": 0,
       "bank": 0,
       "vehicle": null,
       "vehicles": [],
-      "shops": [],
+      "shops": [
+        {
+          "x": 1777.809004999032,
+          "y": 1029.52538548894,
+          "w": 120,
+          "h": 80,
+          "kind": "panadería",
+          "ownerId": "A90830"
+        }
+      ],
       "houses": [],
       "name": "fernando",
       "avatar": "/assets/avatar1.png",
@@ -791,6 +800,90 @@
     },
     {
       "ts": 1757203891117,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757204352039,
+      "type": "login",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "username": "fernando2000b@hotmail.co"
+      }
+    },
+    {
+      "ts": 1757204363235,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757204959302,
+      "type": "login",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "username": "fernando2000b@hotmail.co"
+      }
+    },
+    {
+      "ts": 1757204975761,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757205191475,
+      "type": "shop_add",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "id": "S1"
+      }
+    },
+    {
+      "ts": 1757205191887,
       "type": "progress_update",
       "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
       "details": {

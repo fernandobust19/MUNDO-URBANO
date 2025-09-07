@@ -77,14 +77,14 @@
   /* Posicionar el botón de ocultar UI en la parte inferior del panel */
   #uiHideBtn{position:absolute;right:8px;bottom:8px;top:auto;width:34px;height:34px;border-radius:999px;border:1px solid rgba(0,0,0,0.08);background:var(--ui);color:var(--text);display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.06);font-size:18px;line-height:0}
   #uiShowBtn{position:fixed;left:12px;top:calc(10px + env(safe-area-inset-top));z-index:25;width:40px;height:40px;border-radius:999px;border:1px solid rgba(0,0,0,0.08);background:var(--ui);color:var(--text);cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.04);text-align:center;padding:0;display:none;display:grid;place-items:center}
-  /* Triángulo centrado ópticamente dentro del círculo */
+  /* Triángulo apuntando a la derecha para indicar "abrir" */
   #uiShowBtn::before{
     content:"";
     width:0;height:0;
-    border-left:7px solid transparent;
-    border-right:7px solid transparent;
-    border-top:11px solid currentColor;
-    transform: translateX(5px);
+    border-top:7px solid transparent;
+    border-bottom:7px solid transparent;
+    border-left:11px solid currentColor; /* ▶ */
+    transform: translateX(2px);
   }
 
 
@@ -274,6 +274,7 @@
       <button id="btnHouse" class="btn good">Comprar Casa</button>
       <button id="btnShop" class="btn">Comprar Negocio</button>
   <button id="btnLogout" class="btn" title="Cerrar sesión">SALIR</button>
+  <button id="btnFollow" class="btn" title="Seguir a mi agente">Seguir agente: OFF</button>
     </div>
   <div id="ownedShops" class="hint" style="margin-top:6px">Negocios: 0</div>
   </div>
@@ -299,7 +300,7 @@
     <pre id="bankBody" style="position:absolute; top:10px; right:16px; background:transparent; box-shadow:none; margin:0; padding:0; font-size:15px; color:var(--ok); text-align:right; min-width:80px;"></pre>
   </div>
   <!-- Botón para ocultar/mostrar el panel, ahora posicionado al fondo del dock -->
-  <button id="uiHideBtn" title="Ocultar panel">▲</button>
+  <button id="uiHideBtn" title="Ocultar panel">◀</button>
 </div>
 
 <div id="docDock" style="display:none;">
@@ -337,10 +338,7 @@
   </div>
 </div>
 
-<div id="zoomFab" aria-label="Controles de zoom">
-  <div id="zoomIn" class="fab" title="Acercar">＋</div>
-  <div id="zoomOut" class="fab" title="Alejar">−</div>
-</div>
+<!-- Controles de zoom removidos por solicitud del usuario -->
 
 <div id="mini">
   <canvas id="miniCanvas" width="200" height="130"></canvas>

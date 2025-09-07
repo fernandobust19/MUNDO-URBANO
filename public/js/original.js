@@ -315,7 +315,8 @@ btnRandLikes.addEventListener('click', updateLikesUI);
   const uiDock=$("#uiDock"), uiHideBtn=$("#uiHideBtn"), uiShowBtn=$("#uiShowBtn");
   // Mantener UI del mundo oculta al cargar; se mostrará tras crear personaje
   try{ if(uiDock) uiDock.style.display='none'; }catch(e){}
-  const zoomFab=$("#zoomFab"), zoomIn=$("#zoomIn"), zoomOut=$("#zoomOut"), docDock=$("#docDock"), govDock=$("#govDock"), topBar=$("#top-bar");
+  // Controles de zoom fueron removidos; mantener referencias nulas para compatibilidad
+  const zoomFab = null, zoomIn = null, zoomOut = null, docDock=$("#docDock"), govDock=$("#govDock"), topBar=$("#top-bar");
   const mini=$("#mini"), miniCanvas=$("#miniCanvas"), mctx=miniCanvas.getContext('2d');
   const stats=$("#stats"), toggleLinesBtn=$("#toggleLines");
   const btnShowDoc=$("#btnShowDoc"), accDocBody=$("#docBody");
@@ -359,6 +360,28 @@ btnRandLikes.addEventListener('click', updateLikesUI);
   const shopModal=$("#shopModal"), shopList=$("#shopList"), shopMsg=$("#shopMsg"), btnShopClose=$("#btnShopClose");
   const govFundsEl=$("#govFunds"), govDescEl = $("#govDesc");
   const govSelectEl=$("#govSelect"), btnGovPlace=$("#btnGovPlace");
+
+  // Seguimiento de agente
+  let FOLLOW_AGENT = false;
+  const btnFollow = document.getElementById('btnFollow');
+  if (btnFollow){
+    btnFollow.addEventListener('click', ()=>{
+      FOLLOW_AGENT = !FOLLOW_AGENT;
+      btnFollow.textContent = `Seguir agente: ${FOLLOW_AGENT ? 'ON' : 'OFF'}`;
+      // Al activar, centra inmediatamente
+      if (FOLLOW_AGENT) {
+        try{
+          const me = agents.find(a=>a.id===USER_ID);
+          if(me){
+            const vw = canvas.width/ZOOM, vh = canvas.height/ZOOM;
+            cam.x = Math.max(0, Math.min(me.x - vw/2, Math.max(0, WORLD.w - vw)));
+            cam.y = Math.max(0, Math.min(me.y - vh/2, Math.max(0, WORLD.h - vh)));
+            clampCam();
+          }
+        }catch(_){ }
+      }
+    });
+  }
 
   const btnGovClose = $("#btnGovClose");
   if(btnGovClose) btnGovClose.onclick = ()=> closeGovPanel();
@@ -443,8 +466,7 @@ btnRandLikes.addEventListener('click', updateLikesUI);
   const clearPointer = (id)=>{if(!activePointers.has(id)) return;activePointers.delete(id);if(panPointerId===id) panPointerId=null;if(activePointers.size<2){ pinchBaseDist=0; }};
   canvas.addEventListener('pointerup',   e=> clearPointer(e.pointerId), {passive:true});
   canvas.addEventListener('pointercancel', e=> clearPointer(e.pointerId), {passive:true});
-  $("#zoomIn").onclick = ()=> setZoom(ZOOM+ZSTEP, canvas.width/2, canvas.height/2);
-  $("#zoomOut").onclick= ()=> setZoom(ZOOM-ZSTEP, canvas.width/2, canvas.height/2);
+  // Botones de zoom eliminados: zoom por rueda/pinch permanece activo
 
   // Mapeo directo de imágenes para edificaciones
 const BUILDING_IMAGES = {
@@ -2078,6 +2100,18 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     let dt = (nowMs - __lastTime) / 1000; __lastTime = nowMs; dt = Math.min(dt, 0.05);
     frameCount++;
     updateSocialLogic();
+    // Seguimiento continuo del agente (si está activado) antes de dibujar el mundo
+    try{
+      if (FOLLOW_AGENT && USER_ID) {
+        const me = agents.find(a => a.id === USER_ID);
+        if (me) {
+          const vw = canvas.width / ZOOM, vh = canvas.height / ZOOM;
+          cam.x = Math.max(0, Math.min(me.x - vw / 2, Math.max(0, WORLD.w - vw)));
+          cam.y = Math.max(0, Math.min(me.y - vh / 2, Math.max(0, WORLD.h - vh)));
+          clampCam();
+        }
+      }
+    }catch(_){ }
     drawWorld();
     drawSocialLines();
 
@@ -2433,6 +2467,10 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       dock.classList.add('collapsed-left');
       bar.classList.add('collapsed-left');
       show($("#uiShowBtn"), true);
+  // Dock colapsado: si se mostrara el botón interno, debería apuntar a la derecha (abrir)
+  try{ document.getElementById('uiHideBtn').textContent = '▶'; }catch(_){ }
+  // Al colapsar el dock, mostrar minimapa para navegación
+  try{ document.getElementById('mini').style.display = 'block'; }catch(_){ }
     }catch(e){}
   };
   $("#uiShowBtn").onclick = ()=>{
@@ -2442,6 +2480,10 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       dock.classList.remove('collapsed-left');
       bar.classList.remove('collapsed-left');
       show($("#uiShowBtn"), false);
+  // Dock visible: flecha del botón de ocultar apunta a la izquierda (ocultar)
+  try{ document.getElementById('uiHideBtn').textContent = '◀'; }catch(_){ }
+  // Al expandir el dock, ocultar minimapa para que no se monten
+  try{ document.getElementById('mini').style.display = 'none'; }catch(_){ }
     }catch(e){}
   };
   panelDepositAll.onclick = ()=>{ if(!USER_ID){ toast('Crea tu persona primero.'); return; } const u=agents.find(a=>a.id===USER_ID); if(!u) return; u.money += (u.pendingDeposit||0); u.pendingDeposit=0; try{ window.updateBankPanel && window.updateBankPanel(); }catch(e){} try{ window.saveProgress && window.saveProgress({ money: Math.floor(u.money) }); }catch(e){} toast('Depósito realizado.'); };
@@ -2463,8 +2505,13 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         topBar.style.top = (10 + offset) + 'px';
       }
     }catch(e){}
-    zoomFab.style.display = on ? 'flex':'none';
-    mini.style.display = on ? 'block':'none';
+    // Controles de zoom eliminados
+    try{
+      const collapsed = document.getElementById('uiDock')?.classList.contains('collapsed-left');
+      document.getElementById('mini').style.display = (on && collapsed) ? 'block' : 'none';
+      // Ajustar flecha según estado: visible -> '◀' (ocultar); colapsado -> '▶' (abrir)
+      document.getElementById('uiHideBtn').textContent = collapsed ? '▶' : '◀';
+    }catch(_){ mini.style.display = on ? 'block':'none'; }
     show($("#uiShowBtn"),false);
     docDock.style.display = 'none'; govDock.style.display = 'none';
   }
