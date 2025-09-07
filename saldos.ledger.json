@@ -16,7 +16,7 @@
       "username": "mamita1qqq",
       "lastMoney": 0,
       "lastBank": 0,
-      "updatedAt": 1757271558650
+      "updatedAt": 1757271604453
     }
   },
   "movements": [
@@ -106294,6 +106294,546 @@
     },
     {
       "ts": 1757271558650,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271600373,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271600373,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271600569,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271600569,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271600691,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271600691,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271600827,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271600827,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271600959,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271600959,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271601093,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271601093,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271601226,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271601226,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271601358,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271601358,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271601492,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271601492,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271601625,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271601625,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271601758,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271601758,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271601892,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271601892,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271602025,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271602025,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271602157,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271602157,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271602292,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271602292,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271602424,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271602424,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271602558,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271602558,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271602692,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271602692,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271602824,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271602824,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271602958,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271602958,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271603091,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271603091,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271603225,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271603225,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271603358,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271603358,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271603491,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271603491,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271603624,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271603624,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271603758,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271603758,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271603879,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271603879,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271604010,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271604010,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271604141,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271604141,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "tick"
+    },
+    {
+      "ts": 1757271604453,
+      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "username": "mamita1qqq",
+      "delta": 0,
+      "money": 0,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757271604453,
       "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
       "username": "mamita1qqq",
       "delta": 0,
