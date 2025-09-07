@@ -10,11 +10,21 @@
       "email": "fernando2000b@hotmail.com",
       "phone": "0995986366",
       "gender": "M"
+    },
+    {
+      "id": "2bcc1683-e141-413a-8b4e-e186b838ed23",
+      "username": "fernando1",
+      "passHash": "$2a$10$jtQAPbyI2rGVi3X2E1I2QO.W46WUdlW1/9TaW3VT2xxQ8aVVWN6QO",
+      "createdAt": 1757288823573,
+      "lastLoginAt": 1757289369066,
+      "country": "El Salvador",
+      "email": "fernando2000b@hotmail.com",
+      "gender": "M"
     }
   ],
   "progress": {
     "bc2f0468-2a69-4f6c-95a5-c384d6a50452": {
-      "money": 0,
+      "money": 400,
       "bank": 0,
       "vehicle": null,
       "vehicles": [],
@@ -68,6 +78,27 @@
       "likes": [],
       "gender": null,
       "age": null
+    },
+    "2bcc1683-e141-413a-8b4e-e186b838ed23": {
+      "money": 400,
+      "bank": 0,
+      "vehicle": null,
+      "vehicles": [],
+      "shops": [],
+      "houses": [],
+      "name": "fernando2000",
+      "avatar": "assets/avatar2.png",
+      "likes": [
+        "cocina",
+        "videojuegos",
+        "meditación",
+        "correr",
+        "libros"
+      ],
+      "gender": "M",
+      "age": 20,
+      "country": "El Salvador",
+      "email": "fernando2000b@hotmail.com"
     }
   },
   "government": {
@@ -163,6 +194,66 @@
       "userId": "bc2f0468-2a69-4f6c-95a5-c384d6a50452",
       "details": {
         "username": "fernando"
+      }
+    },
+    {
+      "ts": 1757288823573,
+      "type": "register",
+      "userId": "2bcc1683-e141-413a-8b4e-e186b838ed23",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757288884517,
+      "type": "progress_update",
+      "userId": "2bcc1683-e141-413a-8b4e-e186b838ed23",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "country",
+          "email"
+        ]
+      }
+    },
+    {
+      "ts": 1757289369066,
+      "type": "login",
+      "userId": "2bcc1683-e141-413a-8b4e-e186b838ed23",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757289441584,
+      "type": "progress_update",
+      "userId": "2bcc1683-e141-413a-8b4e-e186b838ed23",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "country",
+          "email"
+        ]
       }
     }
   ]

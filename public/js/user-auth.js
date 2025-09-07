@@ -197,6 +197,8 @@
 			}catch(e){}
 			// Refrescar concesionario: marcar vehículos ya comprados
 			try{ window.updateCarMenuHighlight && window.updateCarMenuHighlight(); }catch(e){}
+			// Actualizar mini lista de comprobantes si existe
+			try{ window.refreshMyProofs && window.refreshMyProofs(); }catch(e){}
 		} catch(e){}
 		showAuth(false);
 	}

@@ -144,10 +144,17 @@
       proofFile.click();
     });
     proofFile.addEventListener('change', async (e)=>{
+      const statusEl = document.getElementById('proofStatus');
       try{
         const file = e.target.files && e.target.files[0];
         if(!file){ return; }
         if(file.size > 8*1024*1024){ toast('Archivo muy grande (máx 8MB).'); return; }
+        if(!/^image\/(jpeg|png)$/i.test(file.type||'')){
+          const msg = 'Formato no permitido. Usa JPG o PNG.';
+          if(statusEl) statusEl.textContent = msg;
+          toast(msg);
+          return;
+        }
         // Usar FileReader para evitar crear strings enormes con fromCharCode (...spread)
         const b64 = await new Promise((resolve, reject)=>{
           const r = new FileReader();
@@ -165,12 +172,36 @@
         const r = await fetch('/api/pay/upload-proof', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload), credentials:'include' });
         const js = await r.json().catch(()=>({ ok:false }));
         if(!r.ok || !js.ok){ throw new Error(js.msg||'Error subiendo comprobante'); }
+        if(statusEl) statusEl.textContent = 'Documento subido correctamente.';
         toast('Comprobante enviado. Gracias.');
         // limpiar input
         e.target.value='';
-      }catch(err){ console.warn('upload-proof', err); toast(err.message||'No se pudo subir'); }
+        try{ await window.refreshMyProofs?.(); }catch(_){ }
+      }catch(err){ console.warn('upload-proof', err); const m = err && err.message ? err.message : 'No se pudo subir'; if(statusEl) statusEl.textContent = m; toast(m); }
     });
   }
+
+  // Mini lista de comprobantes del usuario
+  async function fetchMyProofs(){
+    try{
+      const r = await fetch('/api/pay/proofs', { credentials: 'include' });
+      const js = await r.json().catch(()=>({ ok:false }));
+      return (r.ok && js.ok) ? (js.items||[]) : [];
+    }catch(_){ return []; }
+  }
+  function fmtTime(ts){ try{ return new Date(ts).toLocaleString(); }catch(_){ return String(ts||''); } }
+  async function renderMyProofs(){
+    const box = document.getElementById('proofList'); if(!box) return;
+    const items = await fetchMyProofs();
+    if(!items.length){ box.textContent = ''; return; }
+    const html = items.slice(0,3).map(it => {
+      const url = it.savedAs ? ('/pagos/' + it.savedAs) : '#';
+      const name = it.filename || it.savedAs || 'comprobante';
+      return `<div>• <a href="${url}" target="_blank" rel="noopener">${name}</a> <span style="color:#94a3b8">(${fmtTime(it.ts)})</span></div>`;
+    }).join('');
+    box.innerHTML = `<div>Últimos comprobantes:</div>${html}`;
+  }
+  window.refreshMyProofs = renderMyProofs;
 
   // (Botón de verificación de comprobantes eliminado por solicitud)
   const fGenderPreview = document.getElementById('fGenderPreview');
