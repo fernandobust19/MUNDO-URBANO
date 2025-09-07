@@ -255,7 +255,7 @@ app.post('/api/pay/upload-proof', async (req, res) => {
     if(!(allowedExt.has(ext) && (!mime || allowedMime.has(String(mime).toLowerCase())))){
       return res.status(400).json({ ok:false, msg:'Formato no permitido. Usa JPG o PNG.' });
     }
-    const ts = new Date().toISOString().replace(/[:]/g,'-');
+  const ts = new Date().toISOString().replace(/[:]/g,'-');
     const outDir = path.join(__dirname, 'pagos');
     if(!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
     const outName = `${ts}-${uid}.${ext}`;
@@ -263,7 +263,8 @@ app.post('/api/pay/upload-proof', async (req, res) => {
     const buf = Buffer.from(data, 'base64');
     fs.writeFileSync(outPath, buf);
     // Guardar pequeño .json con metadatos
-    const meta = { ts: Date.now(), userId: uid, filename: safeName, savedAs: outName, mime: mime||null };
+  const userObj = brain.getUserById(uid);
+  const meta = { ts: Date.now(), userId: uid, username: (userObj && userObj.username) || null, filename: safeName, savedAs: outName, mime: mime||null };
     fs.writeFileSync(path.join(outDir, `${ts}-${uid}.json`), JSON.stringify(meta, null, 2));
       console.log(`[upload-proof] saved ${outName} for user ${uid}`);
       // Enviar email si está configurado SMTP

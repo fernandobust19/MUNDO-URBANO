@@ -1,11 +1,11 @@
 {
   "users": [
     {
-      "id": "c30d0f5d-7e26-4a90-adee-d813428a38e3",
+      "id": "bc2f0468-2a69-4f6c-95a5-c384d6a50452",
       "username": "fernando",
-      "passHash": "$2a$10$bHzqTa7Feu5HV4M2dKr3Huxhm0/uHNr2KJpHJGdGkLPyvKLseZoX2",
-      "createdAt": 1757282349037,
-      "lastLoginAt": null,
+      "passHash": "$2a$10$pHltoQ1CCP6/mc2fZxvd4ufkgZSnsqsi4UAjCTm1zivcMuqjNRlaS",
+      "createdAt": 1757283010418,
+      "lastLoginAt": 1757283481631,
       "country": "Ecuador",
       "email": "fernando2000b@hotmail.com",
       "phone": "0995986366",
@@ -13,30 +13,30 @@
     }
   ],
   "progress": {
-    "c30d0f5d-7e26-4a90-adee-d813428a38e3": {
+    "bc2f0468-2a69-4f6c-95a5-c384d6a50452": {
       "money": 0,
       "bank": 0,
       "vehicle": null,
       "vehicles": [],
       "shops": [
         {
-          "x": 506,
-          "y": 141,
+          "x": 493,
+          "y": 273,
           "w": 120,
           "h": 80,
           "kind": "panadería",
-          "ownerId": "A761965"
+          "ownerId": "A179897"
         }
       ],
       "houses": [],
-      "name": "FERNANDO",
-      "avatar": "assets/avatar1.png",
+      "name": "FER",
+      "avatar": "assets/avatar2.png",
       "likes": [
-        "música",
-        "lectura",
-        "cine",
-        "animales",
-        "yoga"
+        "viajes",
+        "baloncesto",
+        "historia",
+        "electrónica",
+        "comida"
       ],
       "gender": "M",
       "age": 20,
@@ -44,22 +44,22 @@
       "email": "fernando2000b@hotmail.com",
       "phone": "0995986366"
     },
-    "e6c2f731-5982-4d30-b463-c5bf475b88bf": {
+    "c30d0f5d-7e26-4a90-adee-d813428a38e3": {
       "money": 0,
       "bank": 0,
       "vehicle": null,
       "vehicles": [],
       "shops": [
         {
-          "x": 506,
-          "y": 141,
+          "x": 493,
+          "y": 273,
           "w": 120,
           "h": 80,
           "kind": "panadería",
-          "ownerId": "A761965",
+          "ownerId": "A179897",
           "id": "S1",
           "cashbox": 0,
-          "createdAt": 1757282430567
+          "createdAt": 1757283047646
         }
       ],
       "houses": [],
@@ -76,17 +76,17 @@
   },
   "activityLog": [
     {
-      "ts": 1757282349037,
+      "ts": 1757283010418,
       "type": "register",
-      "userId": "c30d0f5d-7e26-4a90-adee-d813428a38e3",
+      "userId": "bc2f0468-2a69-4f6c-95a5-c384d6a50452",
       "details": {
         "username": "fernando"
       }
     },
     {
-      "ts": 1757282358228,
+      "ts": 1757283021406,
       "type": "progress_update",
-      "userId": "c30d0f5d-7e26-4a90-adee-d813428a38e3",
+      "userId": "bc2f0468-2a69-4f6c-95a5-c384d6a50452",
       "details": {
         "keys": [
           "money",
@@ -104,9 +104,9 @@
       }
     },
     {
-      "ts": 1757282363549,
+      "ts": 1757283026677,
       "type": "progress_update",
-      "userId": "c30d0f5d-7e26-4a90-adee-d813428a38e3",
+      "userId": "bc2f0468-2a69-4f6c-95a5-c384d6a50452",
       "details": {
         "keys": [
           "money",
@@ -127,17 +127,17 @@
       }
     },
     {
-      "ts": 1757282430567,
+      "ts": 1757283047647,
       "type": "shop_add",
-      "userId": "e6c2f731-5982-4d30-b463-c5bf475b88bf",
+      "userId": "c30d0f5d-7e26-4a90-adee-d813428a38e3",
       "details": {
         "id": "S1"
       }
     },
     {
-      "ts": 1757282430987,
+      "ts": 1757283048079,
       "type": "progress_update",
-      "userId": "c30d0f5d-7e26-4a90-adee-d813428a38e3",
+      "userId": "bc2f0468-2a69-4f6c-95a5-c384d6a50452",
       "details": {
         "keys": [
           "money",
@@ -155,6 +155,14 @@
           "email",
           "phone"
         ]
+      }
+    },
+    {
+      "ts": 1757283481631,
+      "type": "login",
+      "userId": "bc2f0468-2a69-4f6c-95a5-c384d6a50452",
+      "details": {
+        "username": "fernando"
       }
     }
   ]
