@@ -6,6 +6,13 @@
       "passHash": "$2a$10$zS76j1syl1rvohBU.XPXcOhUNN4CKKBAImrDHHrX1b7DGT7COUXF2",
       "createdAt": 1757106628791,
       "lastLoginAt": 1757190826088
+    },
+    {
+      "id": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "username": "fernando2000b@hotmail.co",
+      "passHash": "$2a$10$ksVBv6F3nX3LJQv1d3odD.zQ5kSOoL7C8opObA5sm2Ur2.dhQAwLW",
+      "createdAt": 1757201570350,
+      "lastLoginAt": 1757203849532
     }
   ],
   "progress": {
@@ -42,6 +49,25 @@
       "likes": [],
       "gender": null,
       "age": null
+    },
+    "db1ef90b-7763-4f2a-93e7-381cdfc751c5": {
+      "money": 400,
+      "bank": 0,
+      "vehicle": null,
+      "vehicles": [],
+      "shops": [],
+      "houses": [],
+      "name": "fernando",
+      "avatar": "/assets/avatar1.png",
+      "likes": [
+        "baile",
+        "tecnología",
+        "yoga",
+        "correr",
+        "pizza"
+      ],
+      "gender": "U",
+      "age": 21
     }
   },
   "activityLog": [
@@ -723,6 +749,50 @@
       "ts": 1757190832631,
       "type": "progress_update",
       "userId": "1a61fe5c-466e-4ca2-bf46-43df2c6e22fa",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757201570350,
+      "type": "register",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "username": "fernando2000b@hotmail.co"
+      }
+    },
+    {
+      "ts": 1757201915150,
+      "type": "login",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "username": "fernando2000b@hotmail.co"
+      }
+    },
+    {
+      "ts": 1757203849532,
+      "type": "login",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "username": "fernando2000b@hotmail.co"
+      }
+    },
+    {
+      "ts": 1757203891117,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
       "details": {
         "keys": [
           "money",

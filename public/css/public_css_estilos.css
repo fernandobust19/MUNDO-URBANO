@@ -16,7 +16,8 @@ body {
   background: linear-gradient(180deg, var(--bg) 0%, #fff8e1 100%);
   color: var(--text);
   line-height: 1.35;
-  padding: 16px;
+  /* Quitar padding global: el lienzo ocupa toda la pantalla */
+  padding: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -72,8 +73,9 @@ header.app-header h1 { font-size: 1.4rem; color: var(--accent); }
     font-size: 0.97rem;
   }
   .btn {
-    padding: 7px 10px;
-    font-size: 0.97rem;
+    padding: 10px 12px;
+    min-height: 42px;
+    font-size: 1rem;
   }
   .row {
     flex-direction: column;
@@ -87,10 +89,7 @@ header.app-header h1 { font-size: 1.4rem; color: var(--accent); }
     font-size: 0.95rem;
     padding: 5px 8px;
   }
-  body {
-    padding: 6px;
-    font-size: 0.98rem;
-  }
+  body { font-size: 1rem; }
   /* Ajuste para menús grandes */
   nav, .menu, .main-menu {
     font-size: 0.98rem !important;

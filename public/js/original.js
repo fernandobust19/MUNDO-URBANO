@@ -45,16 +45,16 @@
 
     /* ===== FORMULARIO ===== */
   const formBar = $("#formBar"), fGender=$("#fGender"), fName=$("#fName"), fAge=$("#fAge"), fUsd=$("#fUsd");
-  // Enforce age rules: default 20, min 20, max 90, cannot decrease once increased
+  // Enforce age rules: default 21, min 21, max 90, cannot decrease once increased
   (function enforceAgeField(){
     try{
       if(!fAge) return;
-      // HTML constraints (in case DOM loaded before patch)
-      fAge.min = '20'; fAge.max = '90'; fAge.step = '1';
-      if(!fAge.value || Number(fAge.value) < 20) fAge.value = '20';
-      const clamp = (v)=> Math.max(20, Math.min(90, v|0));
+  // HTML constraints (in case DOM loaded before patch)
+  fAge.min = '21'; fAge.max = '90'; fAge.step = '1';
+  if(!fAge.value || Number(fAge.value) < 21) fAge.value = '21';
+  const clamp = (v)=> Math.max(21, Math.min(90, v|0));
       const onChange = ()=>{
-        let v = clamp(parseInt(fAge.value||'20',10));
+  let v = clamp(parseInt(fAge.value||'21',10));
         // update field within bounds only (allow increasing or decreasing within 20–90)
         fAge.value = String(v);
       };
@@ -381,6 +381,31 @@ btnRandLikes.addEventListener('click', updateLikesUI);
   const isMobile = ()=> innerWidth<=768;
   let ZOOM=1.0, ZMIN=0.6, ZMAX=2.0, ZSTEP=0.15;
   const WORLD={w:0,h:0}; const cam={x:0,y:0};
+
+  // En móviles: colapsar dock inicial y ocultar mini-mapa para más espacio
+  function applyResponsiveUI(){
+    try{
+      const narrow = innerWidth <= 700;
+      const dock = document.getElementById('uiDock');
+      const bar  = document.getElementById('top-bar');
+      const showBtn = document.getElementById('uiShowBtn');
+      const miniEl = document.getElementById('mini');
+      if(narrow){
+        if(dock){ dock.classList.add('collapsed-left'); }
+        if(bar){ bar.classList.add('collapsed-left'); }
+        if(showBtn){ showBtn.style.display = 'grid'; }
+        if(miniEl){ miniEl.style.display = 'none'; }
+      } else {
+        if(dock){ dock.classList.remove('collapsed-left'); }
+        if(bar){ bar.classList.remove('collapsed-left'); }
+        if(showBtn){ showBtn.style.display = 'none'; }
+        if(miniEl){ miniEl.style.display = 'block'; }
+      }
+    }catch(_){ }
+  }
+  addEventListener('resize', applyResponsiveUI, { passive:true });
+  // aplicar al cargar
+  applyResponsiveUI();
 
   // --- Generador de números aleatorios determinista (semilla fija para el mundo) ---
   let _seed = 20250824; // Usa la fecha de hoy como semilla fija
