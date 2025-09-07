@@ -45,17 +45,17 @@
 
     /* ===== FORMULARIO ===== */
   const formBar = $("#formBar"), fGender=$("#fGender"), fName=$("#fName"), fAge=$("#fAge"), fUsd=$("#fUsd");
-  // Enforce age rules: default 21, min 21, max 90, cannot decrease once increased
+  // Enforce age rules: default 20, min 20, max 89
   (function enforceAgeField(){
     try{
       if(!fAge) return;
   // HTML constraints (in case DOM loaded before patch)
-  fAge.min = '21'; fAge.max = '90'; fAge.step = '1';
-  if(!fAge.value || Number(fAge.value) < 21) fAge.value = '21';
-  const clamp = (v)=> Math.max(21, Math.min(90, v|0));
+  fAge.min = '20'; fAge.max = '89'; fAge.step = '1';
+  if(!fAge.value || Number(fAge.value) < 20) fAge.value = '20';
+  const clamp = (v)=> Math.max(20, Math.min(89, v|0));
       const onChange = ()=>{
-  let v = clamp(parseInt(fAge.value||'21',10));
-        // update field within bounds only (allow increasing or decreasing within 20–90)
+  let v = clamp(parseInt(fAge.value||'20',10));
+        // update field within bounds only (allow increasing or decreasing within 20–89)
         fAge.value = String(v);
       };
       fAge.addEventListener('input', onChange);
@@ -358,13 +358,13 @@ btnRandLikes.addEventListener('click', updateLikesUI);
   const govSelectEl=$("#govSelect"), btnGovPlace=$("#btnGovPlace");
   const btnGovOpen = document.getElementById('btnGovOpen');
 
-  // Seguimiento de agente
+  // Seguimiento de agente (btn flotante)
   let FOLLOW_AGENT = false;
-  const btnFollow = document.getElementById('btnFollow');
-  if (btnFollow){
-    btnFollow.addEventListener('click', ()=>{
+  const followFab = document.getElementById('followFab');
+  if (followFab){
+    followFab.addEventListener('click', ()=>{
       FOLLOW_AGENT = !FOLLOW_AGENT;
-      btnFollow.textContent = `Seguir agente: ${FOLLOW_AGENT ? 'ON' : 'OFF'}`;
+      if(FOLLOW_AGENT){ followFab.classList.add('on'); } else { followFab.classList.remove('on'); }
       // Al activar, centra inmediatamente
       if (FOLLOW_AGENT) {
         try{
@@ -466,9 +466,9 @@ btnRandLikes.addEventListener('click', updateLikesUI);
   function isOverUI(sx,sy){
     const rects = [];
     const addRect = (el)=>{ if(!el) return; const cs = getComputedStyle(el); if(cs.display==='none' || cs.visibility==='hidden') return; rects.push(el.getBoundingClientRect()); };
-    addRect(uiDock); addRect(docDock); addRect(govDock); addRect(mini); addRect(zoomFab); addRect(uiShowBtn); addRect(marriedDock);
+  addRect(uiDock); addRect(docDock); addRect(govDock); addRect(mini); addRect(zoomFab); addRect(uiShowBtn); addRect(marriedDock);
     addRect(document.getElementById('docModal')); addRect(document.getElementById('marriedModal'));
-    addRect(document.getElementById('btnFollow'));
+  addRect(document.getElementById('followFab'));
     return rects.some(r => sx>=r.left && sx<=r.right && sy>=r.top && sy<=r.bottom);
   }
   function setZoom(newZ, anchorX=null, anchorY=null){const before = toWorld(anchorX??(canvas.width/2), anchorY??(canvas.height/2));ZOOM = Math.max(ZMIN, Math.min(ZMAX, newZ));const after  = toWorld(anchorX??(canvas.width/2), anchorY??(canvas.height/2));cam.x += (before.x - after.x); cam.y += (before.y - after.y); clampCam();}
@@ -2112,7 +2112,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     let dt = (nowMs - __lastTime) / 1000; __lastTime = nowMs; dt = Math.min(dt, 0.05);
     frameCount++;
   if(!window.__gamePaused){ updateSocialLogic(); }
-    // Seguimiento continuo del agente (si está activado) antes de dibujar el mundo
+  // Seguimiento continuo del agente (si está activado) antes de dibujar el mundo
     try{
       if (FOLLOW_AGENT && USER_ID) {
         const me = agents.find(a => a.id === USER_ID);

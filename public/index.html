@@ -95,6 +95,16 @@
   #zoomFab{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:26;display:flex;flex-direction:column;gap:10px;pointer-events:auto}
   .fab{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:var(--brand);border:1px solid rgba(0,0,0,0.06);box-shadow:0 8px 20px rgba(0,0,0,.06);font-size:22px;cursor:pointer;user-select:none;color:var(--text)}
   .fab:active{transform:scale(.96)}
+  /* Botón flotante Seguir (sin texto) en esquina inferior izquierda */
+  #followFab{position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:26;pointer-events:auto;background:var(--brand);border:1px solid rgba(0,0,0,0.06)}
+  #followFab{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;box-shadow:0 8px 20px rgba(0,0,0,.06)}
+  /* Icono de mira (crosshair) dibujado con SVG como background, sin texto */
+  #followFab::before{content:"";display:block;width:100%;height:100%;background-repeat:no-repeat;background-position:center;background-size:64%;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' stroke='%23ffffff' stroke-width='6' fill='none'><circle cx='50' cy='50' r='28'/><line x1='50' y1='10' x2='50' y2='32'/><line x1='50' y1='68' x2='50' y2='90'/><line x1='10' y1='50' x2='32' y2='50'/><line x1='68' y1='50' x2='90' y2='50'/></svg>");
+  }
+  /* Estado activo: verde para indicar seguimiento ON */
+  #followFab.on{ background: var(--ok); border-color:#15803d; }
+  @media (max-width:700px){ #followFab{ width:48px;height:48px } }
   
   #modal,#builderModal,#shopModal{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.35);display:none;align-items: flex-start;justify-content:center;padding-top: 5vh;}
   .modalBox{width:min(560px,94vw);background:var(--card);border:1px solid rgba(0,0,0,0.06);border-radius:14px;padding:14px}
@@ -183,7 +193,7 @@
       </div>
     </div>
   <div class="field col-3"><label>Nombre</label><input id="fName" type="text" maxlength="12" class="input" placeholder="nombre de usuario" autocomplete="username"/></div>
-  <div class="field col-3"><label>Edad</label><input id="fAge" type="number" min="21" max="90" value="21" step="1" class="input"/></div>
+  <div class="field col-3"><label>Edad</label><input id="fAge" type="number" min="20" max="89" value="20" step="1" class="input"/></div>
   <div class="field col-3">
     <div style="display:flex;flex-direction:column;gap:10px;align-items:stretch">
       <!-- Campo oculto para compatibilidad con la lógica existente -->
@@ -267,6 +277,8 @@
 <canvas id="world"></canvas>
 
 <button id="uiShowBtn" title="Mostrar panel" aria-label="Mostrar panel"></button>
+<!-- Botón flotante para seguir al agente (sin texto, sólo icono) -->
+<button id="followFab" class="fab" title="Seguir a mi agente" aria-label="Seguir agente"></button>
 <div id="uiDock">
   <div class="card">
     <b>Mundo activo</b><br/><small>Trabajo 60s = +15 → 💰 banco</small>
