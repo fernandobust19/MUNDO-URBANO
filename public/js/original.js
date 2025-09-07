@@ -654,8 +654,12 @@ BG_IMG.src = '/assets/fondo1.jpg';
     COST_PARK: 80, COST_SCHOOL: 120, COST_LIBRARY: 150, COST_POLICE: 200, COST_HOSPITAL: 250, COST_POWER: 350,
     SHOP_W:120, SHOP_H:80, VISIT_RADIUS:220, VISIT_RATE: 0.003, PRICE_MIN:1, PRICE_MAX:3,
     SHOP_DWELL: 5, NEW_SHOP_FORCE_WINDOW: 120,
-    SHOP_PAYOUT_CHUNK: 100,
+  SHOP_PAYOUT_CHUNK: 100,
     OWNER_MANAGE_VS_WORK_RATIO: 0.3, // 30% de probabilidad de gestionar negocio vs trabajar
+  // Exploración del mapa por bots
+  EXPLORE_SECTORS_X: 12,
+  EXPLORE_SECTORS_Y: 9,
+  EXPLORE_REACH_RADIUS: 18,
   };
 
   const VEHICLES = {
@@ -784,6 +788,53 @@ BG_IMG.src = '/assets/fondo1.jpg';
       // listas globales
       try{ removeFromList(government.placed); }catch(e){}
       try{ removeFromList(shops); }catch(e){}
+
+      // ===== Cobertura de exploración (para que bots recorran todo el mapa) =====
+      let EXPLORE_GRID = null; // matriz booleana [sy][sx]
+      function ensureExploreGrid(){
+        const sx = CFG.EXPLORE_SECTORS_X, sy = CFG.EXPLORE_SECTORS_Y;
+        if(!EXPLORE_GRID || EXPLORE_GRID.length!==sy || EXPLORE_GRID[0]?.length!==sx){
+          EXPLORE_GRID = Array.from({length: sy}, ()=> Array.from({length: sx}, ()=> false));
+        }
+        return EXPLORE_GRID;
+      }
+      function markVisitedAt(x, y){
+        const grid = ensureExploreGrid();
+        const sx = CFG.EXPLORE_SECTORS_X, sy = CFG.EXPLORE_SECTORS_Y;
+        const ix = Math.min(sx-1, Math.max(0, Math.floor(x / (WORLD.w / sx))));
+        const iy = Math.min(sy-1, Math.max(0, Math.floor(y / (WORLD.h / sy))));
+        grid[iy][ix] = true;
+      }
+      function nextUnvisitedTarget(){
+        const grid = ensureExploreGrid();
+        const sx = CFG.EXPLORE_SECTORS_X, sy = CFG.EXPLORE_SECTORS_Y;
+        // lista de celdas no visitadas
+        const cells = [];
+        for(let iy=0; iy<sy; iy++){
+          for(let ix=0; ix<sx; ix++){
+            if(!grid[iy][ix]){
+              const cx = (ix + 0.5) * (WORLD.w / sx);
+              const cy = (iy + 0.5) * (WORLD.h / sy);
+              cells.push({ix, iy, x: cx, y: cy});
+            }
+          }
+        }
+        if(cells.length===0){
+          // reset coverage para seguir patrullando
+          for(let iy=0; iy<sy; iy++) for(let ix=0; ix<sx; ix++) grid[iy][ix] = false;
+          // escoger centro después de reiniciar
+          return { x: WORLD.w/2, y: WORLD.h/2 };
+        }
+        // elegir la más lejana al azar entre top-k para dispersión
+        const k = Math.min(8, cells.length);
+        // mezclar un poco
+        for(let i=cells.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [cells[i],cells[j]]=[cells[j],cells[i]]; }
+        const sample = cells.slice(0, k);
+        // opcional: priorizar por distancia desde un punto aleatorio
+        const px = Math.random()*WORLD.w, py = Math.random()*WORLD.h;
+        sample.sort((a,b)=> (Math.hypot(b.x-px,b.y-py) - Math.hypot(a.x-px,a.y-py)) );
+        return { x: sample[0].x, y: sample[0].y };
+      }
       try{ removeFromList(factories); }catch(e){}
       try{ removeFromList(banks); }catch(e){}
       try{ removeFromList(malls); }catch(e){}
@@ -910,22 +961,21 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       barrios.push(b);
       cityBlocks.push(b);
     }
-    // Distribuir casas en los 4 barrios con tamaños variables más grandes
-    const pad = 24; // Aumentado padding de 18 a 24 para más espacio
+    // Distribuir casas en los 4 barrios con tamaños UNIFORMES
+    const pad = 24; // Padding de espacio entre casas y bordes
     let totalMade = 0;
     const housesPerBarrio = Math.ceil(totalNeeded / barrios.length);
     for (const b of barrios) {
       let madeInThisBarrio = 0;
-      // Usar tamaños variables: 60-90 píxeles para variar como otras edificaciones
-      const minHouseSize = 60, maxHouseSize = 90;
-      const colsH = Math.max(4, Math.floor((b.w - pad * 2) / (maxHouseSize + 15))); // Ajustado para tamaños mayores
-      const rowsH = Math.max(3, Math.floor((b.h - pad * 2) / (maxHouseSize + 15)));
+      // Tamaño fijo para todas las casas
+      const hsize = CFG.HOUSE_SIZE;
+      const colsH = Math.max(4, Math.floor((b.w - pad * 2) / (hsize + 15))); // Espaciado consistente
+      const rowsH = Math.max(3, Math.floor((b.h - pad * 2) / (hsize + 15)));
       for (let ry = 0; ry < rowsH && madeInThisBarrio < housesPerBarrio && totalMade < totalNeeded; ry++) {
         for (let rx = 0; rx < colsH && madeInThisBarrio < housesPerBarrio && totalMade < totalNeeded; rx++) {
-          // Tamaño aleatorio para cada casa (como fábricas o bancos)
-          const hsize = srandi(minHouseSize, maxHouseSize);
-          const hx = b.x + pad + rx * (maxHouseSize + 15); // Usar max para espaciado consistente
-          const hy = b.y + pad + ry * (maxHouseSize + 15);
+          // Colocación con tamaño uniforme
+          const hx = b.x + pad + rx * (hsize + 15);
+          const hy = b.y + pad + ry * (hsize + 15);
           const newH = { x: hx, y: hy, w: hsize, h: hsize, ownerId: null, rentedBy: null };
           if ([...avenidas, ...roundabouts].some(av => rectsOverlapWithMargin(av, newH, 8))) continue;
           houses.push(newH);
@@ -1850,48 +1900,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       drawBuildingWithImage(s, s.kind, '#8B5CF6', '#c4b5fd');
     });
 
-    // ===== Dibujar etiquetas con nombre/label de cada edificio en el mapa grande =====
-    try{
-      // Reunir todas las entidades que se muestran en el mapa grande
-      const allVisible = [...renderGovernmentPlaced, ...renderShops, ...factories, ...banks, ...malls, ...renderHouses];
-      // Agrupar por tipo/base para numerar repetidos
-      const groups = new Map();
-      const getBaseName = (it) => {
-        let n = (it && (it.label || it.k || it.kind || it.type) || '').toString();
-        n = n.replace(/_+/g, ' ').trim();
-        // quitar numeración final si existe (ej: 'Biblioteca 1')
-        n = n.replace(/\s+#?\d+$/, '').replace(/\s+\d+$/, '').trim();
-        if(!n) n = 'edificio';
-        return n.charAt(0).toUpperCase() + n.slice(1);
-      };
-      for(const ent of allVisible){
-        if(!ent) continue;
-        const key = getBaseName(ent).toLowerCase();
-        const arr = groups.get(key) || [];
-        arr.push(ent);
-        groups.set(key, arr);
-      }
-
-      ctx.textAlign = 'center';
-      ctx.fillStyle = 'rgba(255,255,255,0.95)';
-      ctx.strokeStyle = 'rgba(0,0,0,0.6)';
-      for(const [baseKey, arr] of groups.entries()){
-        for(let i=0;i<arr.length;i++){
-          const ent = arr[i];
-          if(!ent) continue;
-          const base = getBaseName(ent);
-          const display = (arr.length > 1) ? `${base} ${i+1}` : base;
-          const p = toScreen(ent.x, ent.y);
-          const w = (ent.w || 60) * ZOOM;
-          const tx = p.x + w/2;
-          const ty = p.y - 6 * ZOOM; // encima del edificio
-          ctx.lineWidth = Math.max(2, 2 * ZOOM);
-          ctx.font = `${Math.max(10, 12 * ZOOM)}px system-ui,Segoe UI,Arial`;
-          ctx.strokeText(display, tx, ty);
-          ctx.fillText(display, tx, ty);
-        }
-      }
-    }catch(e){ console.warn('Error drawing labels', e); }
+  // Etiquetas de edificaciones ocultas por solicitud del usuario
 
     for(const inst of renderGovernmentPlaced){
       // Si los datos provienen del servidor, algunos campos (k/key/type) pueden faltar.
@@ -1920,10 +1929,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
           ctx.strokeStyle = '#60a5fa';
           ctx.lineWidth = 2;
           ctx.strokeRect(px, py, w, h);
-          ctx.fillStyle = 'white';
-          ctx.textAlign = 'center';
-          ctx.font = `700 ${Math.max(10, 14 * ZOOM)}px system-ui,Segoe UI`;
-          ctx.fillText('GOBIERNO', px + w/2, py + h/2);
+          // No texto del edificio
         }
       } else if(inst.k === 'carcel'){
         const p = toScreen(inst.x, inst.y);
@@ -1933,19 +1939,10 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         ctx.fillStyle = 'rgba(220,220,220,0.95)';
         const bars = Math.max(3, Math.floor(inst.w/10));
         for(let i=0;i<bars;i++){ const bx = p.x + 4 + i*(w-8)/(bars-1); ctx.fillRect(bx, p.y+4, 2, h-8); }
-        ctx.fillStyle = '#fff'; ctx.font=`700 ${Math.max(10, 14*ZOOM)}px system-ui`; ctx.textAlign='center'; ctx.fillText('CÁRCEL', p.x + w/2, p.y + 18*ZOOM);
+        // Sin texto "CÁRCEL"
       } else {
-        // Usar drawBuildingWithImage en lugar de drawLabelIcon
+        // Usar drawBuildingWithImage en lugar de drawLabelIcon (sin textos)
         drawBuildingWithImage(inst, inst.k, inst.fill, inst.stroke);
-        
-        // Mantener el nombre encima de la imagen para mayor claridad
-        if (ZOOM >= 0.8) {
-          const p = toScreen(inst.x, inst.y);
-          ctx.font = `700 ${Math.max(8, 10 * ZOOM)}px system-ui,Segoe UI`;
-          ctx.fillStyle = '#ffffff';
-          ctx.textAlign = 'center';
-          ctx.fillText(inst.label, p.x + (inst.w * ZOOM)/2, p.y + 12 * ZOOM);
-        }
       }
     }
 
@@ -2127,7 +2124,13 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   // Mostrar nombre siempre visible con tamaño fijo en pixeles, independiente del zoom
   ctx.font = `700 ${CFG.NAME_FONT_PX}px ui-monospace,monospace`;
   ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
-  ctx.fillText(`${p.name||p.code||'P'}`, pt.x, pt.y - (r + 12));
+  // Escalar nombre de jugador remoto con el zoom; ocultar si muy pequeño
+  const rpNamePx = CFG.NAME_FONT_PX * ZOOM;
+  const rpNameOffset = Math.max(6, 10 * ZOOM);
+  if (rpNamePx >= 6) {
+    ctx.font = `700 ${rpNamePx}px ui-monospace,monospace`; ctx.fillStyle='#fff'; ctx.textAlign='center';
+    ctx.fillText(`${p.name||p.code||'P'}`, pt.x, pt.y - (r + rpNameOffset));
+  }
     }
   }
 
@@ -2192,7 +2195,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
           else { a.target=null, a.targetRole='idle'; }
         }
       }
-        if(!a.forcedShopId && !a.workingUntil && !a.goingToBank && !a.employedAtShopId && (!a.targetRole || a.targetRole==='idle' || a.targetRole==='home')) {
+  if(!a.forcedShopId && !a.workingUntil && !a.goingToBank && !a.employedAtShopId && (!a.targetRole || a.targetRole==='idle' || a.targetRole==='home')) {
         if (!a.forcedShopId && Math.random() < CFG.VISIT_RATE) {
           // Sólo considerar negocios que ya tienen dueño (comprados). Las panaderías y otros tipos
           // que no estén comprados no deberían atraer visitas porque no existen físicamente.
@@ -2207,6 +2210,11 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
               if(d<bestD && d<CFG.VISIT_RADIUS){ best=s; bestD=d; }
             }
             if(best){ a.target={x:best.x+best.w/2,y:best.y+best.h/2}; a.targetRole='shop'; a._shopTargetId = best.id; }
+          }
+          // Si sigue idle, asignar exploración del mapa
+          if((!a.targetRole || a.targetRole==='idle' || a.targetRole==='home') && !a.target){
+            const t = nextUnvisitedTarget();
+            a.target = t; a.targetRole = 'explore';
           }
         }
       }
@@ -2247,8 +2255,10 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         const dd = Math.hypot(dx, dy) || 1;
         const nx = dx / dd, ny = dy / dd;
         a.vx = nx * currentSpeed; a.vy = ny * currentSpeed;
-        if (dd < 6) {
-          if (['work', 'work_shop', 'home'].includes(a.targetRole)) { a.target = null; a.targetRole = 'idle'; }
+        if (dd < CFG.EXPLORE_REACH_RADIUS) {
+          // marcar sector visitado si era exploración
+          if(a.targetRole === 'explore'){ markVisitedAt(a.x, a.y); a.target = null; a.targetRole = 'idle'; }
+          else if (['work', 'work_shop', 'home', 'bank', 'shop', 'manage_shop', 'go_work'].includes(a.targetRole)) { a.target = null; a.targetRole = 'idle'; }
         }
       } else {
         const isWorkingInFactory = a.workingUntil && nowS < a.workingUntil;
@@ -2306,11 +2316,13 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
           ctx.font=`700 ${Math.max(12, 18*ZOOM)}px system-ui,Segoe UI,Arial,emoji`; ctx.textAlign='center'; ctx.fillText('💕', pt.x, pt.y - 25*ZOOM);
         } else if (ag.justMarried) { ag.justMarried=null; }
   const ageYrs=(yearsSince(ag.bornEpoch)|0);
-  // Etiqueta de nombre que escala con el zoom (más lejos → texto más pequeño)
-  const namePx = Math.max(8, 12 * ZOOM);
-  const nameOffset = Math.max(8, 10 * ZOOM);
-  ctx.font = `700 ${namePx}px ui-monospace,monospace`; ctx.fillStyle='#fff'; ctx.textAlign='center';
-  ctx.fillText(`${ag.name||ag.code}·${ageYrs}`, pt.x, pt.y - (r + nameOffset));
+  // Etiqueta de nombre escala 1:1 con el zoom (y se oculta si es muy pequeña)
+  const namePx = CFG.NAME_FONT_PX * ZOOM;
+  const nameOffset = Math.max(6, 10 * ZOOM);
+  if (namePx >= 6) {
+    ctx.font = `700 ${namePx}px ui-monospace,monospace`; ctx.fillStyle='#fff'; ctx.textAlign='center';
+    ctx.fillText(`${ag.name||ag.code}·${ageYrs}`, pt.x, pt.y - (r + nameOffset));
+  }
       }
     }catch(_){ }
     }

@@ -12,7 +12,7 @@
       "username": "fernando2000b@hotmail.co",
       "passHash": "$2a$10$ksVBv6F3nX3LJQv1d3odD.zQ5kSOoL7C8opObA5sm2Ur2.dhQAwLW",
       "createdAt": 1757201570350,
-      "lastLoginAt": 1757218020121
+      "lastLoginAt": 1757220103564
     },
     {
       "id": "a2e1b1f6-c6d7-4c58-b1a1-63198c47a281",
@@ -2251,6 +2251,78 @@
           "gender",
           "age"
         ]
+      }
+    },
+    {
+      "ts": 1757219228075,
+      "type": "login",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "username": "fernando2000b@hotmail.co"
+      }
+    },
+    {
+      "ts": 1757219233574,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757219757898,
+      "type": "login",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "username": "fernando2000b@hotmail.co"
+      }
+    },
+    {
+      "ts": 1757219765812,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757219836803,
+      "type": "login",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "username": "fernando2000b@hotmail.co"
+      }
+    },
+    {
+      "ts": 1757220103564,
+      "type": "login",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "username": "fernando2000b@hotmail.co"
       }
     }
   ]

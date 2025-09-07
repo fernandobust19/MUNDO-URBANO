@@ -120,6 +120,11 @@
   #uiDock .select, #uiDock .input{ padding:6px 8px; border-radius:7px; font-size:11px; min-height:26px }
   #uiDock pre{ font-size:11px }
 
+  /* Reducir tamaño de botones del menú de crear personaje (solo dentro del formulario) */
+  #formInner .btn{ padding:6px 10px; border-radius:8px; font-size:12px; min-height:30px; line-height:1.1 }
+  /* Mantener el botón principal del modal de contraseña más cómodo */
+  #formInner #btnSaveNewPwd{ font-size:16px; min-height:40px; padding:10px 12px; border-radius:10px }
+
 
   #shopList{display:grid;grid-template-columns:1fr;gap:8px;max-height:260px;overflow-y:auto;padding:8px;border:1px solid rgba(0,0,0,0.06);border-radius:10px;background:var(--card)}
 
@@ -161,6 +166,8 @@
 <style>
   /* Mantener botones del UI más bajos incluso en móvil */
   #uiDock .btn{ min-height:26px !important; padding:4px 7px; font-size:10.5px }
+  /* Reducir y mantener pequeños los botones del menú crear persona también en móvil */
+  #formInner .btn{ min-height:30px !important; padding:6px 10px; font-size:12px }
   /* Aumentar tamaño de letra para Documento y Casados */
   #docBody, #marriedList { font-size: 22px !important; line-height: 1.5; }
 </style>
