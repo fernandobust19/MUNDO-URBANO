@@ -74,18 +74,13 @@
   #docDock{left:10px;}
   #marriedDock{position:fixed; top:10px; left:10px; z-index:24; width:min(340px,92vw); display:none; flex-direction:column; gap:10px; pointer-events:auto;}
   #govDock{left:10px;}
-  /* Posicionar el botón de ocultar UI en la parte inferior del panel */
-  #uiHideBtn{position:absolute;right:8px;bottom:8px;top:auto;width:34px;height:34px;border-radius:999px;border:1px solid rgba(0,0,0,0.08);background:var(--ui);color:var(--text);display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.06);font-size:18px;line-height:0}
-  #uiShowBtn{position:fixed;left:12px;top:calc(10px + env(safe-area-inset-top));z-index:25;width:40px;height:40px;border-radius:999px;border:1px solid rgba(0,0,0,0.08);background:var(--ui);color:var(--text);cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.04);text-align:center;padding:0;display:none;display:grid;place-items:center}
-  /* Triángulo apuntando a la derecha para indicar "abrir" */
-  #uiShowBtn::before{
-    content:"";
-    width:0;height:0;
-    border-top:7px solid transparent;
-    border-bottom:7px solid transparent;
-    border-left:11px solid currentColor; /* ▶ */
-    transform: translateX(2px);
-  }
+  /* Botones azules para contraer/expandir el UI */
+  #uiHideBtn{position:absolute;right:8px;bottom:8px;top:auto;width:34px;height:34px;border-radius:999px;border:1px solid rgba(0,0,0,0.08);background:#1d4ed8;color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.06)}
+  #uiHideBtn::before{content:"";width:100%;height:100%;display:block;background-repeat:no-repeat;background-position:center;background-size:56%;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ffffff'><path d='M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z'/></svg>"); /* flecha ◀ */}
+  #uiShowBtn{position:fixed;left:12px;top:calc(10px + env(safe-area-inset-top));z-index:25;width:40px;height:40px;border-radius:999px;border:1px solid rgba(0,0,0,0.08);background:#1d4ed8;color:#fff;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.04);text-align:center;padding:0;display:none;display:grid;place-items:center}
+  #uiShowBtn::before{content:"";width:100%;height:100%;display:block;background-repeat:no-repeat;background-position:center;background-size:56%;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ffffff'><path d='M8.59 16.59 10 18l6-6-6-6-1.41 1.41L13.17 12z'/></svg>"); /* flecha ▶ */}
 
 
   .actions{display:flex;gap:8px;flex-wrap:wrap}
@@ -163,9 +158,9 @@
     #formInner{ gap:8px }
   }
 </style>
+<style>
   /* Mantener botones del UI más bajos incluso en móvil */
   #uiDock .btn{ min-height:26px !important; padding:4px 7px; font-size:10.5px }
-<style>
   /* Aumentar tamaño de letra para Documento y Casados */
   #docBody, #marriedList { font-size: 22px !important; line-height: 1.5; }
 </style>
@@ -328,7 +323,7 @@
   <pre id="bankBody" style="position:absolute; top:8px; right:56px; background:transparent; box-shadow:none; margin:0; padding:0; font-size:15px; color:var(--ok); text-align:right; min-width:80px;"></pre>
   </div>
   <!-- Botón para ocultar/mostrar el panel, ahora posicionado al fondo del dock -->
-  <button id="uiHideBtn" title="Ocultar panel">◀</button>
+  <button id="uiHideBtn" title="Ocultar panel"></button>
 </div>
 
 <div id="docDock" style="display:none;">

@@ -258,21 +258,29 @@
     btnRemoveAvatar.addEventListener('click', ()=>{
       try{
         const src = AVATAR_PLACEHOLDER;
-        // Actualizar solo la vista previa con el placeholder; dejar el UI avatar como estaba
+        // Actualizar vista previa y avatar del UI
         try{ if(fGenderPreview) fGenderPreview.src = src; }catch(_){ }
-        // Persistir placeholder como avatar actual (para que vuelva a aparecer en la vista previa al recargar)
+        try{ if(uiAvatarEl) uiAvatarEl.src = src; }catch(_){ }
+        // Persistir y notificar servidor
         try{ localStorage.setItem('selectedAvatar', src); }catch(_){ }
         try{
           window.__selectedAvatarCurrent = src;
           window.__progress = Object.assign({}, window.__progress||{}, { avatar: src });
           window.saveProgress && window.saveProgress({ avatar: src });
-          // No forzar cambio del uiAvatar ni enviar al server en este punto
+          try{ window.sockApi?.update({ avatar: src }); }catch(_){ }
         }catch(_){ }
         toast('Se quitó la foto. Vista previa con ?');
       }catch(e){}
     });
   }
-  function updateGenderPreview(){ try{ if(!fGender || !fGender.value || !fGenderPreview) return; fGenderPreview.src = fGender.value === 'M' ? MALE_IMG : FEMALE_IMG; }catch(e){} }
+  function updateGenderPreview(){
+    try{
+      if(!fGender || !fGender.value || !fGenderPreview) return;
+      if(fGender.value === 'M') fGenderPreview.src = MALE_IMG;
+      else if(fGender.value === 'F') fGenderPreview.src = FEMALE_IMG;
+      // Si es otro valor, mantener placeholder
+    }catch(e){}
+  }
   if(fGender){ fGender.addEventListener('change', updateGenderPreview); updateGenderPreview(); }
   const btnStart=$("#btnStart"), btnRandLikes=$("#btnRandLikes"), errBox=$("#errBox");
   const likesWrap=$("#likesWrap"), likesCount=$("#likesCount");
@@ -357,6 +365,9 @@ btnRandLikes.addEventListener('click', updateLikesUI);
   const govFundsEl=$("#govFunds"), govDescEl = $("#govDesc");
   const govSelectEl=$("#govSelect"), btnGovPlace=$("#btnGovPlace");
   const btnGovOpen = document.getElementById('btnGovOpen');
+  // Botones de mostrar/ocultar el UI (flechas azules) usando variables existentes
+  if(uiShowBtn && uiDock){ uiShowBtn.addEventListener('click', ()=>{ try{ uiDock.classList.remove('collapsed-left'); uiShowBtn.style.display='none'; }catch(_){ } }); }
+  if(uiHideBtn && uiDock){ uiHideBtn.addEventListener('click', ()=>{ try{ uiDock.classList.add('collapsed-left'); uiShowBtn.style.display='grid'; }catch(_){ } }); }
 
   // Seguimiento de agente (btn flotante)
   let FOLLOW_AGENT = false;
@@ -2279,9 +2290,12 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         if (ag.justMarried && (performance.now() - ag.justMarried < 5000)){
           ctx.font=`700 ${Math.max(12, 18*ZOOM)}px system-ui,Segoe UI,Arial,emoji`; ctx.textAlign='center'; ctx.fillText('💕', pt.x, pt.y - 25*ZOOM);
         } else if (ag.justMarried) { ag.justMarried=null; }
-        const ageYrs=(yearsSince(ag.bornEpoch)|0);
-        ctx.font=`700 ${CFG.NAME_FONT_PX}px ui-monospace,monospace`; ctx.fillStyle='#fff'; ctx.textAlign='center';
-        ctx.fillText(`${ag.name||ag.code}·${ageYrs}`, pt.x, pt.y - (r + 12));
+  const ageYrs=(yearsSince(ag.bornEpoch)|0);
+  // Etiqueta de nombre que escala con el zoom (más lejos → texto más pequeño)
+  const namePx = Math.max(8, 12 * ZOOM);
+  const nameOffset = Math.max(8, 10 * ZOOM);
+  ctx.font = `700 ${namePx}px ui-monospace,monospace`; ctx.fillStyle='#fff'; ctx.textAlign='center';
+  ctx.fillText(`${ag.name||ag.code}·${ageYrs}`, pt.x, pt.y - (r + nameOffset));
       }
     }catch(_){ }
     }
@@ -2488,29 +2502,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       if(e.clientX < gd.left || e.clientX > gd.right || e.clientY < gd.top || e.clientY > gd.bottom){ closeGovPanel(); }
     }catch(e){}
   }, {passive:true});
-  // Colapsar UI hacia la izquierda y alinear top-bar debajo del UI
-  $("#uiHideBtn").onclick = ()=>{
-    try{
-      const dock = $("#uiDock");
-      dock.classList.add('collapsed-left');
-      show($("#uiShowBtn"), true);
-  // Dock colapsado: si se mostrara el botón interno, debería apuntar a la derecha (abrir)
-  try{ document.getElementById('uiHideBtn').textContent = '▶'; }catch(_){ }
-  // Mantener minimapa visible siempre (queda debajo del UI)
-  try{ document.getElementById('mini').style.display = 'block'; }catch(_){ }
-    }catch(e){}
-  };
-  $("#uiShowBtn").onclick = ()=>{
-    try{
-      const dock = $("#uiDock");
-      dock.classList.remove('collapsed-left');
-      show($("#uiShowBtn"), false);
-  // Dock visible: flecha del botón de ocultar apunta a la izquierda (ocultar)
-  try{ document.getElementById('uiHideBtn').textContent = '◀'; }catch(_){ }
-  // Mantener minimapa visible siempre (queda debajo del UI)
-  try{ document.getElementById('mini').style.display = 'block'; }catch(_){ }
-    }catch(e){}
-  };
+  // Handlers duplicados eliminados (se usan los addEventListener definidos arriba para uiShowBtn/uiHideBtn)
   // Botón de depósito eliminado: el saldo se refleja en tiempo real en el panel del banco.
 
   function setVisibleWorldUI(on){
@@ -2527,8 +2519,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       const collapsed = document.getElementById('uiDock')?.classList.contains('collapsed-left');
       // Minimap siempre visible (debajo del UI por z-index)
       document.getElementById('mini').style.display = on ? 'block' : 'none';
-      // Ajustar flecha según estado: visible -> '◀' (ocultar); colapsado -> '▶' (abrir)
-      document.getElementById('uiHideBtn').textContent = collapsed ? '▶' : '◀';
+  // Iconos gestionados por CSS; no cambiar texto
     }catch(_){ mini.style.display = on ? 'block':'none'; }
   show($("#uiShowBtn"),false);
     docDock.style.display = 'none'; govDock.style.display = 'none';
