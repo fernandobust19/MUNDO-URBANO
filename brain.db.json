@@ -12,7 +12,7 @@
       "username": "fernando2000b@hotmail.co",
       "passHash": "$2a$10$ksVBv6F3nX3LJQv1d3odD.zQ5kSOoL7C8opObA5sm2Ur2.dhQAwLW",
       "createdAt": 1757201570350,
-      "lastLoginAt": 1757206279318
+      "lastLoginAt": 1757212786049
     }
   ],
   "progress": {
@@ -51,7 +51,7 @@
       "age": null
     },
     "db1ef90b-7763-4f2a-93e7-381cdfc751c5": {
-      "money": 103,
+      "money": 113,
       "bank": 0,
       "vehicle": "bicicleta",
       "vehicles": [
@@ -69,7 +69,7 @@
       ],
       "houses": [],
       "name": "fernando",
-      "avatar": "/assets/avatar1.png",
+      "avatar": "assets/avatar1.png",
       "likes": [
         "baile",
         "tecnología",
@@ -962,6 +962,626 @@
     },
     {
       "ts": 1757206284787,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757206704700,
+      "type": "login",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "username": "fernando2000b@hotmail.co"
+      }
+    },
+    {
+      "ts": 1757206708318,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757207013441,
+      "type": "login",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "username": "fernando2000b@hotmail.co"
+      }
+    },
+    {
+      "ts": 1757207019969,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757207383541,
+      "type": "login",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "username": "fernando2000b@hotmail.co"
+      }
+    },
+    {
+      "ts": 1757207388355,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757210045189,
+      "type": "login",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "username": "fernando2000b@hotmail.co"
+      }
+    },
+    {
+      "ts": 1757210083715,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757210114363,
+      "type": "login",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "username": "fernando2000b@hotmail.co"
+      }
+    },
+    {
+      "ts": 1757210126352,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757210574186,
+      "type": "login",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "username": "fernando2000b@hotmail.co"
+      }
+    },
+    {
+      "ts": 1757210578722,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757210584109,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757210634841,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757210692890,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757210696613,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757210888485,
+      "type": "login",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "username": "fernando2000b@hotmail.co"
+      }
+    },
+    {
+      "ts": 1757210904878,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757211077748,
+      "type": "login",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "username": "fernando2000b@hotmail.co"
+      }
+    },
+    {
+      "ts": 1757211082014,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757211084683,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757211475008,
+      "type": "login",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "username": "fernando2000b@hotmail.co"
+      }
+    },
+    {
+      "ts": 1757211478895,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757211925207,
+      "type": "login",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "username": "fernando2000b@hotmail.co"
+      }
+    },
+    {
+      "ts": 1757211932818,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757211935809,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757211938709,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757211963383,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757212431348,
+      "type": "login",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "username": "fernando2000b@hotmail.co"
+      }
+    },
+    {
+      "ts": 1757212434683,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757212442701,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757212485877,
+      "type": "login",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "username": "fernando2000b@hotmail.co"
+      }
+    },
+    {
+      "ts": 1757212488408,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757212550018,
+      "type": "login",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "username": "fernando2000b@hotmail.co"
+      }
+    },
+    {
+      "ts": 1757212553285,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757212685943,
+      "type": "login",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "username": "fernando2000b@hotmail.co"
+      }
+    },
+    {
+      "ts": 1757212689169,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757212786049,
+      "type": "login",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "username": "fernando2000b@hotmail.co"
+      }
+    },
+    {
+      "ts": 1757212789887,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757212918232,
       "type": "progress_update",
       "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
       "details": {

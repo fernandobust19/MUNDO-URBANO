@@ -316,11 +316,11 @@ btnRandLikes.addEventListener('click', updateLikesUI);
   // Mantener UI del mundo oculta al cargar; se mostrará tras crear personaje
   try{ if(uiDock) uiDock.style.display='none'; }catch(e){}
   // Controles de zoom fueron removidos; mantener referencias nulas para compatibilidad
-  const zoomFab = null, zoomIn = null, zoomOut = null, docDock=$("#docDock"), govDock=$("#govDock"), topBar=$("#top-bar");
+  const zoomFab = null, zoomIn = null, zoomOut = null, docDock=$("#docDock"), govDock=$("#govDock"), topBar=null;
   const mini=$("#mini"), miniCanvas=$("#miniCanvas"), mctx=miniCanvas.getContext('2d');
   const stats=$("#stats"), toggleLinesBtn=$("#toggleLines");
   const btnShowDoc=$("#btnShowDoc"), accDocBody=$("#docBody");
-  const panelDepositAll=$("#panelDepositAll"), accBankBody=$("#bankBody");
+  const panelDepositAll=null, accBankBody=$("#bankBody");
   // Cache de imágenes de avatar para no crear objetos por frame
   const AVATAR_CACHE = new Map();
   function getAvatarImage(src){
@@ -360,6 +360,7 @@ btnRandLikes.addEventListener('click', updateLikesUI);
   const shopModal=$("#shopModal"), shopList=$("#shopList"), shopMsg=$("#shopMsg"), btnShopClose=$("#btnShopClose");
   const govFundsEl=$("#govFunds"), govDescEl = $("#govDesc");
   const govSelectEl=$("#govSelect"), btnGovPlace=$("#btnGovPlace");
+  const btnGovOpen = document.getElementById('btnGovOpen');
 
   // Seguimiento de agente
   let FOLLOW_AGENT = false;
@@ -382,6 +383,14 @@ btnRandLikes.addEventListener('click', updateLikesUI);
       }
     });
   }
+  // Abrir panel de Gobierno desde el botón del UI
+  if(btnGovOpen){
+    btnGovOpen.addEventListener('click', ()=>{
+      try{
+        openGovPanel();
+      }catch(_){ govDock && (govDock.style.display='flex'); }
+    });
+  }
 
   const btnGovClose = $("#btnGovClose");
   if(btnGovClose) btnGovClose.onclick = ()=> closeGovPanel();
@@ -402,7 +411,7 @@ btnRandLikes.addEventListener('click', updateLikesUI);
   }
 
   const isMobile = ()=> innerWidth<=768;
-  let ZOOM=1.0, ZMIN=0.6, ZMAX=2.0, ZSTEP=0.15;
+  let ZOOM=1.0, ZMIN=0.35, ZMAX=2.0, ZSTEP=0.15;
   const WORLD={w:0,h:0}; const cam={x:0,y:0};
 
   // En móviles: colapsar dock inicial y ocultar mini-mapa para más espacio
@@ -458,7 +467,14 @@ btnRandLikes.addEventListener('click', updateLikesUI);
 
   /* ===== PAN/ZOOM ===== */
   const activePointers = new Map();let panPointerId = null;let pinchBaseDist = 0, pinchBaseZoom = 1, pinchCx = 0, pinchCy = 0;
-  function isOverUI(sx,sy){const rects = [];const addRect = (el)=>{if(!el) return;const cs = getComputedStyle(el);if(cs.display==='none' || cs.visibility==='hidden') return;rects.push(el.getBoundingClientRect());};addRect(uiDock); addRect(docDock); addRect(govDock); addRect(topBar); addRect(mini); addRect(zoomFab); addRect(uiShowBtn); addRect(marriedDock); return rects.some(r => sx>=r.left && sx<=r.right && sy>=r.top && sy<=r.bottom);}
+  function isOverUI(sx,sy){
+    const rects = [];
+    const addRect = (el)=>{ if(!el) return; const cs = getComputedStyle(el); if(cs.display==='none' || cs.visibility==='hidden') return; rects.push(el.getBoundingClientRect()); };
+    addRect(uiDock); addRect(docDock); addRect(govDock); addRect(mini); addRect(zoomFab); addRect(uiShowBtn); addRect(marriedDock);
+    addRect(document.getElementById('docModal')); addRect(document.getElementById('marriedModal'));
+    addRect(document.getElementById('btnFollow'));
+    return rects.some(r => sx>=r.left && sx<=r.right && sy>=r.top && sy<=r.bottom);
+  }
   function setZoom(newZ, anchorX=null, anchorY=null){const before = toWorld(anchorX??(canvas.width/2), anchorY??(canvas.height/2));ZOOM = Math.max(ZMIN, Math.min(ZMAX, newZ));const after  = toWorld(anchorX??(canvas.width/2), anchorY??(canvas.height/2));cam.x += (before.x - after.x); cam.y += (before.y - after.y); clampCam();}
   canvas.addEventListener('wheel', (e)=>{ e.preventDefault();if(isOverUI(e.clientX,e.clientY)) return;setZoom(ZOOM + (Math.sign(e.deltaY)>0?-ZSTEP:ZSTEP), e.clientX, e.clientY);}, {passive:false});
   canvas.addEventListener('pointerdown', (e)=>{if(isOverUI(e.clientX,e.clientY)) return;canvas.setPointerCapture(e.pointerId);activePointers.set(e.pointerId, {x:e.clientX, y:e.clientY});if(activePointers.size===1){panPointerId = e.pointerId;}else if(activePointers.size===2){const pts=[...activePointers.values()];pinchBaseDist = Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y);pinchBaseZoom = ZOOM;pinchCx = (pts[0].x + pts[1].x)/2;pinchCy = (pts[0].y + pts[1].y)/2;panPointerId = null;}}, {passive:true});
@@ -2099,7 +2115,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     const nowMs = performance.now();
     let dt = (nowMs - __lastTime) / 1000; __lastTime = nowMs; dt = Math.min(dt, 0.05);
     frameCount++;
-    updateSocialLogic();
+  if(!window.__gamePaused){ updateSocialLogic(); }
     // Seguimiento continuo del agente (si está activado) antes de dibujar el mundo
     try{
       if (FOLLOW_AGENT && USER_ID) {
@@ -2112,15 +2128,15 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         }
       }
     }catch(_){ }
-    drawWorld();
-    drawSocialLines();
+  drawWorld();
+  if(!window.__gamePaused){ drawSocialLines(); }
 
     // ======= Jugadores remotos con smoothing nuevo =======
-    try{ renderRemotePlayers(); }catch(e){}
+  try{ if(!window.__gamePaused) renderRemotePlayers(); }catch(e){}
 
     const nowS = performance.now()/1000;
 
-  for(const a of agents){
+  if(!window.__gamePaused) for(const a of agents){
       a.cooldownSocial = Math.max(0, a.cooldownSocial - dt);
       if (a.employedAtShopId) {
         const myWorkplace = shops.find(s => s.id === a.employedAtShopId);
@@ -2281,7 +2297,15 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     }catch(e){
       stats.textContent = `Pob: ${agents.length} | $ total: ${total$} | 🏛️ Fondo: ${Math.floor(government.funds)} | 🏪 ${shops.length} | Instituciones: ${instCount}/25`;
     }
-    drawMiniMap();
+    // Actualizar panel del banco en tiempo real con el jugador local
+    try{
+      if(typeof window.updateBankPanel === 'function'){
+        const me = agents.find(a=>a.id===USER_ID);
+        if(me){ window.updateBankPanel(me.money, me.code); }
+        else { window.updateBankPanel(); }
+      }
+    }catch(_){ }
+  drawMiniMap();
     // Enviar mi posición al servidor cada ~120ms
     try{
       if(hasNet() && window.playerId){
@@ -2399,34 +2423,43 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
 
   function automaticRoadConstruction() { /* lógica opcional */ }
 
+  // Modales para Documento y Casados (pausan el juego)
+  function pauseGame(){ try{ window.__gamePaused = true; }catch(_){} }
+  function resumeGame(){ try{ window.__gamePaused = false; }catch(_){} }
+  // Hook en loop para pausar render/lógica
+  const __origUpdateSocialLogic = updateSocialLogic;
+  function isPaused(){ return !!window.__gamePaused; }
+  updateSocialLogic = function(){ if(isPaused()) return; return __origUpdateSocialLogic(); };
+
+  const docModal = document.getElementById('docModal');
+  const marriedModal = document.getElementById('marriedModal');
+  const btnDocClose = document.getElementById('btnDocClose');
+  const btnMarriedClose = document.getElementById('btnMarriedClose');
+  const docBodyModal = document.getElementById('docBodyModal');
+  const marriedListModal = document.getElementById('marriedListModal');
+
   btnShowDoc.onclick = ()=>{
-  const isVisible = docDock.style.display === 'flex';
-  if (!isVisible) {
-    // Actualizar el documento cada segundo mientras está abierto
+    pauseGame();
     if(!window.__docInterval){
-      window.__docInterval = setInterval(()=>{
-        $("#docBody").textContent = fullDocument();
-      }, 1000);
+      window.__docInterval = setInterval(()=>{ docBodyModal.textContent = fullDocument(); }, 1000);
     }
-    $("#docBody").textContent = fullDocument();
-    // Posicionar al lado del UI dock
-    try {
-      const ui = $("#uiDock");
-      const uiRect = ui.getBoundingClientRect();
-      docDock.style.left = (uiRect.right + 12) + 'px';
-      docDock.style.top = (uiRect.top) + 'px';
-      docDock.classList.remove('collapsed-left');
-    } catch(_){ docDock.style.left='360px'; docDock.style.top='10px'; }
-    docDock.style.display = 'flex';
-  } else {
-    docDock.style.display = 'none';
-    if(window.__docInterval){
-      clearInterval(window.__docInterval);
-      window.__docInterval = null;
-    }
-  }
-};
-  btnShowMarried.onclick = ()=>{ const isVisible = marriedDock.style.display === 'flex'; if (!isVisible) { $("#marriedList").textContent = generateMarriedList(); marriedDock.style.display = 'flex'; } else { marriedDock.style.display = 'none'; } };
+    docBodyModal.textContent = fullDocument();
+    docModal.style.display = 'flex';
+  };
+  btnShowMarried.onclick = ()=>{
+    pauseGame();
+    marriedListModal.textContent = generateMarriedList();
+    marriedModal.style.display = 'flex';
+  };
+  btnDocClose && (btnDocClose.onclick = ()=>{
+    docModal.style.display = 'none';
+    if(window.__docInterval){ clearInterval(window.__docInterval); window.__docInterval = null; }
+    resumeGame();
+  });
+  btnMarriedClose && (btnMarriedClose.onclick = ()=>{
+    marriedModal.style.display = 'none';
+    resumeGame();
+  });
 
   // Gobierno: abrir vía edificio en el mapa (no botón)
   // openGovPanel(target) posiciona el panel sobre el edificio (target en coords del mundo)
@@ -2463,9 +2496,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   $("#uiHideBtn").onclick = ()=>{
     try{
       const dock = $("#uiDock");
-      const bar = $("#top-bar");
       dock.classList.add('collapsed-left');
-      bar.classList.add('collapsed-left');
       show($("#uiShowBtn"), true);
   // Dock colapsado: si se mostrara el botón interno, debería apuntar a la derecha (abrir)
   try{ document.getElementById('uiHideBtn').textContent = '▶'; }catch(_){ }
@@ -2476,9 +2507,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   $("#uiShowBtn").onclick = ()=>{
     try{
       const dock = $("#uiDock");
-      const bar = $("#top-bar");
       dock.classList.remove('collapsed-left');
-      bar.classList.remove('collapsed-left');
       show($("#uiShowBtn"), false);
   // Dock visible: flecha del botón de ocultar apunta a la izquierda (ocultar)
   try{ document.getElementById('uiHideBtn').textContent = '◀'; }catch(_){ }
@@ -2486,25 +2515,17 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   try{ document.getElementById('mini').style.display = 'block'; }catch(_){ }
     }catch(e){}
   };
-  panelDepositAll.onclick = ()=>{ if(!USER_ID){ toast('Crea tu persona primero.'); return; } const u=agents.find(a=>a.id===USER_ID); if(!u) return; u.money += (u.pendingDeposit||0); u.pendingDeposit=0; try{ window.updateBankPanel && window.updateBankPanel(); }catch(e){} try{ window.saveProgress && window.saveProgress({ money: Math.floor(u.money) }); }catch(e){} toast('Depósito realizado.'); };
+  // Botón de depósito eliminado: el saldo se refleja en tiempo real en el panel del banco.
 
   function setVisibleWorldUI(on){
   // No forzar mostrar formulario aquí; el flujo de login controla su visibilidad
   // $("#formBar").style.display = on ? 'none' : 'block';
     canvas.style.display = on ? 'block':'none';
     uiDock.style.display = on ? 'flex':'none';
-    // Posicionar top-bar debajo del UI y a la izquierda
-    topBar.style.display = on ? 'flex':'none';
-  // Asegurar que no estén colapsados cuando deben mostrarse
-  try{ if(on){ uiDock.classList.remove('collapsed-left'); topBar.classList.remove('collapsed-left'); } }catch(e){}
-    try{
-      if(on){
-        topBar.style.left = '10px';
-        const dockRect = uiDock.getBoundingClientRect();
-        const offset = Math.max(10, (dockRect.height||0) + 12);
-        topBar.style.top = (10 + offset) + 'px';
-      }
-    }catch(e){}
+  // Mostrar la botonera siempre que el mundo esté activo (independiente del UI)
+  // topBar removido: botones Documento/Casados viven dentro del UI
+  // Asegurar que el UI no arrastre a la botonera
+  try{ if(on){ uiDock.classList.remove('collapsed-left'); } }catch(e){}
     // Controles de zoom eliminados
     try{
       const collapsed = document.getElementById('uiDock')?.classList.contains('collapsed-left');
@@ -2513,7 +2534,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       // Ajustar flecha según estado: visible -> '◀' (ocultar); colapsado -> '▶' (abrir)
       document.getElementById('uiHideBtn').textContent = collapsed ? '▶' : '◀';
     }catch(_){ mini.style.display = on ? 'block':'none'; }
-    show($("#uiShowBtn"),false);
+  show($("#uiShowBtn"),false);
     docDock.style.display = 'none'; govDock.style.display = 'none';
   }
 
