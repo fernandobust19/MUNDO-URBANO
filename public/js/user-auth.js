@@ -24,8 +24,8 @@
 				<div style="display:flex;align-items:center;gap:12px">
 					<img src="/login/creador.png" alt="creador" style="width:64px;height:64px;border-radius:8px;border:1px solid #2b3553;background:#fff;object-fit:cover"/>
 					<div>
-						<h3 style="margin:0">Bienvenido</h3>
-						<div class="hint">Regístrate o inicia sesión para guardar tu progreso.</div>
+						<h3 id="authTitle" style="margin:0">Inicia sesión</h3>
+						<div id="authHint" class="hint">Ingresa tu usuario y contraseña para continuar.</div>
 					</div>
 				</div>
 				<div class="field" style="margin-top:10px">
@@ -36,8 +36,8 @@
 					<label>Contraseña</label>
 					<input id="authPass" name="password" class="input" type="password" placeholder="••••" maxlength="64" autocomplete="current-password">
 				</div>
-				<!-- Campos adicionales para registro de nuevos usuarios -->
-				<div class="field" style="margin-top:10px">
+				<!-- Campos adicionales para registro de nuevos usuarios (ocultos por defecto) -->
+				<div class="field regOnly" style="margin-top:10px; display:none;">
 					<label>País</label>
 					<select id="authCountry" class="select">
 						<option value="" selected>— Selecciona tu país —</option>
@@ -65,15 +65,15 @@
 					</select>
 					<span class="hint">País, correo y género son obligatorios. Teléfono es opcional.</span>
 				</div>
-				<div class="field" style="margin-top:6px">
-					<label>Correo electrónico (opcional)</label>
+				<div class="field regOnly" style="margin-top:6px; display:none;">
+					<label>Correo electrónico</label>
 					<input id="authEmail" class="input" type="email" placeholder="tucorreo@ejemplo.com" maxlength="120" autocomplete="email">
 				</div>
-				<div class="field" style="margin-top:6px">
+				<div class="field regOnly" style="margin-top:6px; display:none;">
 					<label>Teléfono (opcional)</label>
 					<input id="authPhone" class="input" type="tel" placeholder="Ej: +57 300 123 4567" maxlength="24" autocomplete="tel">
 				</div>
-				<div class="field" style="margin-top:6px">
+				<div class="field regOnly" style="margin-top:6px; display:none;">
 					<label>Género</label>
 					<select id="authGender" class="select">
 						<option value="" selected>— Selecciona género —</option>
@@ -82,9 +82,12 @@
 					</select>
 				</div>
 				<div id="authErr" class="err" style="display:none;margin-top:6px"></div>
-				<div class="actions" style="margin-top:10px">
-					<button id="btnAuthRegister" type="button" class="btn">Registrar</button>
-					<button id="btnAuthLogin" type="button" class="btn primary">Iniciar sesión</button>
+				<div class="actions" style="margin-top:10px; display:flex; align-items:center; justify-content:space-between; gap:8px;">
+					<div style="display:flex; gap:8px;">
+						<button id="btnAuthRegister" type="button" class="btn regOnly" style="display:none;">Registrar</button>
+						<button id="btnAuthLogin" type="button" class="btn primary loginOnly">Iniciar sesión</button>
+					</div>
+					<button id="authToggle" type="button" class="btn" style="background:transparent; border-color:transparent; color:#2563eb;">¿No tienes cuenta? Regístrate</button>
 				</div>
 			</div>
 			</form>`;
@@ -202,6 +205,32 @@
 		ensureAuthModal();
 		document.getElementById('btnAuthRegister').addEventListener('click', handleRegister);
 		document.getElementById('btnAuthLogin').addEventListener('click', handleLogin);
+		// Toggle entre login y registro
+		function setAuthMode(mode){
+			const reg = mode === 'register';
+			const title = document.getElementById('authTitle');
+			const hint = document.getElementById('authHint');
+			const regEls = document.querySelectorAll('.regOnly');
+			const loginEls = document.querySelectorAll('.loginOnly');
+			regEls.forEach(el=> el.style.display = reg ? (el.dataset?.display||'') || '' : 'none');
+			loginEls.forEach(el=> el.style.display = reg ? 'none' : '');
+			const toggle = document.getElementById('authToggle');
+			if(reg){
+				if(title) title.textContent = 'Crear cuenta';
+				if(hint) hint.textContent = 'Completa tus datos para registrar tu cuenta.';
+				if(toggle) toggle.textContent = '¿Ya tienes cuenta? Inicia sesión';
+			}else{
+				if(title) title.textContent = 'Inicia sesión';
+				if(hint) hint.textContent = 'Ingresa tu usuario y contraseña para continuar.';
+				if(toggle) toggle.textContent = '¿No tienes cuenta? Regístrate';
+			}
+		}
+		const toggleBtn = document.getElementById('authToggle');
+		if(toggleBtn){
+			let mode = 'login';
+			toggleBtn.addEventListener('click', ()=>{ mode = (mode==='login' ? 'register' : 'login'); setErr(''); setAuthMode(mode); });
+			setAuthMode('login');
+		}
 		// Enviar con Enter: por defecto, intentar login
 		const form = document.getElementById('authForm');
 		if(form){ form.addEventListener('submit', (e)=>{ e.preventDefault(); handleLogin(); }); }

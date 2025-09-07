@@ -56,7 +56,8 @@
 					if(typeof cb === 'function') cb(res);
 				});
 			},
-			update(patch){ try{ sock.emit('update', patch); }catch(_){ } }
+			update(patch){ try{ sock.emit('update', patch); }catch(_){ } },
+			sendChat({ to, toName, text, gift }, cb){ try{ sock.emit('chat:send', { to, toName, text, gift }, (res)=> cb && cb(res)); }catch(_){ cb && cb({ ok:false }); } }
 		};
 		window.sockApi = api;
 
@@ -89,6 +90,8 @@
 		sock.on('shopPlaced', () => {});
 		sock.on('housePlaced', () => {});
 		sock.on('govPlaced', () => { if (typeof window.updateGovDesc === 'function') window.updateGovDesc(); });
+		// Chat entrante
+		sock.on('chat:msg', (msg)=>{ try{ window.__onChatMessage && window.__onChatMessage(msg); }catch(e){} });
 	}
 
 	// Iniciar

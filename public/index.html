@@ -201,7 +201,7 @@
       <!-- Campo oculto para compatibilidad con la lógica existente -->
       <input id="fUsd" type="hidden" value="0" />
       <button id="btnBuy500" type="button" class="btn good" title="Pagar US$5 para obtener +500 créditos">Comprar 500 (+US$5)</button>
-      <input id="proofFile" type="file" accept="image/*,application/pdf" style="display:none" />
+  <input id="proofFile" type="file" accept="image/jpeg,image/png" style="display:none" />
   <button id="btnUploadProof" type="button" class="btn" title="Subir comprobante de pago">Subir comprobante</button>
     </div>
     <div class="hint">Todos comienzan con 400 créditos gratis. Si compras, se suman +500 créditos al crear tu persona. También puedes subir tu comprobante para verificación manual.</div>
@@ -295,7 +295,8 @@
       <button id="toggleLines" class="btn">Líneas ON/OFF</button>
       <button id="btnHouse" class="btn good">Comprar Casa</button>
       <button id="btnShop" class="btn">Comprar Negocio</button>
-  <button id="btnLogout" class="btn" title="Cerrar sesión">SALIR</button>
+  <button id="btnShowAgentDoc" class="btn" title="Documento del Agente">📄 Documento</button>
+  <button id="btnLogout" class="btn" title="Cerrar sesión">GUARDAR Y SALIR</button>
     </div>
   <div id="ownedShops" class="hint" style="margin-top:6px">Negocios: 0</div>
   </div>
@@ -303,7 +304,7 @@
   <!-- Bloque compacto de utilidades: Documento / Casados / Gobierno / Seguir -->
   <div class="card">
     <div class="actions">
-      <button id="btnShowDoc" class="btn">📄 Documento</button>
+  <button id="btnShowGovDoc" class="btn">� Doc. Gobierno</button>
       <button id="btnShowMarried" class="btn">👨‍👩👧‍👦 Casados</button>
       <button id="btnGovOpen" class="btn">🏛️ Gobierno</button>
       <button id="btnFollow" class="btn" title="Seguir a mi agente">Seguir agente: OFF</button>
@@ -403,10 +404,12 @@
 <div id="docModal" style="display:none;position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.35);align-items:center;justify-content:center;padding:5vh 10px;">
   <div class="modalBox" style="width:min(700px,94vw); max-height:80vh; overflow:auto;">
     <div style="display:flex;align-items:center;justify-content:space-between">
-      <h4 style="margin:0 0 6px 0">📄 Documento</h4>
+  <h4 id="docTitle" style="margin:0 0 6px 0">📄 Documento</h4>
       <button id="btnDocClose" title="Cerrar">✕</button>
     </div>
-    <pre id="docBodyModal" style="font-size:20px; line-height:1.5; white-space:pre-wrap;">Pulsa “Documento” para generar el informe.</pre>
+    <div id="docBodyModal" style="font-size:18px; line-height:1.4;">
+      Pulsa “Documento” para generar el informe.
+    </div>
   </div>
   
 </div>

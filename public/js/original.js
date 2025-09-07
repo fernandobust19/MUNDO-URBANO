@@ -338,7 +338,13 @@ btnRandLikes.addEventListener('click', updateLikesUI);
   const zoomFab = null, zoomIn = null, zoomOut = null, docDock=$("#docDock"), govDock=$("#govDock"), topBar=null;
   const mini=$("#mini"), miniCanvas=$("#miniCanvas"), mctx=miniCanvas.getContext('2d');
   const stats=$("#stats"), toggleLinesBtn=$("#toggleLines");
-  const btnShowDoc=$("#btnShowDoc"), accDocBody=$("#docBody");
+  if(toggleLinesBtn){
+    toggleLinesBtn.addEventListener('click', ()=>{
+      SHOW_LINES = !SHOW_LINES;
+      try{ toggleLinesBtn.textContent = SHOW_LINES ? 'Líneas ON' : 'Líneas OFF'; }catch(_){ }
+    });
+  }
+  const btnShowAgentDoc=$("#btnShowAgentDoc"), btnShowGovDoc=$("#btnShowGovDoc"), accDocBody=$("#docBody");
   const panelDepositAll=null, accBankBody=$("#bankBody");
   // Cache de imágenes de avatar para no crear objetos por frame
   const AVATAR_CACHE = new Map();
@@ -2002,15 +2008,21 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       const pa = toScreen(conn.a.x, conn.a.y);
       const pb = toScreen(conn.b.x, conn.b.y);
       ctx.beginPath(); ctx.moveTo(pa.x, pa.y); ctx.lineTo(pb.x, pb.y);
-      let color = 'rgba(148,163,184,0.55)';
-      if (conn.matches === 3) color = 'rgba(252, 165, 165, 0.8)';
-      else if (conn.matches === 4) color = 'rgba(244, 63, 94, 0.9)';
+      // Base blanca tenue y más roja a mayor coincidencia de gustos
+      let color = 'rgba(255,255,255,0.55)'; // blanco
+      if (conn.matches === 2) color = 'rgba(255, 200, 200, 0.7)';
+      else if (conn.matches === 3) color = 'rgba(252, 165, 165, 0.85)';
+      else if (conn.matches === 4) color = 'rgba(244, 63, 94, 0.95)';
       else if (conn.matches >= 5) color = 'rgba(220, 38, 38, 1.0)';
       ctx.strokeStyle = color; ctx.stroke();
     }
   }
   function updateSocialLogic() {
     const newConnections = [];
+    // Mostrar sugerencia de "media naranja" cuando el jugador coincide en 4 gustos con alguien cercano
+    const player = agents.find(a => a.id === USER_ID);
+    const HEART = '💘';
+    const SEEN_SET = (window.__seenLovePrompts = window.__seenLovePrompts || new Set());
     for (let i = 0; i < agents.length; i++) {
       const a = agents[i];
       if (a.state === 'child') continue;
@@ -2021,6 +2033,17 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         if (d < 50) {
           const matches = likeMatches(a, b);
           newConnections.push({ a, b, matches });
+          // Prompt de media naranja: sólo involucra al jugador; 4 coincidencias, cerca
+          if (player && (a.id === player.id || b.id === player.id) && matches >= 4 && d < 30) {
+            const other = (a.id === player.id) ? b : a;
+            const key = player.id + '|' + other.id;
+            if (!SEEN_SET.has(key)) {
+              SEEN_SET.add(key);
+              try{
+                showLovePrompt(other);
+              }catch(_){ /* ignore UI errors */ }
+            }
+          }
           const near = d < 28;
           const aOwnsHouse = a.houseIdx !== null && houses[a.houseIdx] && houses[a.houseIdx].ownerId === a.id;
           const bOwnsHouse = b.houseIdx !== null && houses[b.houseIdx] && houses[b.houseIdx].ownerId === b.id;
@@ -2431,54 +2454,166 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     return lines.join('\n') || 'Sin fondos por ahora.';
   }
   function fullDocument(){
-    const total$=Math.round(agents.reduce((s,x)=>s+(x.money||0),0));
-  const player = agents.find(a => a.id === USER_ID);
-  // Mostrar nombre completo cuando esté disponible, si no usar código
-  const playerName = player ? (player.name || player.code || '—') : '—';
-    const lines=[];
-  lines.push('# Documento');
-  const playerDisplayName = player ? (player.name || player.fullName || player.code || player.id) : '—';
-  lines.push(`Jugador: ${playerDisplayName} (${player ? (player.code || player.id) : '—'})`);
-  // Quitar la línea antigua de población, solo mostrar créditos, fondo, negocios e instituciones
-  lines.push(`Total créditos: ${total$} — Fondo Gobierno: ${Math.floor(government.funds)} — Negocios: ${shops.length} — Instituciones: ${government.placed.length}`);
-    lines.push('');
-    lines.push('## Usuarios en el mundo (tiempo real)');
-    // Mostrar todos los usuarios conectados en tiempo real (de gameState)
+    // Construye HTML del reporte con tablas y métricas amigables
+    const total$ = Math.round(agents.reduce((s,x)=>s+(x.money||0),0));
+    const me = agents.find(a => a.id === USER_ID) || null;
+    const meName = me ? (me.name || me.fullName || me.code || me.id) : '—';
+    const meCode = me ? (me.code || me.id) : '—';
+
+    // Origen de datos de usuarios conectados
     let users = [];
     if (window.gameState && Array.isArray(window.gameState.players)) {
-      // Si hay players desde el servidor, usarlos, pero preferir el nombre local si existe
       users = window.gameState.players.map(p => {
-        // intentar casar con agente local por id o código
         const local = agents.find(a => (p.id && a.id === p.id) || (p.code && a.code === p.code));
-        if(local){
-          return Object.assign({}, p, { _localName: local.name, _localCode: local.code || local.id });
-        }
-        return p;
+        return local ? Object.assign({}, p, { _localName: local.name, _localCode: local.code || local.id }) : p;
       });
     } else {
       users = agents;
     }
-    // Filtrar solo humanos (no bots) y no niños si quieres
     const filtered = users.filter(u => !u.isBot && (!u.state || u.state !== 'child'));
-  lines.push(`Población conectada: ${filtered.length} — Jugador: ${playerName}`);
-    if(filtered.length > 0){
-      for(const u of filtered){
-        // Si se aportó un nombre local (_localName) usarlo
-        let displayName = u._localName || u.name || u.fullName || u.displayName || '';
-        // Si el nombre es muy corto o vacío, usar code del objeto o el localCode
-        const codeRef = (u._localCode || u.code || u.id || '');
-        if(!displayName || displayName.trim().length <= 2){
-          displayName = codeRef || 'Usuario';
-        }
-        lines.push(`- ${displayName}${codeRef ? ' (' + codeRef + ')' : ''}`);
-      }
-    }else{
-      lines.push('No hay usuarios conectados.');
-    }
-    lines.push('');
-    lines.push('## Finanzas por Agente');
-    lines.push(bankReport());
-    return lines.join('\n');
+
+    // Negocios propios del jugador
+    const myId = me ? me.id : null;
+    const myShops = (window.gameState?.shops || shops || []).filter(s => myId && s && s.ownerId === myId);
+    const myShopsCount = myShops.length;
+
+    // Tabla: negocios propios
+    const shopRows = myShops.map(s => {
+      const kind = s.kind || s.k || 'negocio';
+      // buscar metadata del tipo para precio y costo de compra
+      const meta = (Array.isArray(SHOP_TYPES) ? SHOP_TYPES.find(t => t.k === kind) : null) || {};
+      const label = meta.label || kind;
+      const price = (typeof meta.price === 'number' ? meta.price : (s.price || '—'));
+      const buyCost = (typeof meta.buyCost === 'number' ? meta.buyCost : (s.buyCost || '—'));
+      return `<tr><td>${label}</td><td style="text-align:right">${price}</td><td style="text-align:right">${buyCost}</td></tr>`;
+    }).join('');
+    const shopsTable = `
+      <table style="width:100%; border-collapse:collapse; margin:6px 0;">
+        <thead>
+          <tr>
+            <th style="text-align:left; border-bottom:1px solid #ddd; padding:4px 2px;">Negocio</th>
+            <th style="text-align:right; border-bottom:1px solid #ddd; padding:4px 2px;">Precio</th>
+            <th style="text-align:right; border-bottom:1px solid #ddd; padding:4px 2px;">Costo compra</th>
+          </tr>
+        </thead>
+        <tbody>${shopRows || `<tr><td colspan="3" style="padding:6px 2px; color:#6b7280;">No has comprado negocios todavía.</td></tr>`}</tbody>
+      </table>`;
+
+  // Nota: el documento del agente NO incluye instituciones del gobierno
+
+    // Tabla: finanzas por agente
+    const finRows = agents
+      .filter(a => a && a.state !== 'child')
+      .map(a => {
+        const nm = a.name || a.fullName || a.code || a.id;
+        const money = Math.floor(a.money || 0);
+        return `<tr><td>${nm}</td><td style="text-align:right">${money}</td></tr>`;
+      })
+      .sort((ra, rb) => {
+        // sort by money desc parsing inner text between tags; fallback no-op
+        const ma = parseInt((ra.match(/>(\-?\d+)</)||[])[1]||'0',10);
+        const mb = parseInt((rb.match(/>(\-?\d+)</)||[])[1]||'0',10);
+        return mb - ma;
+      })
+      .join('');
+    const finTable = `
+      <table style="width:100%; border-collapse:collapse; margin:6px 0;">
+        <thead>
+          <tr>
+            <th style="text-align:left; border-bottom:1px solid #ddd; padding:4px 2px;">Agente</th>
+            <th style="text-align:right; border-bottom:1px solid #ddd; padding:4px 2px;">Créditos</th>
+          </tr>
+        </thead>
+        <tbody>${finRows || `<tr><td colspan="2" style="padding:6px 2px; color:#6b7280;">Sin fondos por ahora.</td></tr>`}</tbody>
+      </table>`;
+
+    // Lista de usuarios conectados (ligera)
+    const userList = filtered.map(u => {
+      let displayName = u._localName || u.name || u.fullName || u.displayName || '';
+      const codeRef = (u._localCode || u.code || u.id || '');
+      if(!displayName || displayName.trim().length <= 2) displayName = codeRef || 'Usuario';
+      return `<li>${displayName}${codeRef ? ` <span style="color:#6b7280">(${codeRef})</span>` : ''}</li>`;
+    }).join('');
+
+    // Resumen superior
+    const summary = `
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+        <div><strong>Jugador:</strong> ${meName} <span style="color:#6b7280">(${meCode})</span></div>
+        <div style="text-align:right"><strong>Total créditos:</strong> ${total$}</div>
+        <div><strong>Mis negocios comprados:</strong> ${myShopsCount}</div>
+        <div style="text-align:right"><strong>Fondo Gobierno:</strong> ${Math.floor(government.funds)}</div>
+        <div><strong>Negocios en el mundo:</strong> ${(window.gameState?.shops||shops||[]).length}</div>
+        <div style="text-align:right"><strong>Instituciones:</strong> ${(government.placed||[]).length}</div>
+      </div>`;
+
+    return `
+      <div>
+        <h2 style="margin:0 0 6px 0; font-size:22px;">Documento del Agente</h2>
+        ${summary}
+        <h3 style="margin:8px 0 4px; font-size:18px;">Mis Negocios</h3>
+        ${shopsTable}
+        <h3 style="margin:8px 0 4px; font-size:18px;">Usuarios en el mundo (${filtered.length})</h3>
+        <ul style="margin:4px 0 10px 18px;">${userList || '<li>No hay usuarios conectados.</li>'}</ul>
+        <h3 style="margin:8px 0 4px; font-size:18px;">Finanzas por Agente</h3>
+        ${finTable}
+      </div>
+    `;
+  }
+
+  function fullGovDocument(){
+    // Documento del Gobierno: saldo, edificaciones (instituciones) e impuestos
+    const funds = Math.floor(government.funds || 0);
+    const inst = Array.isArray(government.placed) ? government.placed : [];
+    const n = inst.length;
+    const effRate = Math.min(CFG.WEALTH_TAX_MAX, CFG.WEALTH_TAX_BASE + n*CFG.INSTITUTION_TAX_PER);
+    const taxInfo = {
+      base: CFG.WEALTH_TAX_BASE,
+      perInst: CFG.INSTITUTION_TAX_PER,
+      cap: CFG.WEALTH_TAX_MAX,
+      effective: effRate
+    };
+
+    const instRows = inst.map(g => {
+      const kind = g.kind || g.k || 'inst';
+      const label = (typeof kind === 'string' ? kind.replace(/_/g,' ') : 'Institución');
+      const cost = g.cost != null ? g.cost : (CFG && CFG[`COST_${String(kind).toUpperCase()}`]) || '—';
+      return `<tr><td>${label}</td><td style="text-align:right">${cost}</td><td style="text-align:right">${Math.round(g.x||0)},${Math.round(g.y||0)}</td></tr>`;
+    }).join('');
+    const instTable = `
+      <table style="width:100%; border-collapse:collapse; margin:6px 0;">
+        <thead>
+          <tr>
+            <th style="text-align:left; border-bottom:1px solid #ddd; padding:4px 2px;">Institución</th>
+            <th style="text-align:right; border-bottom:1px solid #ddd; padding:4px 2px;">Costo</th>
+            <th style="text-align:right; border-bottom:1px solid #ddd; padding:4px 2px;">Ubicación</th>
+          </tr>
+        </thead>
+        <tbody>${instRows || `<tr><td colspan="3" style="padding:6px 2px; color:#6b7280;">Sin instituciones aún.</td></tr>`}</tbody>
+      </table>`;
+
+    const taxTable = `
+      <table style="width:100%; border-collapse:collapse; margin:6px 0;">
+        <tbody>
+          <tr><td>Base</td><td style="text-align:right">${(taxInfo.base*100).toFixed(1)}%</td></tr>
+          <tr><td>Por institución</td><td style="text-align:right">${(taxInfo.perInst*100).toFixed(1)}%</td></tr>
+          <tr><td>Tope</td><td style="text-align:right">${(taxInfo.cap*100).toFixed(1)}%</td></tr>
+          <tr><td>Efectiva (${n} inst.)</td><td style="text-align:right">${(taxInfo.effective*100).toFixed(1)}%</td></tr>
+        </tbody>
+      </table>`;
+
+    return `
+      <div>
+        <h2 style="margin:0 0 6px 0; font-size:22px;">Documento del Gobierno</h2>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+          <div><strong>Saldo del Gobierno:</strong> ${funds}</div>
+          <div style="text-align:right"><strong>Instituciones:</strong> ${n}/25</div>
+        </div>
+        <h3 style="margin:8px 0 4px; font-size:18px;">Edificaciones</h3>
+        ${instTable}
+        <h3 style="margin:8px 0 4px; font-size:18px;">Impuestos</h3>
+        ${taxTable}
+      </div>
+    `;
   }
   function generateMarriedList() {
       const lines = [];
@@ -2517,14 +2652,25 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   const btnDocClose = document.getElementById('btnDocClose');
   const btnMarriedClose = document.getElementById('btnMarriedClose');
   const docBodyModal = document.getElementById('docBodyModal');
+  const docTitle = document.getElementById('docTitle');
   const marriedListModal = document.getElementById('marriedListModal');
 
-  btnShowDoc.onclick = ()=>{
+  // Documento del Agente (rojo en la imagen)
+  if(btnShowAgentDoc) btnShowAgentDoc.onclick = ()=>{
     pauseGame();
-    if(!window.__docInterval){
-      window.__docInterval = setInterval(()=>{ docBodyModal.textContent = fullDocument(); }, 1000);
-    }
-    docBodyModal.textContent = fullDocument();
+    if(docTitle) docTitle.textContent = '📄 Documento del Agente';
+    if(!window.__docInterval){ window.__docInterval = setInterval(()=>{ docBodyModal.innerHTML = fullDocument(); }, 1000); }
+    docBodyModal.innerHTML = fullDocument();
+    docModal.style.display = 'flex';
+  };
+  // Documento del Gobierno (amarillo en la imagen)
+  if(btnShowGovDoc) btnShowGovDoc.onclick = ()=>{
+    pauseGame();
+    if(docTitle) docTitle.textContent = '📑 Documento del Gobierno';
+    if(!window.__docInterval){ window.__docInterval = setInterval(()=>{ docBodyModal.innerHTML = fullGovDocument(); }, 1000); }
+    // Reutilizamos el mismo intervalo pero con contenido de gobierno
+    clearInterval(window.__docInterval); window.__docInterval = setInterval(()=>{ docBodyModal.innerHTML = fullGovDocument(); }, 1000);
+    docBodyModal.innerHTML = fullGovDocument();
     docModal.style.display = 'flex';
   };
   btnShowMarried.onclick = ()=>{
@@ -3204,6 +3350,123 @@ function yearsSince(epochSeconds) {
 function likeMatches(a, b) {
   if (!a.likes || !b.likes) return 0;
   return a.likes.filter(like => b.likes.includes(like)).length;
+}
+
+// Popup "media naranja"
+function showLovePrompt(otherAgent){
+  // Evitar múltiples a la vez
+  if(document.getElementById('lovePrompt')) return;
+  const wrap = document.createElement('div');
+  wrap.id = 'lovePrompt';
+  wrap.style.position = 'fixed'; wrap.style.inset = '0'; wrap.style.zIndex='70';
+  wrap.style.display='flex'; wrap.style.alignItems='center'; wrap.style.justifyContent='center';
+  wrap.style.background='rgba(0,0,0,0.45)';
+  const box = document.createElement('div');
+  box.className = 'modalBox'; box.style.width='min(440px,92vw)';
+  const name = otherAgent.name || otherAgent.fullName || otherAgent.code || 'esta persona';
+  box.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="font-size:28px">💖</div>
+      <div>
+        <h3 style="margin:0">¿Deseas conocer a tu media naranja?</h3>
+        <div class="hint">Coinciden en varios gustos con <b>${name}</b>.</div>
+      </div>
+    </div>
+    <div class="actions" style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+      <button id="btnLoveNo" class="btn">No</button>
+      <button id="btnLoveYes" class="btn primary">Sí</button>
+    </div>
+  `;
+  wrap.appendChild(box);
+  document.body.appendChild(wrap);
+  const close = ()=>{ try{ wrap.remove(); }catch(_){ } };
+  wrap.addEventListener('click', (e)=>{ if(e.target===wrap) close(); });
+  document.getElementById('btnLoveNo').addEventListener('click', close);
+  document.getElementById('btnLoveYes').addEventListener('click', ()=>{
+    try{
+      // Acción simple: marcar objetivo para acercarse y mostrar un toast
+      const me = agents.find(a=>a.id===USER_ID);
+      if(me){ me.target = { x: otherAgent.x, y: otherAgent.y }; me.targetRole = 'meet'; me.cooldownSocial = (me.cooldownSocial||0) + 30; }
+      toast('¡Ve a conocer a tu media naranja! 💘');
+      openChatWith(otherAgent);
+    }catch(_){ }
+    close();
+  });
+}
+
+// Chat simple entre jugador y otro agente
+function ensureChatUI(){
+  if(document.getElementById('chatDock')) return;
+  const dock = document.createElement('div');
+  dock.id = 'chatDock';
+  dock.style.position='fixed'; dock.style.right='16px'; dock.style.bottom='16px'; dock.style.zIndex='65';
+  dock.style.width='min(320px, 90vw)'; dock.style.maxHeight='60vh'; dock.style.display='none';
+  dock.style.background='rgba(17,24,39,0.92)'; dock.style.border='1px solid #334155'; dock.style.borderRadius='10px'; dock.style.boxShadow='0 10px 30px rgba(0,0,0,0.4)';
+  dock.innerHTML = `
+    <div id="chatHeader" style="padding:8px 10px;border-bottom:1px solid #334155;display:flex;align-items:center;gap:8px;justify-content:space-between">
+      <div id="chatTitle" style="font-weight:600">Chat</div>
+      <button id="chatClose" class="btn">×</button>
+    </div>
+    <div id="chatBody" style="padding:10px; overflow:auto; max-height:36vh; font-size:14px; line-height:1.3"></div>
+    <div style="padding:8px 10px;border-top:1px solid #334155;display:flex;gap:6px;align-items:center">
+      <input id="chatInput" class="input" placeholder="Escribe un mensaje…" style="flex:1;min-width:0"/>
+      <button id="chatSend" class="btn primary">Enviar</button>
+    </div>
+    <div style="padding:6px 10px 10px;display:flex;gap:8px;align-items:center">
+      <button id="sendRoses" class="btn">🌹 Rosas</button>
+      <button id="sendChoco" class="btn">🍫 Chocolates</button>
+    </div>
+  `;
+  document.body.appendChild(dock);
+  document.getElementById('chatClose').addEventListener('click', ()=> dock.style.display='none');
+}
+
+let __chatPeer = null;
+function openChatWith(other){
+  ensureChatUI(); __chatPeer = other; const dock = document.getElementById('chatDock'); if(!dock) return;
+  dock.style.display='block';
+  const title = document.getElementById('chatTitle');
+  if(title){ title.textContent = 'Chat con ' + (other.name || other.code || other.id); }
+  const body = document.getElementById('chatBody'); if(body){ body.innerHTML = ''; }
+  const send = (gift=null)=>{
+    const input = document.getElementById('chatInput'); const text = (input?.value || '').trim();
+    if(!text && !gift) return;
+    const to = other.id; const payload = { to, text: text || null, gift: gift||null };
+    if(window.sockApi && window.sock){ window.sockApi.sendChat(payload, ()=>{}); }
+    renderIncomingMsg({ from: { id: 'me', name:'Tú' }, to: { id: other.id }, text, gift, ts: Date.now() });
+    if(input) input.value='';
+  };
+  document.getElementById('chatSend').onclick = ()=> send(null);
+  document.getElementById('chatInput').onkeydown = (e)=>{ if(e.key==='Enter'){ e.preventDefault(); send(null); } };
+  document.getElementById('sendRoses').onclick = ()=> send('roses');
+  document.getElementById('sendChoco').onclick = ()=> send('chocolates');
+}
+
+function renderIncomingMsg(msg){
+  try{
+    const body = document.getElementById('chatBody'); if(!body) return;
+    const meId = USER_ID;
+    const isMine = msg.from && (msg.from.id==='me' || msg.from.id===meId);
+    const who = isMine ? 'Tú' : (msg.from?.name || msg.from?.id || 'Alguien');
+    const line = document.createElement('div');
+    line.style.margin = '4px 0';
+    line.style.textAlign = isMine ? 'right' : 'left';
+    const gift = msg.gift==='roses' ? ' 🌹' : (msg.gift==='chocolates' ? ' 🍫' : '');
+    const text = (msg.text ? msg.text : '') + gift;
+    line.textContent = who + ': ' + text;
+    body.appendChild(line);
+    body.scrollTop = body.scrollHeight;
+  }catch(_){ }
+}
+
+// Mensajes entrantes desde socket
+window.__onChatMessage = function(msg){
+  try{
+    // Abrir chat si llega algo del peer actual o si aún no hay chat abierto
+    ensureChatUI();
+    const dock = document.getElementById('chatDock'); if(dock) dock.style.display='block';
+    renderIncomingMsg(msg);
+  }catch(_){ }
 }
 
 // Función para asignar alquiler

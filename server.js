@@ -107,6 +107,22 @@ app.get('/api/me', (req, res) => {
   return res.json({ ok:true, user: { id:user.id, username:user.username, gender: user.gender||null, country: user.country||null, email: user.email||null, phone: user.phone||null }, progress: brain.getProgress(uid) });
 });
 
+// Estado del gobierno (solo lectura)
+app.get('/api/gov', (req, res) => {
+  try{ return res.json({ ok:true, government: brain.getGovernment() }); }catch(e){ return res.status(500).json({ ok:false }); }
+});
+
+// Añadir fondos al gobierno (demo; en producción debería requerir admin)
+app.post('/api/gov/funds/add', (req, res) => {
+  try{
+    const amount = Number(req.body?.amount||0);
+    if(!Number.isFinite(amount) || amount===0) return res.status(400).json({ ok:false });
+    const out = brain.addGovernmentFunds(amount);
+    if(!(out && out.ok)) return res.status(400).json({ ok:false });
+    return res.json({ ok:true, funds: out.funds });
+  }catch(e){ return res.status(500).json({ ok:false }); }
+});
+
 
 app.post('/api/change-password', (req, res) => {
   const uid = getSessionUserId(req);
@@ -232,7 +248,13 @@ app.post('/api/pay/upload-proof', async (req, res) => {
     const { filename, mime, data } = req.body || {};
     if(!data || typeof data !== 'string') return res.status(400).json({ ok:false, msg:'faltan datos' });
     const safeName = String(filename||'comprobante').replace(/[^a-zA-Z0-9_.-]/g,'_');
-    const ext = (safeName.includes('.') ? safeName.split('.').pop() : 'bin');
+    const ext = (safeName.includes('.') ? safeName.split('.').pop().toLowerCase() : 'bin');
+    // Validar tipo: solo jpg/png
+    const allowedExt = new Set(['jpg','jpeg','png']);
+    const allowedMime = new Set(['image/jpeg','image/png']);
+    if(!(allowedExt.has(ext) && (!mime || allowedMime.has(String(mime).toLowerCase())))){
+      return res.status(400).json({ ok:false, msg:'Formato no permitido. Usa JPG o PNG.' });
+    }
     const ts = new Date().toISOString().replace(/[:]/g,'-');
     const outDir = path.join(__dirname, 'pagos');
     if(!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
@@ -317,7 +339,7 @@ const state = {
   players: {},
   shops: [],
   houses: [],
-  government: { funds: 10000, placed: [] }
+  government: (function(){ try{ return brain.getGovernment(); }catch(e){ return { funds: 0, placed: [] }; } })()
 };
 
 function now() { return Date.now(); }
@@ -574,14 +596,42 @@ io.on('connection', (socket) => {
   });
 
   socket.on('placeGov', (payload, ack) => {
-    if ((state.government.funds || 0) < (payload.cost || 0)) {
+  if ((state.government.funds || 0) < (payload.cost || 0)) {
       if (ack) ack({ ok:false, msg: 'Fondos insuficientes' });
       return;
     }
-    state.government.funds -= payload.cost || 0;
-    state.government.placed.push(payload);
+  try{ brain.addGovernmentFunds(-Math.abs(payload.cost||0)); }catch(_){ }
+  try{ brain.placeGovernment(payload); }catch(_){ }
+  state.government = brain.getGovernment();
     io.emit('govPlaced', payload);
     if (ack) ack({ ok:true });
+  });
+
+  // Chat básico entre jugadores conectados
+  socket.on('chat:send', (payload, ack) => {
+    try{
+      const fromId = socket.playerId;
+      const from = state.players[fromId];
+      if(!from){ if(ack) ack({ ok:false, msg:'no-sender' }); return; }
+      const toId = (payload && payload.to) ? String(payload.to) : null;
+      const toName = (payload && payload.toName) ? String(payload.toName) : null;
+      let target = null;
+      if(toId && state.players[toId]) target = state.players[toId];
+      if(!target && toName){ target = Object.values(state.players).find(p => (p.code||'').toLowerCase() === toName.toLowerCase()); }
+      if(!target){ if(ack) ack({ ok:false, msg:'notfound' }); return; }
+      if(!target.socketId){ if(ack) ack({ ok:false, msg:'offline' }); return; }
+      const msg = {
+        from: { id: fromId, name: from.code || from.id, avatar: from.avatar||null },
+        to: { id: target.id, name: target.code || target.id },
+        text: (payload && typeof payload.text==='string') ? payload.text.slice(0,300) : null,
+        gift: (payload && payload.gift && (payload.gift==='roses' || payload.gift==='chocolates')) ? payload.gift : null,
+        ts: now()
+      };
+      // Entregar al destinatario y eco al remitente
+      io.to(target.socketId).emit('chat:msg', msg);
+      if(socket.id) io.to(socket.id).emit('chat:msg', msg);
+      if(ack) ack({ ok:true });
+    }catch(e){ if(ack) ack({ ok:false }); }
   });
 
   socket.on('disconnect', () => {

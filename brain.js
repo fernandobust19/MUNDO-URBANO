@@ -12,6 +12,7 @@ let db = {
 	users: [], // { id, username, passHash, createdAt, lastLoginAt, gender?, country?, email?, phone? }
 	// userId -> { money, bank, vehicle, vehicles:[], shops:[], houses:[], name, avatar, likes:[], gender, age }
 	progress: {},
+	government: { funds: 0, placed: [] },
 	activityLog: [] // { ts, type, userId, details }
 };
 
@@ -36,6 +37,8 @@ function load() {
 			const raw = fs.readFileSync(DB_PATH, 'utf8');
 			const parsed = JSON.parse(raw);
 			if (parsed && typeof parsed === 'object') db = Object.assign(db, parsed);
+			// backfill gobierno
+			if(!db.government){ db.government = { funds: 0, placed: [] }; }
 		} else {
 			persist();
 		}
@@ -96,6 +99,45 @@ function log(type, userId = null, details = null) {
 	db.activityLog.push({ ts: Date.now(), type, userId, details });
 	if (db.activityLog.length > 5000) db.activityLog.splice(0, db.activityLog.length - 5000);
 	schedulePersist();
+}
+
+// ===== Gobierno (persistente) =====
+function getGovernment(){
+	try{
+		if(!db.government || typeof db.government !== 'object') db.government = { funds: 0, placed: [] };
+		if(!Array.isArray(db.government.placed)) db.government.placed = [];
+		if(typeof db.government.funds !== 'number') db.government.funds = 0;
+		return db.government;
+	}catch(e){ return { funds: 0, placed: [] }; }
+}
+function setGovernment(gov){
+	try{
+		const g = getGovernment();
+		if(gov && typeof gov === 'object'){
+			if(typeof gov.funds === 'number') g.funds = Math.floor(gov.funds);
+			if(Array.isArray(gov.placed)) g.placed = gov.placed;
+			schedulePersist();
+			log('gov_set', null, { funds: g.funds, placed: g.placed.length });
+			return { ok:true };
+		}
+	}catch(e){}
+	return { ok:false };
+}
+function addGovernmentFunds(delta){
+	const g = getGovernment();
+	const add = Math.floor(delta||0);
+	if(!isFinite(add) || add===0) return { ok:false };
+	g.funds = Math.max(0, (g.funds||0) + add);
+	schedulePersist();
+	log('gov_funds', null, { delta: add, funds: g.funds });
+	return { ok:true, funds: g.funds };
+}
+function placeGovernment(payload){
+	const g = getGovernment();
+	try{ g.placed.push(payload); }catch(_){ }
+	schedulePersist();
+	log('gov_place', null, { k: payload?.k||payload?.label||'item' });
+	return { ok:true };
 }
 
 function getUserByUsername(username) {
@@ -328,6 +370,11 @@ module.exports = {
 	// credits helpers
 	addMoney,
 	addMoneyOnce,
-	hasLedgerReason
+	hasLedgerReason,
+	// government
+	getGovernment,
+	setGovernment,
+	addGovernmentFunds,
+	placeGovernment
 };
 

@@ -21,7 +21,7 @@ function backup(file) {
 }
 
 function resetDb() {
-  const fresh = { users: [], progress: {}, activityLog: [] };
+  const fresh = { users: [], progress: {}, government: { funds: 0, placed: [] }, activityLog: [] };
   fs.writeFileSync(DB, JSON.stringify(fresh, null, 2));
 }
 

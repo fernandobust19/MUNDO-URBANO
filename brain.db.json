@@ -1,248 +1,92 @@
 {
   "users": [
     {
-      "id": "47ea849a-c7d2-48dd-a879-38be0a234999",
+      "id": "c30d0f5d-7e26-4a90-adee-d813428a38e3",
       "username": "fernando",
-      "passHash": "$2a$10$Y7ysn.VPWGO6Y4NQH25BVO7GPjWxuM2RbGmUPW2nvG7i8gfqENT1m",
-      "createdAt": 1757267527204,
-      "lastLoginAt": 1757268980707
-    },
-    {
-      "id": "880587e6-a1e8-454c-8fc2-c29efab047c4",
-      "username": "fernando123",
-      "passHash": "$2a$10$NMdao09s8XqMBQZqhz8z7.VhIUxmD4y3u4OL3XzEt65LNxlKDsrOy",
-      "createdAt": 1757269173748,
-      "lastLoginAt": null
-    },
-    {
-      "id": "259c39cd-17df-4237-98f0-60ac16193e74",
-      "username": "fernando1232",
-      "passHash": "$2a$10$So6iAshR6EJQpEiP3EPfkOJsIoy7To3Ev3aILMr4EQypkwfXYS/BW",
-      "createdAt": 1757269516610,
-      "lastLoginAt": null
-    },
-    {
-      "id": "01926eda-6fec-44dc-9257-6444496fe1fb",
-      "username": "fernando12322",
-      "passHash": "$2a$10$fJGKpqabeexOyzEzgm84Nu5OwtVbxnmYwKW9paf0gbLK1WNS9/8T2",
-      "createdAt": 1757269735409,
-      "lastLoginAt": null
-    },
-    {
-      "id": "18fc85f6-cd4a-43ed-8868-963bfc0a1150",
-      "username": "mamita",
-      "passHash": "$2a$10$gTERpITqaQ1IljkSMI.YaOMar9GcN0EzDLX2J4BLgRrT/T8Kmvxhy",
-      "createdAt": 1757269928646,
-      "lastLoginAt": null
-    },
-    {
-      "id": "cb6c9180-b616-437f-8e68-f34a1a4c368d",
-      "username": "mamita1",
-      "passHash": "$2a$10$4aWy0oMpWIlGPumceF6KZOAYehOpskixauxFc5wfmuMOEAUt7r5Zm",
-      "createdAt": 1757270197464,
-      "lastLoginAt": null
-    },
-    {
-      "id": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
-      "username": "mamita1qqq",
-      "passHash": "$2a$10$vmnxqr/EfUFsWuxZ7YazXecidBmCVVjSFJjzZoKtCrhDWMc7ztPVW",
-      "createdAt": 1757270682632,
-      "lastLoginAt": null
-    },
-    {
-      "id": "8277a504-5d5a-4353-aa05-787d9c7cf31e",
-      "username": "mamita1qqq111",
-      "passHash": "$2a$10$MPupxQIkRhlXWQwaOhdb.OBr7KPI2DmVYM7.IhrT3ZRufmHeRF2pa",
-      "createdAt": 1757271280667,
-      "lastLoginAt": null
+      "passHash": "$2a$10$bHzqTa7Feu5HV4M2dKr3Huxhm0/uHNr2KJpHJGdGkLPyvKLseZoX2",
+      "createdAt": 1757282349037,
+      "lastLoginAt": null,
+      "country": "Ecuador",
+      "email": "fernando2000b@hotmail.com",
+      "phone": "0995986366",
+      "gender": "M"
     }
   ],
   "progress": {
-    "47ea849a-c7d2-48dd-a879-38be0a234999": {
-      "money": 400,
+    "c30d0f5d-7e26-4a90-adee-d813428a38e3": {
+      "money": 0,
       "bank": 0,
       "vehicle": null,
       "vehicles": [],
-      "shops": [],
+      "shops": [
+        {
+          "x": 506,
+          "y": 141,
+          "w": 120,
+          "h": 80,
+          "kind": "panadería",
+          "ownerId": "A761965"
+        }
+      ],
       "houses": [],
-      "name": "fernando",
+      "name": "FERNANDO",
       "avatar": "assets/avatar1.png",
       "likes": [
-        "cocina",
-        "poesía",
-        "café",
-        "helado",
-        "pan"
-      ],
-      "gender": "U",
-      "age": 20
-    },
-    "880587e6-a1e8-454c-8fc2-c29efab047c4": {
-      "money": 400,
-      "bank": 0,
-      "vehicle": null,
-      "vehicles": [],
-      "shops": [],
-      "houses": [],
-      "name": null,
-      "avatar": null,
-      "likes": [],
-      "gender": null,
-      "age": null
-    },
-    "259c39cd-17df-4237-98f0-60ac16193e74": {
-      "money": 400,
-      "bank": 0,
-      "vehicle": null,
-      "vehicles": [],
-      "shops": [],
-      "houses": [],
-      "name": null,
-      "avatar": null,
-      "likes": [],
-      "gender": null,
-      "age": null
-    },
-    "01926eda-6fec-44dc-9257-6444496fe1fb": {
-      "money": 400,
-      "bank": 0,
-      "vehicle": null,
-      "vehicles": [],
-      "shops": [],
-      "houses": [],
-      "name": null,
-      "avatar": null,
-      "likes": [],
-      "gender": null,
-      "age": null
-    },
-    "18fc85f6-cd4a-43ed-8868-963bfc0a1150": {
-      "money": 400,
-      "bank": 0,
-      "vehicle": null,
-      "vehicles": [],
-      "shops": [],
-      "houses": [],
-      "name": null,
-      "avatar": "assets/avatar2.png",
-      "likes": [],
-      "gender": null,
-      "age": null
-    },
-    "cb6c9180-b616-437f-8e68-f34a1a4c368d": {
-      "money": 0,
-      "bank": 0,
-      "vehicle": null,
-      "vehicles": [],
-      "shops": [
-        {
-          "x": 1559.130883901988,
-          "y": 1014.388708360153,
-          "w": 120,
-          "h": 80,
-          "kind": "panadería",
-          "ownerId": "A837142",
-          "id": "S1",
-          "cashbox": 0,
-          "createdAt": 1757270799065
-        }
-      ],
-      "houses": [],
-      "name": null,
-      "avatar": "/assets/avatar1.png",
-      "likes": [],
-      "gender": null,
-      "age": null
-    },
-    "e6a10923-21f1-4e88-8fd9-a1d86a3da958": {
-      "money": 0,
-      "bank": 0,
-      "vehicle": null,
-      "vehicles": [],
-      "shops": [
-        {
-          "x": 1559.130883901988,
-          "y": 1014.388708360153,
-          "w": 120,
-          "h": 80,
-          "kind": "panadería",
-          "ownerId": "A837142"
-        },
-        {
-          "x": 37,
-          "y": 373,
-          "w": 120,
-          "h": 80,
-          "kind": "panadería",
-          "ownerId": "A766618",
-          "id": "S2",
-          "cashbox": 0,
-          "createdAt": 1757271400364
-        }
-      ],
-      "houses": [],
-      "name": "aaaaaaa",
-      "avatar": "assets/avatar2.png",
-      "likes": [
+        "música",
         "lectura",
         "cine",
-        "fotografía",
-        "juguetes",
-        "kiosco"
+        "animales",
+        "yoga"
       ],
       "gender": "M",
-      "age": 20
+      "age": 20,
+      "country": "Ecuador",
+      "email": "fernando2000b@hotmail.com",
+      "phone": "0995986366"
     },
-    "8277a504-5d5a-4353-aa05-787d9c7cf31e": {
+    "e6c2f731-5982-4d30-b463-c5bf475b88bf": {
       "money": 0,
       "bank": 0,
       "vehicle": null,
       "vehicles": [],
       "shops": [
         {
-          "x": 37,
-          "y": 373,
+          "x": 506,
+          "y": 141,
           "w": 120,
           "h": 80,
           "kind": "panadería",
-          "ownerId": "A766618"
+          "ownerId": "A761965",
+          "id": "S1",
+          "cashbox": 0,
+          "createdAt": 1757282430567
         }
       ],
       "houses": [],
-      "name": "qqqqqqqqqq",
-      "avatar": "assets/avatar2.png",
-      "likes": [
-        "deporte",
-        "baile",
-        "jardinería",
-        "poesía",
-        "jugos"
-      ],
-      "gender": "F",
-      "age": 20
+      "name": null,
+      "avatar": null,
+      "likes": [],
+      "gender": null,
+      "age": null
     }
+  },
+  "government": {
+    "funds": 0,
+    "placed": []
   },
   "activityLog": [
     {
-      "ts": 1757267527204,
+      "ts": 1757282349037,
       "type": "register",
-      "userId": "47ea849a-c7d2-48dd-a879-38be0a234999",
+      "userId": "c30d0f5d-7e26-4a90-adee-d813428a38e3",
       "details": {
         "username": "fernando"
       }
     },
     {
-      "ts": 1757267570709,
-      "type": "login",
-      "userId": "47ea849a-c7d2-48dd-a879-38be0a234999",
-      "details": {
-        "username": "fernando"
-      }
-    },
-    {
-      "ts": 1757267674329,
+      "ts": 1757282358228,
       "type": "progress_update",
-      "userId": "47ea849a-c7d2-48dd-a879-38be0a234999",
+      "userId": "c30d0f5d-7e26-4a90-adee-d813428a38e3",
       "details": {
         "keys": [
           "money",
@@ -260,165 +104,9 @@
       }
     },
     {
-      "ts": 1757268980707,
-      "type": "login",
-      "userId": "47ea849a-c7d2-48dd-a879-38be0a234999",
-      "details": {
-        "username": "fernando"
-      }
-    },
-    {
-      "ts": 1757269173748,
-      "type": "register",
-      "userId": "880587e6-a1e8-454c-8fc2-c29efab047c4",
-      "details": {
-        "username": "fernando123"
-      }
-    },
-    {
-      "ts": 1757269516610,
-      "type": "register",
-      "userId": "259c39cd-17df-4237-98f0-60ac16193e74",
-      "details": {
-        "username": "fernando1232"
-      }
-    },
-    {
-      "ts": 1757269735410,
-      "type": "register",
-      "userId": "01926eda-6fec-44dc-9257-6444496fe1fb",
-      "details": {
-        "username": "fernando12322"
-      }
-    },
-    {
-      "ts": 1757269928647,
-      "type": "register",
-      "userId": "18fc85f6-cd4a-43ed-8868-963bfc0a1150",
-      "details": {
-        "username": "mamita"
-      }
-    },
-    {
-      "ts": 1757269956042,
+      "ts": 1757282363549,
       "type": "progress_update",
-      "userId": "18fc85f6-cd4a-43ed-8868-963bfc0a1150",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age"
-        ]
-      }
-    },
-    {
-      "ts": 1757269957166,
-      "type": "progress_update",
-      "userId": "18fc85f6-cd4a-43ed-8868-963bfc0a1150",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age"
-        ]
-      }
-    },
-    {
-      "ts": 1757270015146,
-      "type": "progress_update",
-      "userId": "18fc85f6-cd4a-43ed-8868-963bfc0a1150",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age"
-        ]
-      }
-    },
-    {
-      "ts": 1757270197464,
-      "type": "register",
-      "userId": "cb6c9180-b616-437f-8e68-f34a1a4c368d",
-      "details": {
-        "username": "mamita1"
-      }
-    },
-    {
-      "ts": 1757270209822,
-      "type": "progress_update",
-      "userId": "cb6c9180-b616-437f-8e68-f34a1a4c368d",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age"
-        ]
-      }
-    },
-    {
-      "ts": 1757270682632,
-      "type": "register",
-      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
-      "details": {
-        "username": "mamita1qqq"
-      }
-    },
-    {
-      "ts": 1757270685044,
-      "type": "progress_update",
-      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age"
-        ]
-      }
-    },
-    {
-      "ts": 1757270695240,
-      "type": "progress_update",
-      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "userId": "c30d0f5d-7e26-4a90-adee-d813428a38e3",
       "details": {
         "keys": [
           "money",
@@ -433,22 +121,23 @@
           "gender",
           "age",
           "country",
-          "email"
+          "email",
+          "phone"
         ]
       }
     },
     {
-      "ts": 1757270799065,
+      "ts": 1757282430567,
       "type": "shop_add",
-      "userId": "cb6c9180-b616-437f-8e68-f34a1a4c368d",
+      "userId": "e6c2f731-5982-4d30-b463-c5bf475b88bf",
       "details": {
         "id": "S1"
       }
     },
     {
-      "ts": 1757270799490,
+      "ts": 1757282430987,
       "type": "progress_update",
-      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
+      "userId": "c30d0f5d-7e26-4a90-adee-d813428a38e3",
       "details": {
         "keys": [
           "money",
@@ -463,67 +152,8 @@
           "gender",
           "age",
           "country",
-          "email"
-        ]
-      }
-    },
-    {
-      "ts": 1757271280667,
-      "type": "register",
-      "userId": "8277a504-5d5a-4353-aa05-787d9c7cf31e",
-      "details": {
-        "username": "mamita1qqq111"
-      }
-    },
-    {
-      "ts": 1757271296439,
-      "type": "progress_update",
-      "userId": "8277a504-5d5a-4353-aa05-787d9c7cf31e",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "country",
-          "email"
-        ]
-      }
-    },
-    {
-      "ts": 1757271400364,
-      "type": "shop_add",
-      "userId": "e6a10923-21f1-4e88-8fd9-a1d86a3da958",
-      "details": {
-        "id": "S2"
-      }
-    },
-    {
-      "ts": 1757271400788,
-      "type": "progress_update",
-      "userId": "8277a504-5d5a-4353-aa05-787d9c7cf31e",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "country",
-          "email"
+          "email",
+          "phone"
         ]
       }
     }
