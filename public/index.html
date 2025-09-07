@@ -108,11 +108,11 @@
   #uiDock .card{ padding:8px 10px; }
   #uiDock h4{ font-size:14px; }
   #uiDock .actions{ gap:6px }
-  /* Botones del UI más pequeños y con borde más oscuro que el botón */
-  #uiDock .btn{ padding:5px 8px; border-radius:8px; font-size:11px; border:1px solid rgba(0,0,0,0.38); }
+  /* Botones del UI más pequeños (menos altos) y con borde más oscuro que el botón */
+  #uiDock .btn{ padding:4px 7px; border-radius:7px; font-size:11px; border:1px solid rgba(0,0,0,0.38); min-height:26px; line-height:1.1; }
   #uiDock .btn.primary{ border-color: rgba(0,0,0,0.45); }
   #uiDock .btn.good{ border-color: #186333; }
-  #uiDock .select, #uiDock .input{ padding:7px 9px; border-radius:8px; font-size:11px; min-height:30px }
+  #uiDock .select, #uiDock .input{ padding:6px 8px; border-radius:7px; font-size:11px; min-height:26px }
   #uiDock pre{ font-size:11px }
 
 
@@ -153,6 +153,8 @@
     #formInner{ gap:8px }
   }
 </style>
+  /* Mantener botones del UI más bajos incluso en móvil */
+  #uiDock .btn{ min-height:26px !important; padding:4px 7px; font-size:10.5px }
 <style>
   /* Aumentar tamaño de letra para Documento y Casados */
   #docBody, #marriedList { font-size: 22px !important; line-height: 1.5; }
@@ -176,7 +178,7 @@
         <input id="avatarFile" type="file" accept="image/*" style="display:none" />
   <button id="btnUploadAvatar" type="button" class="btn">Subir foto</button>
   <button id="btnRemoveAvatar" type="button" class="btn">Quitar foto</button>
-  <img id="fGenderPreview" src="assets/avatar1.png" alt="Vista previa" style="width:48px;height:48px;border-radius:50%;border:1px solid #2b3553;background:#fff;object-fit:cover" />
+  <img id="fGenderPreview" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'><rect width='100%' height='100%' fill='white'/><text x='50%' y='52%' text-anchor='middle' dominant-baseline='middle' font-size='84' font-family='Segoe UI, Arial, sans-serif' fill='%239ca3af'>?</text></svg>" alt="Vista previa" style="width:48px;height:48px;border-radius:50%;border:1px solid #2b3553;background:#fff;object-fit:cover" />
         <span class="hint">Puedes subir una foto para usarla como avatar. Se mostrará en el panel y en tu agente.</span>
       </div>
     </div>
@@ -269,7 +271,7 @@
   <div class="card">
     <b>Mundo activo</b><br/><small>Trabajo 60s = +15 → 💰 banco</small>
     <div style="display:flex;gap:10px;align-items:center;margin-top:6px">
-  <img id="uiAvatar" src="assets/avatar1.png" style="width:56px;height:56px;border-radius:8px;border:1px solid #2b3553;background:#fff;object-fit:cover" alt="avatar" />
+  <img id="uiAvatar" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'><rect width='100%' height='100%' fill='white'/><text x='50%' y='52%' text-anchor='middle' dominant-baseline='middle' font-size='84' font-family='Segoe UI, Arial, sans-serif' fill='%239ca3af'>?</text></svg>" style="width:56px;height:56px;border-radius:8px;border:1px solid #2b3553;background:#fff;object-fit:cover" alt="avatar" />
       <div>
         <div id="stats" style="font-size:12px"></div>
         <div id="userName" style="font-size:12px;opacity:.9;margin-top:2px">Sin iniciar</div>

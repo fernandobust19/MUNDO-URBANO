@@ -169,6 +169,12 @@
   // Avatar grid clickable thumbnails
   const avatarGrid = document.getElementById('avatarGrid');
   const uiAvatarEl = document.getElementById('uiAvatar');
+  // Placeholder de avatar: fondo blanco y un gran signo de pregunta
+  const AVATAR_PLACEHOLDER = "data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'>\
+<rect width='100%' height='100%' fill='white'/>\
+<text x='50%' y='52%' text-anchor='middle' dominant-baseline='middle' font-size='84' font-family='Segoe UI, Arial, sans-serif' fill='%239ca3af'>?</text>\
+</svg>";
   const avatarFile = document.getElementById('avatarFile');
   const btnUploadAvatar = document.getElementById('btnUploadAvatar');
   const btnRemoveAvatar = document.getElementById('btnRemoveAvatar');
@@ -192,7 +198,7 @@
   if(typeof USER_ID !== 'undefined' && USER_ID){ const me = agents.find(a=>a.id===USER_ID); if(me){ if(me.avatar !== src){ me.avatar = src; try{ AVATAR_CACHE && AVATAR_CACHE.delete && AVATAR_CACHE.delete(src); }catch(_){} try{ window.sockApi?.update({ avatar: src }); }catch(_){} } } }
       }catch(e){}
     });
-    // restore saved selection (if any) or pre-select first and reflect it in the UI avatar preview
+    // restore saved selection (if any). Si no hay, usar placeholder con '?'
     try{
       const isValidSrc = (v)=> typeof v === 'string' && v.length > 0 && (/^data:/.test(v) || /^https?:/.test(v) || v.startsWith('/'));
       let saved = null;
@@ -209,20 +215,17 @@
         }catch(_){ }
         try{
           const src = (typeof saved === 'string') ? saved : String(saved || '');
+          // Si el guardado es el placeholder, sólo reflejar en la vista previa
           if(fGenderPreview) fGenderPreview.src = src;
-          if(uiAvatarEl) uiAvatarEl.src = src;
+          if(src !== AVATAR_PLACEHOLDER){ if(uiAvatarEl) uiAvatarEl.src = src; }
         }catch(_){ }
       } else {
-        const first = avatarGrid.querySelector('.avatar-option');
-        if(first){
-          first.classList.add('selected');
-          try{ const s = first.getAttribute('data-src'); if(s){ if(fGenderPreview) fGenderPreview.src = s; if(uiAvatarEl) uiAvatarEl.src = s; } }catch(_){ }
-        }
+        // No hay avatar guardado: mostrar placeholder en la vista previa y no auto-seleccionar
+        try{ if(fGenderPreview) fGenderPreview.src = AVATAR_PLACEHOLDER; }catch(_){ }
       }
     }catch(e){
-      // ignore localStorage errors y aplicar primer avatar del grid
-      const first = avatarGrid.querySelector('.avatar-option');
-      if(first){ first.classList.add('selected'); try{ const s = first.getAttribute('data-src'); if(s){ if(fGenderPreview) fGenderPreview.src = s; if(uiAvatarEl) uiAvatarEl.src = s; } }catch(_){ } }
+      // Si hay error con localStorage: usar placeholder en la vista previa
+      try{ if(fGenderPreview) fGenderPreview.src = AVATAR_PLACEHOLDER; }catch(_){ }
     }
   }
   // Soporte para subir foto como avatar (Data URL en cliente)
@@ -254,25 +257,18 @@
   if(btnRemoveAvatar){
     btnRemoveAvatar.addEventListener('click', ()=>{
       try{
-        // elegir avatar por defecto según género (si existe), sino usar el primero del grid
-        let src = null;
-        try{ src = (fGender && fGender.value === 'M') ? MALE_IMG : FEMALE_IMG; }catch(_){ src = MALE_IMG; }
-        try{
-          // si el grid tiene un seleccionado, úsalo como valor por defecto visual
-          const first = avatarGrid && avatarGrid.querySelector('.avatar-option');
-          if(first){ const s = first.getAttribute('data-src'); if(s) src = s; }
-        }catch(_){}
-  // actualizar UI
-  try{ if(fGenderPreview) fGenderPreview.src = src; if(uiAvatarEl) uiAvatarEl.src = src; }catch(_){}
-        // persistir
+        const src = AVATAR_PLACEHOLDER;
+        // Actualizar solo la vista previa con el placeholder; dejar el UI avatar como estaba
+        try{ if(fGenderPreview) fGenderPreview.src = src; }catch(_){ }
+        // Persistir placeholder como avatar actual (para que vuelva a aparecer en la vista previa al recargar)
         try{ localStorage.setItem('selectedAvatar', src); }catch(_){ }
         try{
           window.__selectedAvatarCurrent = src;
           window.__progress = Object.assign({}, window.__progress||{}, { avatar: src });
           window.saveProgress && window.saveProgress({ avatar: src });
-          if(typeof USER_ID !== 'undefined' && USER_ID){ const me = agents.find(a=>a.id===USER_ID); if(me){ if(me.avatar !== src){ me.avatar = src; try{ AVATAR_CACHE && AVATAR_CACHE.delete && AVATAR_CACHE.delete(src); }catch(_){} try{ window.sockApi?.update({ avatar: src }); }catch(_){} } } }
+          // No forzar cambio del uiAvatar ni enviar al server en este punto
         }catch(_){ }
-        toast('Se restauró el avatar por defecto.');
+        toast('Se quitó la foto. Vista previa con ?');
       }catch(e){}
     });
   }
@@ -2999,6 +2995,23 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       const vType = carTypeSelect.value;
       if (!vType || !VEHICLES[vType]) { carMsg.textContent = 'Por favor, selecciona un vehículo.'; carMsg.style.color = 'var(--warn)'; return; }
       const vehicle = VEHICLES[vType];
+      // Bloquear compra duplicada: si ya lo tienes, sólo activarlo sin costo
+      try{
+        const prog = (window.__progress || {});
+        const ownedList = Array.isArray(prog.vehicles) ? prog.vehicles : [];
+        const alreadyOwned = ownedList.includes(vType) || (u.vehicle === vType);
+        if(alreadyOwned){
+          // Activar como vehículo actual, persistir y notificar
+          u.vehicle = vType;
+          try{ window.saveProgress && window.saveProgress({ vehicle: vType }); }catch(_){ }
+          try{ window.sockApi?.update({ vehicle: vType }); }catch(_){ }
+          carMsg.textContent = `Ya tienes ${vehicle.name}. Se activó como vehículo actual.`;
+          carMsg.style.color = 'var(--ok)';
+          toast('Vehículo ya comprado. Activado.');
+          try{ updateCarMenuHighlight(); }catch(_){ }
+          return;
+        }
+      }catch(_){ }
       if (u.money >= vehicle.cost){
         u.money -= vehicle.cost;
         u.vehicle = vType;
