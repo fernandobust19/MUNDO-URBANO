@@ -2075,7 +2075,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
 
   const pt = toScreen(s.x, s.y);
   const baseR = (p.state==='child'?CFG.R_CHILD:CFG.R_ADULT) * ZOOM;
-  const r = Math.max(CFG.MIN_AGENT_PX, baseR);
+  const r = baseR;
   // Solo imagen de avatar (sin círculo de fondo)
   try{
     const img = getAvatarImage(p.avatar);
@@ -2252,8 +2252,8 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     try{
       for(const ag of agents){
         const pt = toScreen(ag.x, ag.y);
-        const baseR = (ag.state==='child'?CFG.R_CHILD:CFG.R_ADULT) * ZOOM;
-        const r = Math.max(CFG.MIN_AGENT_PX, baseR);
+  const baseR = (ag.state==='child'?CFG.R_CHILD:CFG.R_ADULT) * ZOOM;
+  const r = baseR;
         let drew=false;
         try{
           if(ag.avatar){ const img=getAvatarImage(ag.avatar); if(img&&img.complete&&img.naturalWidth){ ctx.save(); ctx.beginPath(); ctx.arc(pt.x,pt.y,r*0.95,0,Math.PI*2); ctx.clip(); const d=r*1.8; ctx.drawImage(img, pt.x-d/2, pt.y-d/2, d, d); ctx.restore(); drew=true; } }
@@ -2469,7 +2469,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       show($("#uiShowBtn"), true);
   // Dock colapsado: si se mostrara el botón interno, debería apuntar a la derecha (abrir)
   try{ document.getElementById('uiHideBtn').textContent = '▶'; }catch(_){ }
-  // Al colapsar el dock, mostrar minimapa para navegación
+  // Mantener minimapa visible siempre (queda debajo del UI)
   try{ document.getElementById('mini').style.display = 'block'; }catch(_){ }
     }catch(e){}
   };
@@ -2482,8 +2482,8 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       show($("#uiShowBtn"), false);
   // Dock visible: flecha del botón de ocultar apunta a la izquierda (ocultar)
   try{ document.getElementById('uiHideBtn').textContent = '◀'; }catch(_){ }
-  // Al expandir el dock, ocultar minimapa para que no se monten
-  try{ document.getElementById('mini').style.display = 'none'; }catch(_){ }
+  // Mantener minimapa visible siempre (queda debajo del UI)
+  try{ document.getElementById('mini').style.display = 'block'; }catch(_){ }
     }catch(e){}
   };
   panelDepositAll.onclick = ()=>{ if(!USER_ID){ toast('Crea tu persona primero.'); return; } const u=agents.find(a=>a.id===USER_ID); if(!u) return; u.money += (u.pendingDeposit||0); u.pendingDeposit=0; try{ window.updateBankPanel && window.updateBankPanel(); }catch(e){} try{ window.saveProgress && window.saveProgress({ money: Math.floor(u.money) }); }catch(e){} toast('Depósito realizado.'); };
@@ -2508,7 +2508,8 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     // Controles de zoom eliminados
     try{
       const collapsed = document.getElementById('uiDock')?.classList.contains('collapsed-left');
-      document.getElementById('mini').style.display = (on && collapsed) ? 'block' : 'none';
+      // Minimap siempre visible (debajo del UI por z-index)
+      document.getElementById('mini').style.display = on ? 'block' : 'none';
       // Ajustar flecha según estado: visible -> '◀' (ocultar); colapsado -> '▶' (abrir)
       document.getElementById('uiHideBtn').textContent = collapsed ? '▶' : '◀';
     }catch(_){ mini.style.display = on ? 'block':'none'; }
