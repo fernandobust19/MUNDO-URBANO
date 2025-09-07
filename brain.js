@@ -9,7 +9,7 @@ const DB_PATH = path.join(__dirname, 'brain.db.json');
 const LEDGER_PATH = path.join(__dirname, 'saldos.ledger.json');
 
 let db = {
-	users: [], // { id, username, passHash, createdAt, lastLoginAt }
+	users: [], // { id, username, passHash, createdAt, lastLoginAt, gender?, country?, email?, phone? }
 	// userId -> { money, bank, vehicle, vehicles:[], shops:[], houses:[], name, avatar, likes:[], gender, age }
 	progress: {},
 	activityLog: [] // { ts, type, userId, details }
@@ -121,7 +121,7 @@ function ensureProgress(userId) {
 	return p;
 }
 
-function registerUser(username, password) {
+function registerUser(username, password, extra={}) {
 	const name = String(username || '').trim();
 	if (!name || name.length < 3) return { ok: false, msg: 'Nombre inválido' };
 	if (String(password || '').length < 4) return { ok: false, msg: 'Contraseña muy corta' };
@@ -129,11 +129,21 @@ function registerUser(username, password) {
 
 	const passHash = bcrypt.hashSync(String(password), 10);
 	const user = { id: uid(), username: name, passHash, createdAt: Date.now(), lastLoginAt: null };
+	// Guardar campos adicionales opcionales
+	try{
+		if(extra && typeof extra === 'object'){
+			const { country, email, phone, gender } = extra;
+			if(country) user.country = String(country);
+			if(email) user.email = String(email);
+			if(phone) user.phone = String(phone);
+			if(gender && ['M','F','X'].includes(String(gender))) user.gender = String(gender);
+		}
+	}catch(_){ }
 	db.users.push(user);
 	ensureProgress(user.id);
 	log('register', user.id, { username: name });
 	schedulePersist();
-	return { ok: true, user: { id: user.id, username: user.username } };
+	return { ok: true, user: { id: user.id, username: user.username, gender: user.gender||null, country: user.country||null, email: user.email||null, phone: user.phone||null } };
 }
 
 function verifyLogin(username, password) {
@@ -144,7 +154,7 @@ function verifyLogin(username, password) {
 	user.lastLoginAt = Date.now();
 	log('login', user.id, { username: user.username });
 	schedulePersist();
-	return { ok: true, user: { id: user.id, username: user.username } };
+	return { ok: true, user: { id: user.id, username: user.username, gender: user.gender||null, country: user.country||null, email: user.email||null, phone: user.phone||null } };
 }
 
 function getProgress(userId) {
@@ -157,7 +167,7 @@ function updateProgress(userId, patch) {
 	const p = ensureProgress(userId);
 	if (patch == null || typeof patch !== 'object') return { ok: false };
 	// Solo campos permitidos
-	const allowed = ['money', 'bank', 'vehicle', 'vehicles', 'shops', 'houses', 'name', 'avatar', 'likes', 'gender', 'age'];
+	const allowed = ['money', 'bank', 'vehicle', 'vehicles', 'shops', 'houses', 'name', 'avatar', 'likes', 'gender', 'age', 'country', 'email', 'phone'];
 	for (const k of allowed) {
 		if (k in patch) {
 			if (k === 'shops' || k === 'houses' || k === 'vehicles' || k === 'likes') {

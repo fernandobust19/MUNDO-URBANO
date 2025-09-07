@@ -77,11 +77,11 @@ function getSessionUserId(req){ const raw = req.cookies?.[SESS_COOKIE]; const ui
 // API de autenticación
 app.post('/api/register', (req, res) => {
   try{
-    const { username, password } = req.body || {};
-    const out = brain.registerUser(username, password);
+  const { username, password, country, email, phone, gender } = req.body || {};
+  const out = brain.registerUser(username, password, { country, email, phone, gender });
     if(!out.ok) return res.status(400).json(out);
     setSession(res, out.user.id);
-    return res.json({ ok: true, user: out.user, progress: brain.getProgress(out.user.id) });
+  return res.json({ ok: true, user: out.user, progress: brain.getProgress(out.user.id) });
   }catch(e){ return res.status(500).json({ ok:false, msg:'Error' }); }
 });
 
@@ -104,7 +104,7 @@ app.get('/api/me', (req, res) => {
   if(!uid) return res.status(401).json({ ok:false });
   const user = brain.getUserById(uid);
   if(!user) return res.status(401).json({ ok:false });
-  return res.json({ ok:true, user: { id:user.id, username:user.username }, progress: brain.getProgress(uid) });
+  return res.json({ ok:true, user: { id:user.id, username:user.username, gender: user.gender||null, country: user.country||null, email: user.email||null, phone: user.phone||null }, progress: brain.getProgress(uid) });
 });
 
 

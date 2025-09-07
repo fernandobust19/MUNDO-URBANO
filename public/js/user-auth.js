@@ -20,7 +20,7 @@
 		wrap.style.backgroundAttachment = 'fixed';
 		wrap.innerHTML = `
 			<form id="authForm" autocomplete="on">
-			<div class="modalBox" style="width:min(460px,94vw);">
+			<div class="modalBox" style="width:min(520px,94vw);">
 				<div style="display:flex;align-items:center;gap:12px">
 					<img src="/login/creador.png" alt="creador" style="width:64px;height:64px;border-radius:8px;border:1px solid #2b3553;background:#fff;object-fit:cover"/>
 					<div>
@@ -35,6 +35,51 @@
 				<div class="field" style="margin-top:6px">
 					<label>Contraseña</label>
 					<input id="authPass" name="password" class="input" type="password" placeholder="••••" maxlength="64" autocomplete="current-password">
+				</div>
+				<!-- Campos adicionales para registro de nuevos usuarios -->
+				<div class="field" style="margin-top:10px">
+					<label>País</label>
+					<select id="authCountry" class="select">
+						<option value="" selected>— Selecciona tu país —</option>
+						<option>Argentina</option>
+						<option>Bolivia</option>
+						<option>Chile</option>
+						<option>Colombia</option>
+						<option>Costa Rica</option>
+						<option>Cuba</option>
+						<option>Ecuador</option>
+						<option>El Salvador</option>
+						<option>España</option>
+						<option>Guatemala</option>
+						<option>Honduras</option>
+						<option>México</option>
+						<option>Nicaragua</option>
+						<option>Panamá</option>
+						<option>Paraguay</option>
+						<option>Perú</option>
+						<option>Puerto Rico</option>
+						<option>República Dominicana</option>
+						<option>Uruguay</option>
+						<option>Venezuela</option>
+						<option>Otro</option>
+					</select>
+					<span class="hint">País, correo y género son obligatorios. Teléfono es opcional.</span>
+				</div>
+				<div class="field" style="margin-top:6px">
+					<label>Correo electrónico (opcional)</label>
+					<input id="authEmail" class="input" type="email" placeholder="tucorreo@ejemplo.com" maxlength="120" autocomplete="email">
+				</div>
+				<div class="field" style="margin-top:6px">
+					<label>Teléfono (opcional)</label>
+					<input id="authPhone" class="input" type="tel" placeholder="Ej: +57 300 123 4567" maxlength="24" autocomplete="tel">
+				</div>
+				<div class="field" style="margin-top:6px">
+					<label>Género</label>
+					<select id="authGender" class="select">
+						<option value="" selected>— Selecciona género —</option>
+						<option value="M">Hombre</option>
+						<option value="F">Mujer</option>
+					</select>
 				</div>
 				<div id="authErr" class="err" style="display:none;margin-top:6px"></div>
 				<div class="actions" style="margin-top:10px">
@@ -62,8 +107,18 @@
 		setErr('');
 		const u = document.getElementById('authUser').value.trim();
 		const p = document.getElementById('authPass').value;
+		const country = (document.getElementById('authCountry')?.value || '').trim();
+		const email = (document.getElementById('authEmail')?.value || '').trim();
+		const phone = (document.getElementById('authPhone')?.value || '').trim();
+		const gender = (document.getElementById('authGender')?.value || '').trim();
+		// Validaciones: país, correo y género obligatorios; teléfono opcional
+		if(!country){ setErr('Selecciona tu país'); return; }
+		if(!email){ setErr('Ingresa tu correo'); return; }
+		if(!/^\S+@\S+\.\S+$/.test(email)){ setErr('Correo inválido'); return; }
+		if(phone && (phone.replace(/[^0-9]/g,'').length < 7)){ setErr('Teléfono inválido'); return; }
+		if(!['M','F'].includes(gender)) { setErr('Selecciona género (Hombre o Mujer)'); return; }
 		try{
-			const out = await call('POST', '/api/register', { username: u, password: p });
+			const out = await call('POST', '/api/register', { username: u, password: p, country, email, phone, gender });
 			applyLogin(out);
 		}catch(e){ setErr(e.message || 'No se pudo registrar'); }
 	}
@@ -81,6 +136,18 @@
 		try {
 			window.__user = out.user;
 			window.__progress = out.progress || {};
+			// Sincronizar género al progreso:
+			// 1) Si el usuario tiene M/F y al progreso le falta, úsalo.
+			// 2) Si el usuario no tiene M/F pero en el modal se eligió uno válido, tomarlo para esta sesión.
+			try{
+				const chosen = (document.getElementById('authGender')?.value || '').trim();
+				const userG = out.user?.gender;
+				if(userG && ['M','F'].includes(userG) && (!window.__progress.gender || !['M','F'].includes(window.__progress.gender))){
+					window.__progress.gender = userG;
+				}else if((!userG || !['M','F'].includes(userG)) && ['M','F'].includes(chosen)){
+					window.__progress.gender = chosen; // preferir lo recién seleccionado
+				}
+			}catch(_){ }
 			// Reflejar nombre de usuario
 			const userName = document.getElementById('userName');
 			if(userName) userName.textContent = out.user.username;
@@ -98,7 +165,18 @@
 				const fName = document.getElementById('fName');
 				if(fName && prog.name){ fName.value = prog.name; }
 				const fGender = document.getElementById('fGender');
-				if(fGender && prog.gender){ fGender.value = prog.gender; }
+				if(fGender){
+					const chosen = (document.getElementById('authGender')?.value || '').trim();
+					const best = (prog.gender && ['M','F'].includes(prog.gender)) ? prog.gender
+						: (['M','F'].includes(out.user?.gender) ? out.user.gender
+						: (['M','F'].includes(chosen) ? chosen : ''));
+					if(best) fGender.value = best;
+				}
+				// Prefill popup extra fields si existen
+				try{ const el = document.getElementById('authCountry'); if(el && out.user?.country) el.value = out.user.country; }catch(e){}
+				try{ const el = document.getElementById('authEmail'); if(el && out.user?.email) el.value = out.user.email; }catch(e){}
+				try{ const el = document.getElementById('authPhone'); if(el && out.user?.phone) el.value = out.user.phone; }catch(e){}
+				try{ const el = document.getElementById('authGender'); if(el && out.user?.gender) el.value = out.user.gender; }catch(e){}
 				const fAge = document.getElementById('fAge');
 				if(fAge && typeof prog.age === 'number'){ fAge.value = String(prog.age); }
 				const likesWrap = document.getElementById('likesWrap');

@@ -859,6 +859,50 @@ BG_IMG.src = '/assets/fondo1.jpg';
     return rectsOverlap(rectA, paddedB);
   };
 
+  // ===== Cobertura de exploración (scope global) =====
+  // Las versiones anteriores quedaron dentro de removeByLabels(), lo que hacía
+  // que no existieran en el ámbito global. Las definimos aquí para que el bucle
+  // principal pueda usarlas sin ReferenceError.
+  let __EXPLORE_GRID = null; // matriz booleana [sy][sx]
+  function ensureExploreGrid(){
+    const sx = CFG.EXPLORE_SECTORS_X, sy = CFG.EXPLORE_SECTORS_Y;
+    if(!__EXPLORE_GRID || __EXPLORE_GRID.length!==sy || __EXPLORE_GRID[0]?.length!==sx){
+      __EXPLORE_GRID = Array.from({length: sy}, ()=> Array.from({length: sx}, ()=> false));
+    }
+    return __EXPLORE_GRID;
+  }
+  function markVisitedAt(x, y){
+    const grid = ensureExploreGrid();
+    const sx = CFG.EXPLORE_SECTORS_X, sy = CFG.EXPLORE_SECTORS_Y;
+    const ix = Math.min(sx-1, Math.max(0, Math.floor(x / (WORLD.w / sx))));
+    const iy = Math.min(sy-1, Math.max(0, Math.floor(y / (WORLD.h / sy))));
+    grid[iy][ix] = true;
+  }
+  function nextUnvisitedTarget(){
+    const grid = ensureExploreGrid();
+    const sx = CFG.EXPLORE_SECTORS_X, sy = CFG.EXPLORE_SECTORS_Y;
+    const cells = [];
+    for(let iy=0; iy<sy; iy++){
+      for(let ix=0; ix<sx; ix++){
+        if(!grid[iy][ix]){
+          const cx = (ix + 0.5) * (WORLD.w / sx);
+          const cy = (iy + 0.5) * (WORLD.h / sy);
+          cells.push({ix, iy, x: cx, y: cy});
+        }
+      }
+    }
+    if(cells.length===0){
+      for(let iy=0; iy<sy; iy++) for(let ix=0; ix<sx; ix++) grid[iy][ix] = false;
+      return { x: WORLD.w/2, y: WORLD.h/2 };
+    }
+    const k = Math.min(8, cells.length);
+    for(let i=cells.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [cells[i],cells[j]]=[cells[j],cells[i]]; }
+    const sample = cells.slice(0, k);
+    const px = Math.random()*WORLD.w, py = Math.random()*WORLD.h;
+    sample.sort((a,b)=> (Math.hypot(b.x-px,b.y-py) - Math.hypot(a.x-px,a.y-py)) );
+    return { x: sample[0].x, y: sample[0].y };
+  }
+
   function isOnRoad(agent) {
     const pt = { x: agent.x, y: agent.y };
     if (avenidas.some(r => inside(pt, r))) return true;
@@ -2602,7 +2646,17 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   if(typeof saved.bank === 'number') try{ user.bank = Math.max(0, Math.floor(saved.bank)); }catch(e){}
   // Guardar inmediatamente el perfil elegido para futuras sesiones
   try{
-    const patch = { name: user.name, avatar: user.avatar, likes: (user.likes||[]).slice(0,5), gender: user.gender, age: age };
+  const patch = { name: user.name, avatar: user.avatar, likes: (user.likes||[]).slice(0,5), gender: user.gender, age: age };
+  try{ if(fGender && (!fGender.value || !['M','F'].includes(fGender.value)) && ['M','F'].includes(user.gender)){ fGender.value = user.gender; } }catch(_){ }
+    // Si faltan país/correo/teléfono en el progreso, intentar tomarlos del modal de autenticación
+    try{
+      const authCountry = document.getElementById('authCountry');
+      const authEmail = document.getElementById('authEmail');
+      const authPhone = document.getElementById('authPhone');
+      if(authCountry && authCountry.value && !(window.__progress && 'country' in window.__progress)) patch.country = authCountry.value;
+      if(authEmail && authEmail.value && !(window.__progress && 'email' in window.__progress)) patch.email = authEmail.value;
+      if(authPhone && authPhone.value && authPhone.value.trim().length && !(window.__progress && 'phone' in window.__progress)) patch.phone = authPhone.value;
+    }catch(_){ }
     window.__progress = Object.assign({}, window.__progress||{}, patch);
     window.saveProgress && window.saveProgress(patch);
   }catch(e){}
@@ -2682,7 +2736,20 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   const startHandler = ()=>{
     // Seguridad extra: exigir sesión iniciada antes de crear personaje
     if(!window.__user){ toast('Inicia sesión primero.'); return; }
-  const name=fName.value.trim(),gender=fGender.value,age=Math.max(20, Math.min(89, parseInt(fAge.value||'20',10))),likes=getChecked().map(x=>x.value),usd=fUsd.value;
+  // Determinar género desde el registro (M/F) con fallbacks: campo oculto -> progreso -> usuario -> selección del modal
+  let gender = (fGender.value||'').trim();
+  // Preferir el género del progreso por encima del usuario (es el perfil activo de juego)
+  try{ if((!gender || !['M','F'].includes(gender)) && window.__progress && window.__progress.gender){ gender = String(window.__progress.gender); } }catch(_){ }
+  // Luego intentar con el perfil del usuario
+  try{ if((!gender || !['M','F'].includes(gender)) && window.__user && window.__user.gender){ gender = String(window.__user.gender); } }catch(_){ }
+  // Último recurso: si el modal sigue en el DOM y tiene un valor válido, úsalo
+  try{ if((!gender || !['M','F'].includes(gender))){ const el = document.getElementById('authGender'); if(el && ['M','F'].includes(el.value)) gender = el.value; } }catch(_){ }
+  const name=fName.value.trim();
+  const age=Math.max(20, Math.min(89, parseInt(fAge.value||'20',10)));
+  const likes=getChecked().map(x=>x.value);
+  const usd=fUsd.value;
+  if(!['M','F'].includes(gender)){ toast('Selecciona género en el registro (Hombre o Mujer).'); return; }
+  // Campos extra (país/correo/teléfono) se piden en el registro; aquí no se vuelven a pedir ni validar
     if(!name || likes.length!==5){ errBox.style.display='inline-block'; toast('Completa nombre y marca 5 gustos.'); return; }
     errBox.style.display='none';
     startWorldWithUser({name,gender,age,likes,usd});
