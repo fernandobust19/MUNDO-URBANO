@@ -12,7 +12,14 @@
       "username": "fernando2000b@hotmail.co",
       "passHash": "$2a$10$ksVBv6F3nX3LJQv1d3odD.zQ5kSOoL7C8opObA5sm2Ur2.dhQAwLW",
       "createdAt": 1757201570350,
-      "lastLoginAt": 1757217358304
+      "lastLoginAt": 1757218020121
+    },
+    {
+      "id": "a2e1b1f6-c6d7-4c58-b1a1-63198c47a281",
+      "username": "lucas",
+      "passHash": "$2a$10$xCRxvIJP78y6vnAEJk1p3Of7Pq1j8r1eudZkx4TkqSNykPwGqYC9i",
+      "createdAt": 1757218164449,
+      "lastLoginAt": null
     }
   ],
   "progress": {
@@ -51,6 +58,36 @@
       "age": null
     },
     "db1ef90b-7763-4f2a-93e7-381cdfc751c5": {
+      "money": 158,
+      "bank": 0,
+      "vehicle": "bicicleta",
+      "vehicles": [
+        "bicicleta"
+      ],
+      "shops": [
+        {
+          "x": 1777.809004999032,
+          "y": 1029.52538548894,
+          "w": 120,
+          "h": 80,
+          "kind": "panadería",
+          "ownerId": "A90830"
+        }
+      ],
+      "houses": [],
+      "name": "fernando",
+      "avatar": "assets/avatar1.png",
+      "likes": [
+        "baile",
+        "tecnología",
+        "yoga",
+        "correr",
+        "pizza"
+      ],
+      "gender": "U",
+      "age": 21
+    },
+    "a2e1b1f6-c6d7-4c58-b1a1-63198c47a281": {
       "money": 158,
       "bank": 0,
       "vehicle": "bicicleta",
@@ -2104,6 +2141,102 @@
       "ts": 1757217375902,
       "type": "progress_update",
       "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757218020121,
+      "type": "login",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "username": "fernando2000b@hotmail.co"
+      }
+    },
+    {
+      "ts": 1757218085531,
+      "type": "progress_update",
+      "userId": "db1ef90b-7763-4f2a-93e7-381cdfc751c5",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757218164449,
+      "type": "register",
+      "userId": "a2e1b1f6-c6d7-4c58-b1a1-63198c47a281",
+      "details": {
+        "username": "lucas"
+      }
+    },
+    {
+      "ts": 1757218177945,
+      "type": "progress_update",
+      "userId": "a2e1b1f6-c6d7-4c58-b1a1-63198c47a281",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757218208029,
+      "type": "progress_update",
+      "userId": "a2e1b1f6-c6d7-4c58-b1a1-63198c47a281",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age"
+        ]
+      }
+    },
+    {
+      "ts": 1757218484337,
+      "type": "progress_update",
+      "userId": "a2e1b1f6-c6d7-4c58-b1a1-63198c47a281",
       "details": {
         "keys": [
           "money",

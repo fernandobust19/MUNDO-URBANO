@@ -45,24 +45,39 @@
 
     /* ===== FORMULARIO ===== */
   const formBar = $("#formBar"), fGender=$("#fGender"), fName=$("#fName"), fAge=$("#fAge"), fUsd=$("#fUsd");
-  // Enforce age rules: default 20, min 20, max 89
+  // Enforce age rules: editable typing, clamp on blur/change, keep 20–89
   (function enforceAgeField(){
     try{
       if(!fAge) return;
-  // HTML constraints (in case DOM loaded before patch)
-  fAge.min = '20'; fAge.max = '89'; fAge.step = '1';
-  if(!fAge.value || Number(fAge.value) < 20) fAge.value = '20';
-  const clamp = (v)=> Math.max(20, Math.min(89, v|0));
-      const onChange = ()=>{
-  let v = clamp(parseInt(fAge.value||'20',10));
-        // update field within bounds only (allow increasing or decreasing within 20–89)
-        fAge.value = String(v);
+      // HTML constraints
+      fAge.min = '20'; fAge.max = '89'; fAge.step = '1';
+      if(!fAge.value) fAge.value = '20';
+      const clamp = (v)=> Math.max(20, Math.min(89, (v|0)));
+      // Permitir escribir/borrar libremente; sólo limpiar caracteres no numéricos
+      const onInput = ()=>{
+        const raw = fAge.value;
+        if(raw === '') return; // permitir vacío mientras escribe
+        const digits = raw.replace(/[^0-9]/g, '');
+        if(digits !== raw) fAge.value = digits;
       };
-      fAge.addEventListener('input', onChange);
-      fAge.addEventListener('change', onChange);
-      // Wheel adjustments should respect bounds
-      fAge.addEventListener('wheel', (e)=>{ e.preventDefault(); onChange(); }, { passive:false });
-    }catch(_){}
+      // Al salir del campo o confirmar cambio, ajustar a rango
+      const onCommit = ()=>{
+        let v = parseInt(fAge.value || '20', 10);
+        if(Number.isNaN(v)) v = 20;
+        fAge.value = String(clamp(v));
+      };
+      fAge.addEventListener('input', onInput);
+      fAge.addEventListener('change', onCommit);
+      fAge.addEventListener('blur', onCommit);
+      // Rueda del mouse: incrementar/decrementar respetando límites
+      fAge.addEventListener('wheel', (e)=>{
+        e.preventDefault();
+        let v = parseInt(fAge.value || '20', 10);
+        if(Number.isNaN(v)) v = 20;
+        v += (e.deltaY > 0 ? -1 : 1);
+        fAge.value = String(clamp(v));
+      }, { passive:false });
+    }catch(_){ }
   })();
   const btnBuy500 = document.getElementById('btnBuy500');
   const btnUploadProof = document.getElementById('btnUploadProof');
@@ -2655,7 +2670,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   const startHandler = ()=>{
     // Seguridad extra: exigir sesión iniciada antes de crear personaje
     if(!window.__user){ toast('Inicia sesión primero.'); return; }
-  const name=fName.value.trim(),gender=fGender.value,age=Math.max(20, Math.min(90, parseInt(fAge.value||'20',10))),likes=getChecked().map(x=>x.value),usd=fUsd.value;
+  const name=fName.value.trim(),gender=fGender.value,age=Math.max(20, Math.min(89, parseInt(fAge.value||'20',10))),likes=getChecked().map(x=>x.value),usd=fUsd.value;
     if(!name || likes.length!==5){ errBox.style.display='inline-block'; toast('Completa nombre y marca 5 gustos.'); return; }
     errBox.style.display='none';
     startWorldWithUser({name,gender,age,likes,usd});
