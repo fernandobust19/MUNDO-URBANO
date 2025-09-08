@@ -17,6 +17,8 @@ const io = require('socket.io')(server, {
 });
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+// Directorio de comprobantes (configurable). En producción usa un disco persistente.
+const PAGOS_DIR = process.env.PAGOS_DIR || path.join(__dirname, 'pagos');
 // Pago sencillo: secret compartido para webhooks y generación de intents
 const PAYMENT_SECRET = process.env.PAYMENT_SECRET || 'dev-pay-secret';
 const PAY_BASE_LINK = process.env.PAY_BASE_LINK || 'https://ppls.me/ptnd6qxvmV1Km0yys7Hg';
@@ -56,6 +58,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/login', express.static(path.join(__dirname, 'login')));
 // Servir assets descargados
 app.use('/game-assets', express.static(path.join(__dirname, 'game-assets')));
+// Exponer carpeta de comprobantes (si no existe, crearla)
+try{ if(!fs.existsSync(PAGOS_DIR)) fs.mkdirSync(PAGOS_DIR, { recursive:true }); }catch(_){}
+app.use('/pagos', express.static(PAGOS_DIR));
 // Aumentar límite del body JSON para permitir data URLs de avatar
 app.use(express.json({ limit: '12mb' }));
 app.use(cookieParser());
@@ -256,7 +261,7 @@ app.post('/api/pay/upload-proof', async (req, res) => {
       return res.status(400).json({ ok:false, msg:'Formato no permitido. Usa JPG o PNG.' });
     }
   const ts = new Date().toISOString().replace(/[:]/g,'-');
-    const outDir = path.join(__dirname, 'pagos');
+    const outDir = PAGOS_DIR;
     if(!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
     const outName = `${ts}-${uid}.${ext}`;
     const outPath = path.join(outDir, outName);
@@ -265,7 +270,7 @@ app.post('/api/pay/upload-proof', async (req, res) => {
     // Guardar pequeño .json con metadatos
   const userObj = brain.getUserById(uid);
   const meta = { ts: Date.now(), userId: uid, username: (userObj && userObj.username) || null, filename: safeName, savedAs: outName, mime: mime||null };
-    fs.writeFileSync(path.join(outDir, `${ts}-${uid}.json`), JSON.stringify(meta, null, 2));
+  fs.writeFileSync(path.join(outDir, `${ts}-${uid}.json`), JSON.stringify(meta, null, 2));
       console.log(`[upload-proof] saved ${outName} for user ${uid}`);
       // Enviar email si está configurado SMTP
       if(mailer){
@@ -284,17 +289,46 @@ app.post('/api/pay/upload-proof', async (req, res) => {
   }catch(e){ console.error('upload-proof error', e); return res.status(500).json({ ok:false }); }
 });
 
+// 4b) Registrar número de comprobante (sin imagen) -> guarda JSON en /pagos
+app.post('/api/pay/upload-proof-number', (req, res) => {
+  try{
+    const uid = getSessionUserId(req);
+    if(!uid) return res.status(401).json({ ok:false, msg:'No autenticado' });
+    const receiptNumber = String(req.body?.receiptNumber||'').trim();
+    const username = String(req.body?.username||'').trim();
+    if(!receiptNumber) return res.status(400).json({ ok:false, msg:'Falta número de comprobante' });
+    if(!username) return res.status(400).json({ ok:false, msg:'Falta nombre de usuario' });
+    // normalizar: solo caracteres seguros en archivo, pero conservar número y username originales en JSON
+    const safeNum = receiptNumber.replace(/[^a-zA-Z0-9_.-]/g,'_').slice(0, 64) || 'comprobante';
+    const tsIso = new Date().toISOString().replace(/[:]/g,'-');
+    const outDir = PAGOS_DIR;
+    try{ if(!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive:true }); }catch(_){ }
+    const base = `${tsIso}-${uid}-num-${safeNum}`;
+    const meta = {
+      ts: Date.now(),
+      userId: uid,
+      username,
+      receiptNumber,
+      type: 'number-only'
+    };
+    const outPath = path.join(outDir, `${base}.json`);
+    fs.writeFileSync(outPath, JSON.stringify(meta, null, 2));
+    console.log(`[upload-proof-number] saved ${base}.json for user ${uid}`);
+    return res.json({ ok:true, saved: `pagos/${base}.json` });
+  }catch(e){ console.error('upload-proof-number error', e); return res.status(500).json({ ok:false }); }
+});
+
   // Listar comprobantes del usuario autenticado (solo metadatos)
   app.get('/api/pay/proofs', (req, res) => {
     try{
       const uid = getSessionUserId(req);
       if(!uid) return res.status(401).json({ ok:false });
-      const outDir = path.join(__dirname, 'pagos');
+  const outDir = PAGOS_DIR;
       if(!fs.existsSync(outDir)) return res.json({ ok:true, items: [] });
-      const files = fs.readdirSync(outDir).filter(f => typeof f === 'string' && f.endsWith(`${uid}.json`));
+      const files = fs.readdirSync(outDir).filter(f => typeof f === 'string' && f.toLowerCase().endsWith('.json'));
       const items = [];
       for(const f of files){
-        try{ const meta = JSON.parse(fs.readFileSync(path.join(outDir, f), 'utf8')); items.push(meta); }catch(_){ }
+        try{ const meta = JSON.parse(fs.readFileSync(path.join(outDir, f), 'utf8')); if(meta && String(meta.userId||'') === String(uid)) items.push(meta); }catch(_){ }
       }
       // Ordenar por ts desc
       items.sort((a,b)=> (b.ts||0)-(a.ts||0));

@@ -1,83 +1,39 @@
 {
   "users": [
     {
-      "id": "bc2f0468-2a69-4f6c-95a5-c384d6a50452",
+      "id": "dd2065d9-9d7c-4759-9ad7-2b5ccd7615fd",
       "username": "fernando",
-      "passHash": "$2a$10$pHltoQ1CCP6/mc2fZxvd4ufkgZSnsqsi4UAjCTm1zivcMuqjNRlaS",
-      "createdAt": 1757283010418,
-      "lastLoginAt": 1757283481631,
+      "passHash": "$2a$10$AgEKkL.EhekltERjvIVVD.UXhHvO.w8I2geqGP8hUWXWPq3WI4BQm",
+      "createdAt": 1757294051682,
+      "lastLoginAt": null,
       "country": "Ecuador",
       "email": "fernando2000b@hotmail.com",
       "phone": "0995986366",
       "gender": "M"
-    },
-    {
-      "id": "2bcc1683-e141-413a-8b4e-e186b838ed23",
-      "username": "fernando1",
-      "passHash": "$2a$10$jtQAPbyI2rGVi3X2E1I2QO.W46WUdlW1/9TaW3VT2xxQ8aVVWN6QO",
-      "createdAt": 1757288823573,
-      "lastLoginAt": 1757289369066,
-      "country": "El Salvador",
-      "email": "fernando2000b@hotmail.com",
-      "gender": "M"
     }
   ],
   "progress": {
-    "bc2f0468-2a69-4f6c-95a5-c384d6a50452": {
+    "dd2065d9-9d7c-4759-9ad7-2b5ccd7615fd": {
       "money": 400,
       "bank": 0,
       "vehicle": null,
       "vehicles": [],
-      "shops": [
-        {
-          "x": 493,
-          "y": 273,
-          "w": 120,
-          "h": 80,
-          "kind": "panadería",
-          "ownerId": "A179897"
-        }
-      ],
+      "shops": [],
       "houses": [],
-      "name": "FER",
+      "name": "fernando",
       "avatar": "assets/avatar2.png",
       "likes": [
-        "viajes",
-        "baloncesto",
-        "historia",
-        "electrónica",
-        "comida"
+        "cine",
+        "fotografía",
+        "montaña",
+        "yoga",
+        "teatro"
       ],
       "gender": "M",
       "age": 20,
       "country": "Ecuador",
       "email": "fernando2000b@hotmail.com",
       "phone": "0995986366"
-    },
-    "c30d0f5d-7e26-4a90-adee-d813428a38e3": {
-      "money": 0,
-      "bank": 0,
-      "vehicle": null,
-      "vehicles": [],
-      "shops": [
-        {
-          "x": 493,
-          "y": 273,
-          "w": 120,
-          "h": 80,
-          "kind": "panadería",
-          "ownerId": "A179897",
-          "id": "S1",
-          "cashbox": 0,
-          "createdAt": 1757283047646
-        }
-      ],
-      "houses": [],
-      "name": null,
-      "avatar": null,
-      "likes": [],
-      "gender": null,
-      "age": null
     },
     "2bcc1683-e141-413a-8b4e-e186b838ed23": {
       "money": 400,
@@ -86,19 +42,11 @@
       "vehicles": [],
       "shops": [],
       "houses": [],
-      "name": "fernando2000",
-      "avatar": "assets/avatar2.png",
-      "likes": [
-        "cocina",
-        "videojuegos",
-        "meditación",
-        "correr",
-        "libros"
-      ],
-      "gender": "M",
-      "age": 20,
-      "country": "El Salvador",
-      "email": "fernando2000b@hotmail.com"
+      "name": null,
+      "avatar": null,
+      "likes": [],
+      "gender": null,
+      "age": null
     }
   },
   "government": {
@@ -107,37 +55,17 @@
   },
   "activityLog": [
     {
-      "ts": 1757283010418,
+      "ts": 1757294051682,
       "type": "register",
-      "userId": "bc2f0468-2a69-4f6c-95a5-c384d6a50452",
+      "userId": "dd2065d9-9d7c-4759-9ad7-2b5ccd7615fd",
       "details": {
         "username": "fernando"
       }
     },
     {
-      "ts": 1757283021406,
+      "ts": 1757294319499,
       "type": "progress_update",
-      "userId": "bc2f0468-2a69-4f6c-95a5-c384d6a50452",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age"
-        ]
-      }
-    },
-    {
-      "ts": 1757283026677,
-      "type": "progress_update",
-      "userId": "bc2f0468-2a69-4f6c-95a5-c384d6a50452",
+      "userId": "dd2065d9-9d7c-4759-9ad7-2b5ccd7615fd",
       "details": {
         "keys": [
           "money",
@@ -154,105 +82,6 @@
           "country",
           "email",
           "phone"
-        ]
-      }
-    },
-    {
-      "ts": 1757283047647,
-      "type": "shop_add",
-      "userId": "c30d0f5d-7e26-4a90-adee-d813428a38e3",
-      "details": {
-        "id": "S1"
-      }
-    },
-    {
-      "ts": 1757283048079,
-      "type": "progress_update",
-      "userId": "bc2f0468-2a69-4f6c-95a5-c384d6a50452",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "country",
-          "email",
-          "phone"
-        ]
-      }
-    },
-    {
-      "ts": 1757283481631,
-      "type": "login",
-      "userId": "bc2f0468-2a69-4f6c-95a5-c384d6a50452",
-      "details": {
-        "username": "fernando"
-      }
-    },
-    {
-      "ts": 1757288823573,
-      "type": "register",
-      "userId": "2bcc1683-e141-413a-8b4e-e186b838ed23",
-      "details": {
-        "username": "fernando1"
-      }
-    },
-    {
-      "ts": 1757288884517,
-      "type": "progress_update",
-      "userId": "2bcc1683-e141-413a-8b4e-e186b838ed23",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "country",
-          "email"
-        ]
-      }
-    },
-    {
-      "ts": 1757289369066,
-      "type": "login",
-      "userId": "2bcc1683-e141-413a-8b4e-e186b838ed23",
-      "details": {
-        "username": "fernando1"
-      }
-    },
-    {
-      "ts": 1757289441584,
-      "type": "progress_update",
-      "userId": "2bcc1683-e141-413a-8b4e-e186b838ed23",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "country",
-          "email"
         ]
       }
     }
