@@ -310,9 +310,16 @@ app.post('/api/pay/upload-proof-number', async (req, res) => {
 
     // Selección de destino en función de STORAGE_MODE (default: ephemeral sin persistir)
     if(cfg.storageMode === 'sheets'){
-      const { appendRow } = require('./server/googleSheets.service.js');
-      await appendRow({ spreadsheetId: cfg.sheetId, sheetName: cfg.sheetTab, values: [record.iso, record.userId, record.username, record.receiptNumber] });
-      return res.json({ ok:true, storage: 'sheets' });
+      try{
+        if(!cfg.sheetId) return res.status(500).json({ ok:false, msg:'GSHEET_ID no configurado' });
+        if(!process.env.GOOGLE_SA_JSON) return res.status(500).json({ ok:false, msg:'GOOGLE_SA_JSON no configurado' });
+        const { appendRow } = require('./server/googleSheets.service.js');
+        await appendRow({ spreadsheetId: cfg.sheetId, sheetName: cfg.sheetTab, values: [record.iso, record.userId, record.username, record.receiptNumber] });
+        return res.json({ ok:true, storage: 'sheets' });
+      }catch(e){
+        console.error('sheets append error:', e && e.message ? e.message : e);
+        return res.status(500).json({ ok:false, msg: 'Sheets error: ' + (e && e.message ? e.message : 'fail') });
+      }
     }
     if(cfg.storageMode === 'github'){
       const { publishDailyHtml } = require('./server/githubPublish.service.js');

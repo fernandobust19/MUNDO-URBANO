@@ -5,7 +5,7 @@ module.exports = {
   // Sheets
   gsaJson: process.env.GOOGLE_SA_JSON,
   sheetId: process.env.GSHEET_ID,
-  sheetTab: process.env.GSHEET_TAB || 'Hoja1',
+  sheetTab: process.env.GSHEET_TAB || 'Hoja 1',
   // GitHub
   ghToken: process.env.GH_TOKEN,
   ghRepo: process.env.GH_REPO,          // owner/repo
