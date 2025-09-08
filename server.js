@@ -289,8 +289,8 @@ app.post('/api/pay/upload-proof', async (req, res) => {
   }catch(e){ console.error('upload-proof error', e); return res.status(500).json({ ok:false }); }
 });
 
-// 4b) Registrar número de comprobante (sin imagen) -> guarda JSON en /pagos
-app.post('/api/pay/upload-proof-number', (req, res) => {
+// 4b) Registrar número de comprobante (sin imagen) -> Google Sheets si está configurado; si no, JSON en /pagos
+app.post('/api/pay/upload-proof-number', async (req, res) => {
   try{
     const uid = getSessionUserId(req);
     if(!uid) return res.status(401).json({ ok:false, msg:'No autenticado' });
@@ -298,21 +298,32 @@ app.post('/api/pay/upload-proof-number', (req, res) => {
     const username = String(req.body?.username||'').trim();
     if(!receiptNumber) return res.status(400).json({ ok:false, msg:'Falta número de comprobante' });
     if(!username) return res.status(400).json({ ok:false, msg:'Falta nombre de usuario' });
-    // normalizar: solo caracteres seguros en archivo, pero conservar número y username originales en JSON
+    const ts = Date.now();
+    const tsIso = new Date(ts).toISOString();
+
+    const SHEET_ID = process.env.GSHEET_ID || process.env.GOOGLE_SHEET_ID || '';
+    const SHEET_TAB = process.env.GSHEET_TAB || process.env.GOOGLE_SHEET_TAB || 'Hoja1';
+
+    if(SHEET_ID && process.env.GOOGLE_SA_JSON){
+      try{
+        const { appendRow } = require('./server/googleSheets.service.js');
+        await appendRow({
+          spreadsheetId: SHEET_ID,
+          sheetName: SHEET_TAB,
+          values: [tsIso, uid, username, receiptNumber]
+        });
+        console.log(`[upload-proof-number] appended to Google Sheets (${SHEET_TAB})`);
+        return res.json({ ok:true, saved: `gsheet:${SHEET_ID}:${SHEET_TAB}` });
+      }catch(e){ console.warn('GS append error, fallback to file:', e.message); }
+    }
+
+    // Fallback a archivo JSON en /pagos si no hay Sheets
     const safeNum = receiptNumber.replace(/[^a-zA-Z0-9_.-]/g,'_').slice(0, 64) || 'comprobante';
-    const tsIso = new Date().toISOString().replace(/[:]/g,'-');
     const outDir = PAGOS_DIR;
     try{ if(!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive:true }); }catch(_){ }
-    const base = `${tsIso}-${uid}-num-${safeNum}`;
-    const meta = {
-      ts: Date.now(),
-      userId: uid,
-      username,
-      receiptNumber,
-      type: 'number-only'
-    };
-    const outPath = path.join(outDir, `${base}.json`);
-    fs.writeFileSync(outPath, JSON.stringify(meta, null, 2));
+    const base = `${tsIso.replace(/[:]/g,'-')}-${uid}-num-${safeNum}`;
+    const meta = { ts, userId: uid, username, receiptNumber, type: 'number-only' };
+    fs.writeFileSync(path.join(outDir, `${base}.json`), JSON.stringify(meta, null, 2));
     console.log(`[upload-proof-number] saved ${base}.json for user ${uid}`);
     return res.json({ ok:true, saved: `pagos/${base}.json` });
   }catch(e){ console.error('upload-proof-number error', e); return res.status(500).json({ ok:false }); }
