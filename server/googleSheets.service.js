@@ -28,4 +28,12 @@ async function appendRow({ spreadsheetId, sheetName, values }){
   return true;
 }
 
-module.exports = { appendRow };
+async function getSheetInfo(spreadsheetId){
+  const sheets = await getSheetsClient();
+  const r = await sheets.spreadsheets.get({ spreadsheetId });
+  const title = r.data?.properties?.title || null;
+  const firstSheet = r.data?.sheets?.[0]?.properties?.title || null;
+  return { title, firstSheet };
+}
+
+module.exports = { appendRow, getSheetInfo };

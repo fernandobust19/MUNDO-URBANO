@@ -163,8 +163,11 @@
           const r = await fetch('/api/pay/upload-proof-number', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload), credentials:'include' });
           const js = await r.json().catch(()=>({ ok:false }));
           if(!r.ok || !js.ok){ throw new Error(js.msg||'No se pudo guardar'); }
-          if(statusEl) statusEl.textContent = 'Guardado.';
-          toast('Número guardado.');
+          let msg = 'Guardado.';
+          if(js && js.storage === 'txt' && js.file){ msg = `Guardado en ${js.file}`; }
+          if(js && js.storage === 'sheets'){ msg = 'Guardado en Google Sheets.'; }
+          if(statusEl) statusEl.textContent = msg;
+          toast(msg);
           try{ proofNumberInput.value=''; proofUserInput.value = window.__user?.username || ''; }catch(_){ }
         }catch(err){ console.warn('upload-proof-number', err); const m = err?.message || 'No se pudo guardar'; if(statusEl) statusEl.textContent = m; toast(m); }
       });

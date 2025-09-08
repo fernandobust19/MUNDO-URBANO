@@ -6,3 +6,13 @@ services:
     buildCommand: npm install
     startCommand: node server.js
     autoDeploy: true
+    envVars:
+      - key: STORAGE_MODE
+        value: sheets
+      - key: GSHEET_ID
+        value: 10gGILK8xELQy0PbJeAOlZSii891GoOas3q3857YNqi0
+      - key: GSHEET_TAB
+        value: Hoja1
+      # No pongas el JSON aquí. Cárgalo en el Dashboard de Render como variable secreta.
+      - key: GOOGLE_SA_JSON
+        value: set-in-dashboard

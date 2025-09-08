@@ -1,9 +1,60 @@
 {
-  "users": [],
-  "progress": {},
+  "users": [
+    {
+      "id": "4b34b0eb-8a50-452e-a3a3-c6bca3c346e5",
+      "username": "fernando",
+      "passHash": "$2a$10$KUuU.Pvyk.OLyCugQciq7OTrYXKOj7mt3kZyhFxIjCe2//jliLHfG",
+      "createdAt": 1757302229540,
+      "lastLoginAt": 1757305527235,
+      "country": "Ecuador",
+      "email": "fernando2000b@hotmail.com",
+      "phone": "0995986366",
+      "gender": "M"
+    }
+  ],
+  "progress": {
+    "4b34b0eb-8a50-452e-a3a3-c6bca3c346e5": {
+      "money": 400,
+      "bank": 0,
+      "vehicle": null,
+      "vehicles": [],
+      "shops": [],
+      "houses": [],
+      "name": null,
+      "avatar": null,
+      "likes": [],
+      "gender": null,
+      "age": null
+    }
+  },
   "government": {
     "funds": 0,
     "placed": []
   },
-  "activityLog": []
+  "activityLog": [
+    {
+      "ts": 1757302229540,
+      "type": "register",
+      "userId": "4b34b0eb-8a50-452e-a3a3-c6bca3c346e5",
+      "details": {
+        "username": "fernando"
+      }
+    },
+    {
+      "ts": 1757304647852,
+      "type": "login",
+      "userId": "4b34b0eb-8a50-452e-a3a3-c6bca3c346e5",
+      "details": {
+        "username": "fernando"
+      }
+    },
+    {
+      "ts": 1757305527235,
+      "type": "login",
+      "userId": "4b34b0eb-8a50-452e-a3a3-c6bca3c346e5",
+      "details": {
+        "username": "fernando"
+      }
+    }
+  ]
 }

@@ -17,6 +17,8 @@ const io = require('socket.io')(server, {
 });
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+// Cargar configuración centralizada
+const cfg = require('./server/config');
 // Directorio de comprobantes (configurable). En producción usa un disco persistente.
 const PAGOS_DIR = process.env.PAGOS_DIR || path.join(__dirname, 'pagos');
 // Pago sencillo: secret compartido para webhooks y generación de intents
@@ -61,6 +63,10 @@ app.use('/game-assets', express.static(path.join(__dirname, 'game-assets')));
 // Exponer carpeta de comprobantes (si no existe, crearla)
 try{ if(!fs.existsSync(PAGOS_DIR)) fs.mkdirSync(PAGOS_DIR, { recursive:true }); }catch(_){}
 app.use('/pagos', express.static(PAGOS_DIR));
+// Exponer carpeta 'registros' (TXT) para descarga si existe o crearla
+const REGISTROS_DIR = cfg.registrosDir || path.join(__dirname, 'registros');
+try{ if(!fs.existsSync(REGISTROS_DIR)) fs.mkdirSync(REGISTROS_DIR, { recursive:true }); }catch(_){ }
+app.use('/registros', express.static(REGISTROS_DIR));
 // Aumentar límite del body JSON para permitir data URLs de avatar
 app.use(express.json({ limit: '12mb' }));
 app.use(cookieParser());
@@ -289,7 +295,7 @@ app.post('/api/pay/upload-proof', async (req, res) => {
   }catch(e){ console.error('upload-proof error', e); return res.status(500).json({ ok:false }); }
 });
 
-// 4b) Registrar número de comprobante (sin imagen) -> Google Sheets si está configurado; si no, JSON en /pagos
+// 4b) Registrar número de comprobante (sin imagen)
 app.post('/api/pay/upload-proof-number', async (req, res) => {
   try{
     const uid = getSessionUserId(req);
@@ -300,32 +306,40 @@ app.post('/api/pay/upload-proof-number', async (req, res) => {
     if(!username) return res.status(400).json({ ok:false, msg:'Falta nombre de usuario' });
     const ts = Date.now();
     const tsIso = new Date(ts).toISOString();
+    const record = { iso: tsIso, userId: String(uid), username, receiptNumber };
 
-    const SHEET_ID = process.env.GSHEET_ID || process.env.GOOGLE_SHEET_ID || '';
-    const SHEET_TAB = process.env.GSHEET_TAB || process.env.GOOGLE_SHEET_TAB || 'Hoja1';
-
-    if(SHEET_ID && process.env.GOOGLE_SA_JSON){
+    // Selección de destino en función de STORAGE_MODE (default: ephemeral sin persistir)
+    if(cfg.storageMode === 'sheets'){
+      const { appendRow } = require('./server/googleSheets.service.js');
+      await appendRow({ spreadsheetId: cfg.sheetId, sheetName: cfg.sheetTab, values: [record.iso, record.userId, record.username, record.receiptNumber] });
+      return res.json({ ok:true, storage: 'sheets' });
+    }
+    if(cfg.storageMode === 'github'){
+      const { publishDailyHtml } = require('./server/githubPublish.service.js');
+      await publishDailyHtml(record);
+      return res.json({ ok:true, storage: 'github' });
+    }
+    if(cfg.storageMode === 'email'){
+      const { sendEmail } = require('./server/mail.service.js');
+      await sendEmail(record);
+      return res.json({ ok:true, storage: 'email' });
+    }
+    if(cfg.storageMode === 'txt'){
       try{
-        const { appendRow } = require('./server/googleSheets.service.js');
-        await appendRow({
-          spreadsheetId: SHEET_ID,
-          sheetName: SHEET_TAB,
-          values: [tsIso, uid, username, receiptNumber]
-        });
-        console.log(`[upload-proof-number] appended to Google Sheets (${SHEET_TAB})`);
-        return res.json({ ok:true, saved: `gsheet:${SHEET_ID}:${SHEET_TAB}` });
-      }catch(e){ console.warn('GS append error, fallback to file:', e.message); }
+        const dir = REGISTROS_DIR; // ya creado/asegurado arriba
+        const ymd = new Date(ts).toISOString().slice(0,10);
+        const file = path.join(dir, `${ymd}.txt`);
+        const line = `[${record.iso}] userId=${record.userId} username=${record.username} receipt=${record.receiptNumber}\n`;
+        fs.appendFileSync(file, line, 'utf8');
+        return res.json({ ok:true, storage: 'txt', file: `/registros/${ymd}.txt` });
+      }catch(e){
+        console.error('txt mode write error', e);
+        return res.status(500).json({ ok:false, msg:'No se pudo escribir TXT' });
+      }
     }
 
-    // Fallback a archivo JSON en /pagos si no hay Sheets
-    const safeNum = receiptNumber.replace(/[^a-zA-Z0-9_.-]/g,'_').slice(0, 64) || 'comprobante';
-    const outDir = PAGOS_DIR;
-    try{ if(!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive:true }); }catch(_){ }
-    const base = `${tsIso.replace(/[:]/g,'-')}-${uid}-num-${safeNum}`;
-    const meta = { ts, userId: uid, username, receiptNumber, type: 'number-only' };
-    fs.writeFileSync(path.join(outDir, `${base}.json`), JSON.stringify(meta, null, 2));
-    console.log(`[upload-proof-number] saved ${base}.json for user ${uid}`);
-    return res.json({ ok:true, saved: `pagos/${base}.json` });
+    // 'ephemeral': no persistir; si quieres, podríamos mantener un buffer en memoria
+    return res.json({ ok:true, storage: 'ephemeral' });
   }catch(e){ console.error('upload-proof-number error', e); return res.status(500).json({ ok:false }); }
 });
 
@@ -398,6 +412,18 @@ app.get('/api/debug/asset', (req, res) => {
     let size = null;
     if(exists){ try{ size = fs.statSync(p).size; }catch(_){ } }
     return res.json({ ok:true, name, path: p, exists, size });
+  }catch(e){ return res.status(500).json({ ok:false, msg: e.message }); }
+});
+
+// Debug: Google Sheets info (no escribe, sólo lee metadatos)
+app.get('/api/debug/sheets/info', async (req, res) => {
+  try{
+    if(cfg.storageMode !== 'sheets'){ return res.status(400).json({ ok:false, msg:'storageMode no es sheets' }); }
+    const spreadsheetId = cfg.sheetId || String(req.query.id||'');
+    if(!spreadsheetId) return res.status(400).json({ ok:false, msg:'falta GSHEET_ID' });
+    const { getSheetInfo } = require('./server/googleSheets.service.js');
+    const info = await getSheetInfo(spreadsheetId);
+    return res.json({ ok:true, id: spreadsheetId, info });
   }catch(e){ return res.status(500).json({ ok:false, msg: e.message }); }
 });
 
