@@ -1,10 +1,10 @@
 {
   "users": [
     {
-      "id": "dd2065d9-9d7c-4759-9ad7-2b5ccd7615fd",
+      "id": "f7ec7922-d578-4d83-b7ad-d72c6def5f99",
       "username": "fernando",
-      "passHash": "$2a$10$AgEKkL.EhekltERjvIVVD.UXhHvO.w8I2geqGP8hUWXWPq3WI4BQm",
-      "createdAt": 1757294051682,
+      "passHash": "$2a$10$.5UJowMRPdU5FsQpDe3Zi.hHUX0y1OmQDTf8NpvZikfIajgHqLXeS",
+      "createdAt": 1757294814295,
       "lastLoginAt": null,
       "country": "Ecuador",
       "email": "fernando2000b@hotmail.com",
@@ -13,40 +13,27 @@
     }
   ],
   "progress": {
-    "dd2065d9-9d7c-4759-9ad7-2b5ccd7615fd": {
+    "f7ec7922-d578-4d83-b7ad-d72c6def5f99": {
       "money": 400,
       "bank": 0,
       "vehicle": null,
       "vehicles": [],
       "shops": [],
       "houses": [],
-      "name": "fernando",
+      "name": "FERNANDO",
       "avatar": "assets/avatar2.png",
       "likes": [
-        "cine",
-        "fotografía",
-        "montaña",
-        "yoga",
-        "teatro"
+        "cocina",
+        "baile",
+        "helado",
+        "comida",
+        "jugos"
       ],
       "gender": "M",
       "age": 20,
       "country": "Ecuador",
       "email": "fernando2000b@hotmail.com",
       "phone": "0995986366"
-    },
-    "2bcc1683-e141-413a-8b4e-e186b838ed23": {
-      "money": 400,
-      "bank": 0,
-      "vehicle": null,
-      "vehicles": [],
-      "shops": [],
-      "houses": [],
-      "name": null,
-      "avatar": null,
-      "likes": [],
-      "gender": null,
-      "age": null
     }
   },
   "government": {
@@ -55,17 +42,17 @@
   },
   "activityLog": [
     {
-      "ts": 1757294051682,
+      "ts": 1757294814296,
       "type": "register",
-      "userId": "dd2065d9-9d7c-4759-9ad7-2b5ccd7615fd",
+      "userId": "f7ec7922-d578-4d83-b7ad-d72c6def5f99",
       "details": {
         "username": "fernando"
       }
     },
     {
-      "ts": 1757294319499,
+      "ts": 1757294859230,
       "type": "progress_update",
-      "userId": "dd2065d9-9d7c-4759-9ad7-2b5ccd7615fd",
+      "userId": "f7ec7922-d578-4d83-b7ad-d72c6def5f99",
       "details": {
         "keys": [
           "money",

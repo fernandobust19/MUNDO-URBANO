@@ -200,7 +200,20 @@
     <div style="display:flex;flex-direction:column;gap:10px;align-items:stretch">
       <!-- Campo oculto para compatibilidad con la lógica existente -->
     <input id="fUsd" type="hidden" value="0" />
-  <button id="btnBuy500" type="button" class="btn good" title="Pagar US$5 para obtener +500 créditos">Comprar 500 (+US$5)</button>
+    <button id="btnBuy500" type="button" class="btn good" title="Pagar US$5 para obtener +500 créditos">Comprar 500 (+US$5)</button>
+    <button id="btnUploadProof" type="button" class="btn" title="Registrar número de documento">N° doc.</button>
+    <div id="proofNumberBox" style="display:none; margin-top:8px; padding:8px; border:1px dashed rgba(0,0,0,0.15); border-radius:8px; background:rgba(255,255,255,0.6)">
+      <div class="field" style="margin-bottom:6px">
+        <label for="proofNumber">Número de documento</label>
+        <input id="proofNumber" type="text" class="input" placeholder="Ej: 123456789" maxlength="40" />
+      </div>
+      <div class="field" style="margin-bottom:6px">
+        <label for="proofUsername">Nombre de usuario</label>
+        <input id="proofUsername" type="text" class="input" placeholder="Tu usuario" maxlength="24" />
+      </div>
+      <div class="actions"><button id="btnSaveProofNumber" type="button" class="btn good">Guardar</button></div>
+    </div>
+    <div id="proofStatus" class="hint" aria-live="polite"></div>
     </div>
   <div class="hint">Todos comienzan con 400 créditos gratis. Si compras, se suman +500 créditos al crear tu persona.</div>
   </div>

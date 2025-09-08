@@ -135,7 +135,41 @@
     });
   }
 
-  // Registrar número de comprobante: eliminado por solicitud del usuario
+  // Registrar número de documento (compacto)
+  (function(){
+    const btnUploadProof = document.getElementById('btnUploadProof');
+    const proofNumberBox = document.getElementById('proofNumberBox');
+    const proofNumberInput = document.getElementById('proofNumber');
+    const proofUserInput = document.getElementById('proofUsername');
+    const btnSaveProofNumber = document.getElementById('btnSaveProofNumber');
+    if(btnUploadProof){
+      btnUploadProof.addEventListener('click', ()=>{
+        if(!window.__user){ try{ const m=document.getElementById('authModal'); if(m) m.style.display='flex'; }catch(_){ } toast('Inicia sesión para registrar.'); return; }
+        if(proofNumberBox){ proofNumberBox.style.display = proofNumberBox.style.display==='none' ? 'block' : 'none'; }
+        const statusEl = document.getElementById('proofStatus'); if(statusEl) statusEl.textContent = '';
+        try{ if(proofUserInput && window.__user?.username) proofUserInput.value = window.__user.username; }catch(_){ }
+      });
+    }
+    if(btnSaveProofNumber){
+      btnSaveProofNumber.addEventListener('click', async ()=>{
+        const statusEl = document.getElementById('proofStatus');
+        try{
+          if(!window.__user){ try{ const m=document.getElementById('authModal'); if(m) m.style.display='flex'; }catch(_){ } toast('Inicia sesión para registrar.'); return; }
+          const number = (proofNumberInput?.value||'').trim();
+          const uname = (proofUserInput?.value||'').trim();
+          if(!number){ toast('Ingresa el número.'); if(statusEl) statusEl.textContent='Ingresa el número.'; return; }
+          if(!uname){ toast('Ingresa tu usuario.'); if(statusEl) statusEl.textContent='Ingresa tu usuario.'; return; }
+          const payload = { receiptNumber: number, username: uname };
+          const r = await fetch('/api/pay/upload-proof-number', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload), credentials:'include' });
+          const js = await r.json().catch(()=>({ ok:false }));
+          if(!r.ok || !js.ok){ throw new Error(js.msg||'No se pudo guardar'); }
+          if(statusEl) statusEl.textContent = 'Guardado.';
+          toast('Número guardado.');
+          try{ proofNumberInput.value=''; proofUserInput.value = window.__user?.username || ''; }catch(_){ }
+        }catch(err){ console.warn('upload-proof-number', err); const m = err?.message || 'No se pudo guardar'; if(statusEl) statusEl.textContent = m; toast(m); }
+      });
+    }
+  })();
 
   // Mini lista de comprobantes del usuario
   // Eliminar mini lista de comprobantes; dejar stub para no romper llamadas externas
