@@ -16,16 +16,33 @@ async function getSheetsClient(){
 
 async function appendRow({ spreadsheetId, sheetName, values }){
   const sheets = await getSheetsClient();
-  const range = `${sheetName}!A1`;
   const resource = { values: [values] };
-  await sheets.spreadsheets.values.append({
-    spreadsheetId,
-    range,
-    valueInputOption: 'USER_ENTERED',
-    insertDataOption: 'INSERT_ROWS',
-    requestBody: resource
-  });
-  return true;
+  async function doAppend(tab){
+    const range = `${tab}!A1`;
+    return sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range,
+      valueInputOption: 'USER_ENTERED',
+      insertDataOption: 'INSERT_ROWS',
+      requestBody: resource
+    });
+  }
+  try{
+    await doAppend(sheetName);
+    return true;
+  }catch(e){
+    const msg = e && (e.message||'');
+    // Si la pestaña no existe o el rango es inválido, intentar con la primera hoja
+    if(/invalidRange|Unable to parse range|notFound|Sheet not found/i.test(msg)){
+      const info = await getSheetInfo(spreadsheetId).catch(()=>null);
+      const fallback = info && info.firstSheet ? info.firstSheet : null;
+      if(fallback && fallback !== sheetName){
+        await doAppend(fallback);
+        return true;
+      }
+    }
+    throw e;
+  }
 }
 
 async function getSheetInfo(spreadsheetId){
