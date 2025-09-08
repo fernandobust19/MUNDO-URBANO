@@ -612,7 +612,7 @@ function preloadImages() {
       };
       
       img.onerror = function() {
-        console.warn(`Error al cargar la imagen: ${key}. Usando fallback.`);
+        console.warn(`Error al cargar la imagen: ${key} -> ${BUILDING_IMAGES[key]}. Usando fallback.`);
         // Crear un fallback simple que no cause errores
         BUILDING_IMAGE_CACHE[key] = { 
           error: true, 
@@ -631,6 +631,14 @@ function preloadImages() {
 
 // Ejecutar precarga inmediatamente
 preloadImages();
+setTimeout(()=>{
+  // Si muchas fallan, sugiere revisar assets en servidor
+  try{
+    const total = Object.keys(BUILDING_IMAGES).length;
+    const errors = Object.values(BUILDING_IMAGE_CACHE).filter(v => v && v.error).length;
+    if(errors > 6){ console.warn(`[debug] ${errors}/${total} imágenes fallaron. Revisa /api/debug/assets-list y /api/debug/asset?name=archivo.png`); }
+  }catch(_){ }
+}, 1500);
 
 // Limpiar cualquier entrada residual de 'librería' en el cache (por versiones antiguas)
 if (BUILDING_IMAGE_CACHE['librería']) { delete BUILDING_IMAGE_CACHE['librería']; }

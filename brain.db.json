@@ -5,7 +5,7 @@
       "username": "fernando",
       "passHash": "$2a$10$.5UJowMRPdU5FsQpDe3Zi.hHUX0y1OmQDTf8NpvZikfIajgHqLXeS",
       "createdAt": 1757294814295,
-      "lastLoginAt": null,
+      "lastLoginAt": 1757299216126,
       "country": "Ecuador",
       "email": "fernando2000b@hotmail.com",
       "phone": "0995986366",
@@ -14,11 +14,20 @@
   ],
   "progress": {
     "f7ec7922-d578-4d83-b7ad-d72c6def5f99": {
-      "money": 400,
+      "money": 0,
       "bank": 0,
       "vehicle": null,
       "vehicles": [],
-      "shops": [],
+      "shops": [
+        {
+          "x": 13164.66021429926,
+          "y": 2562.612893725658,
+          "w": 120,
+          "h": 80,
+          "kind": "panadería",
+          "ownerId": "A594275"
+        }
+      ],
       "houses": [],
       "name": "FERNANDO",
       "avatar": "assets/avatar2.png",
@@ -51,6 +60,68 @@
     },
     {
       "ts": 1757294859230,
+      "type": "progress_update",
+      "userId": "f7ec7922-d578-4d83-b7ad-d72c6def5f99",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "country",
+          "email",
+          "phone"
+        ]
+      }
+    },
+    {
+      "ts": 1757299216126,
+      "type": "login",
+      "userId": "f7ec7922-d578-4d83-b7ad-d72c6def5f99",
+      "details": {
+        "username": "fernando"
+      }
+    },
+    {
+      "ts": 1757299220897,
+      "type": "progress_update",
+      "userId": "f7ec7922-d578-4d83-b7ad-d72c6def5f99",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "country",
+          "email",
+          "phone"
+        ]
+      }
+    },
+    {
+      "ts": 1757299251546,
+      "type": "shop_add",
+      "userId": "f7ec7922-d578-4d83-b7ad-d72c6def5f99",
+      "details": {
+        "id": "S1"
+      }
+    },
+    {
+      "ts": 1757299251961,
       "type": "progress_update",
       "userId": "f7ec7922-d578-4d83-b7ad-d72c6def5f99",
       "details": {

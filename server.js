@@ -370,6 +370,26 @@ app.get('/img', async (req, res) => {
   }catch(e){ res.status(500).send('error'); }
 });
 
+// Debug simple para verificar assets en producción (limitar a carpeta /public/assets)
+app.get('/api/debug/assets-list', (req, res) => {
+  try{
+    const dir = path.join(__dirname, 'public', 'assets');
+    const files = fs.readdirSync(dir).filter(f => typeof f === 'string');
+    return res.json({ ok:true, dir, count: files.length, files });
+  }catch(e){ return res.status(500).json({ ok:false, msg: e.message }); }
+});
+app.get('/api/debug/asset', (req, res) => {
+  try{
+    const name = String(req.query.name||'');
+    if(!name) return res.status(400).json({ ok:false, msg:'missing name' });
+    const p = path.join(__dirname, 'public', 'assets', name);
+    const exists = fs.existsSync(p);
+    let size = null;
+    if(exists){ try{ size = fs.statSync(p).size; }catch(_){ } }
+    return res.json({ ok:true, name, path: p, exists, size });
+  }catch(e){ return res.status(500).json({ ok:false, msg: e.message }); }
+});
+
 const state = {
   players: {},
   shops: [],
