@@ -1,7 +1,5 @@
 module.exports = {
-  storageMode: (process.env.STORAGE_MODE || 'ephemeral').toLowerCase(), // sheets|github|email|txt|ephemeral
-  // TXT registros (opcional): si no se define, usará <raiz>/registros
-  registrosDir: process.env.REGISTROS_DIR,
+  storageMode: (process.env.STORAGE_MODE || 'ephemeral').toLowerCase(),
   // Sheets
   gsaJson: process.env.GOOGLE_SA_JSON,
   sheetId: process.env.GSHEET_ID,

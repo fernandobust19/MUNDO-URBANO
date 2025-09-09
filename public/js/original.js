@@ -135,44 +135,7 @@
     });
   }
 
-  // Registrar número de documento (compacto)
-  (function(){
-    const btnUploadProof = document.getElementById('btnUploadProof');
-    const proofNumberBox = document.getElementById('proofNumberBox');
-    const proofNumberInput = document.getElementById('proofNumber');
-    const proofUserInput = document.getElementById('proofUsername');
-    const btnSaveProofNumber = document.getElementById('btnSaveProofNumber');
-    if(btnUploadProof){
-      btnUploadProof.addEventListener('click', ()=>{
-        if(!window.__user){ try{ const m=document.getElementById('authModal'); if(m) m.style.display='flex'; }catch(_){ } toast('Inicia sesión para registrar.'); return; }
-        if(proofNumberBox){ proofNumberBox.style.display = proofNumberBox.style.display==='none' ? 'block' : 'none'; }
-        const statusEl = document.getElementById('proofStatus'); if(statusEl) statusEl.textContent = '';
-        try{ if(proofUserInput && window.__user?.username) proofUserInput.value = window.__user.username; }catch(_){ }
-      });
-    }
-    if(btnSaveProofNumber){
-      btnSaveProofNumber.addEventListener('click', async ()=>{
-        const statusEl = document.getElementById('proofStatus');
-        try{
-          if(!window.__user){ try{ const m=document.getElementById('authModal'); if(m) m.style.display='flex'; }catch(_){ } toast('Inicia sesión para registrar.'); return; }
-          const number = (proofNumberInput?.value||'').trim();
-          const uname = (proofUserInput?.value||'').trim();
-          if(!number){ toast('Ingresa el número.'); if(statusEl) statusEl.textContent='Ingresa el número.'; return; }
-          if(!uname){ toast('Ingresa tu usuario.'); if(statusEl) statusEl.textContent='Ingresa tu usuario.'; return; }
-          const payload = { receiptNumber: number, username: uname };
-          const r = await fetch('/api/pay/upload-proof-number', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload), credentials:'include' });
-          const js = await r.json().catch(()=>({ ok:false }));
-          if(!r.ok || !js.ok){ throw new Error(js.msg||'No se pudo guardar'); }
-          let msg = 'Guardado.';
-          if(js && js.storage === 'txt' && js.file){ msg = `Guardado en ${js.file}`; }
-          if(js && js.storage === 'sheets'){ msg = 'Guardado en Google Sheets.'; }
-          if(statusEl) statusEl.textContent = msg;
-          toast(msg);
-          try{ proofNumberInput.value=''; proofUserInput.value = window.__user?.username || ''; }catch(_){ }
-        }catch(err){ console.warn('upload-proof-number', err); const m = err?.message || 'No se pudo guardar'; if(statusEl) statusEl.textContent = m; toast(m); }
-      });
-    }
-  })();
+  // N° doc. eliminado por solicitud
 
   // Mini lista de comprobantes del usuario
   // Eliminar mini lista de comprobantes; dejar stub para no romper llamadas externas
@@ -3494,54 +3457,7 @@ function assignRental(agent) {
   return true;
 }
 
-// Mejorar tu contraseña: mostrar modal, guardar nueva contraseña y mostrar recomendación
-const btnImprovePwd = document.getElementById('btnImprovePwd');
-const pwdModal = document.getElementById('pwdModal');
-const btnClosePwdModal = document.getElementById('btnClosePwdModal');
-const btnSaveNewPwd = document.getElementById('btnSaveNewPwd');
-const newPwdInput = document.getElementById('newPwdInput');
-const pwdMsg = document.getElementById('pwdMsg');
-if(btnImprovePwd && pwdModal && btnClosePwdModal && btnSaveNewPwd && newPwdInput && pwdMsg){
-  btnImprovePwd.onclick = ()=>{
-    pwdModal.style.display = 'flex';
-    newPwdInput.value = '';
-    pwdMsg.style.display = 'none';
-  };
-  btnClosePwdModal.onclick = ()=>{ pwdModal.style.display = 'none'; };
-  btnSaveNewPwd.onclick = async ()=>{
-    const pwd = newPwdInput.value.trim();
-    // Validación básica
-    if(pwd.length < 8 || !/[A-Z]/.test(pwd) || !/[a-z]/.test(pwd) || !/[0-9]/.test(pwd) || !/[^A-Za-z0-9]/.test(pwd)){
-      pwdMsg.textContent = 'La contraseña debe tener mínimo 8 caracteres, incluir mayúsculas, minúsculas, números y símbolos.';
-      pwdMsg.style.color = '#ef4444';
-      pwdMsg.style.display = 'block';
-      return;
-    }
-    // Enviar al servidor para guardar de forma segura
-    try {
-      const resp = await fetch('/api/change-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newPassword: pwd })
-      });
-      const data = await resp.json();
-      if(data.ok){
-        pwdMsg.textContent = '¡Contraseña actualizada con éxito!';
-        pwdMsg.style.color = '#22c55e';
-        pwdMsg.style.display = 'block';
-        newPwdInput.value = '';
-      }else{
-        pwdMsg.textContent = data.msg || 'Error al guardar la contraseña.';
-        pwdMsg.style.color = '#ef4444';
-        pwdMsg.style.display = 'block';
-      }
-    } catch(e){
-      pwdMsg.textContent = 'Error de conexión con el servidor.';
-      pwdMsg.style.color = '#ef4444';
-      pwdMsg.style.display = 'block';
-    }
-  };
-}
+// (Removido) Mejora de contraseña: botón y modal
 
 // Asegurar que el avatar por defecto esté presente en el progreso
 function ensureDefaultAvatar(progress) {

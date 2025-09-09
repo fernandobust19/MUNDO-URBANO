@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
 <title>Mundo urbano — Gobierno Central y Nuevos Edificios (Multiplayer)</title>
 <link rel="stylesheet" href="css/public_css_estilos.css">
+<!-- Fuente moderna para un texto más bonito -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
   @import "otra.css";
   :root { --color-principal: yellow; }
@@ -20,33 +24,110 @@
     --brand:#ff9800; /* color principal de botones */
     --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444; --muted:#8b6b00; --text:#222222;
   }
-  html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#fff8e1);color:var(--text);font-family:system-ui,Segoe UI,Roboto,Arial;overflow:hidden}
+  html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#fff8e1);color:var(--text);font-family:'Poppins',system-ui,Segoe UI,Roboto,Arial;overflow:hidden;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
   html, body {-webkit-user-select: none; -ms-user-select: none; user-select: none;}
   *{box-sizing:border-box}
 
 
-  #formBar{position:fixed;top:0;left:0;right:0;z-index:2000;background:rgba(15,28,48,0.85);border-bottom:1px solid rgba(20,40,64,0.28);backdrop-filter:blur(6px);color:#eef7fb;max-height:100svh;overflow-y:auto}
-  #formInner{width:min(1100px,98vw);margin:0 auto;padding:12px;display:grid;grid-template-columns:repeat(12,1fr);gap:10px}
-  #formInner h2{grid-column:1/-1;margin:0 0 4px 0;color:var(--brand);font-size:18px}
-  .field{display:flex;flex-direction:column;gap:6px}
-  .field label{font-size:12px;opacity:.95}
-  .input,.select{padding:10px 12px;border:1px solid rgba(0,0,0,0.06);border-radius:10px;background:var(--card);color:var(--text);min-height:38px}
-  .btn{all:unset;cursor:pointer;padding:10px 12px;border:1px solid rgba(0,0,0,0.06);border-radius:12px;background:var(--brand);color:var(--text);font-weight:700;text-align:center}
-  .btn.primary{border-color:var(--edge);background:var(--brand);color:var(--text)}
-  .btn.good{border-color:#1e7a3a;background:#34d399;color:#042021}
+  /* Fondo del menú de crear personaje: degradado morado oscuro como la referencia (sin líneas) */
+  #formBar{position:fixed;top:0;left:0;right:0;z-index:2000;
+    background:
+      radial-gradient(900px 520px at 18% 12%, rgba(150, 120, 255, 0.14), rgba(150,120,255,0) 52%),
+      radial-gradient(800px 480px at 85% 18%, rgba(255, 170, 120, 0.10), rgba(255,170,120,0) 55%),
+      radial-gradient(1200px 700px at 50% 100%, rgba(0,0,0,0.28), rgba(0,0,0,0) 60%),
+      linear-gradient(180deg, #140c2a 0%, #2a0e55 52%, #190b42 100%);
+    border-bottom:1px solid rgba(20,40,64,0.28);backdrop-filter:blur(6px);color:#eef7fb;max-height:100svh;overflow-y:auto}
+  #formInner{width:min(1100px,98vw);margin:0 auto;padding:20px 16px 14px;display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+  #formInner h2{grid-column:1/-1;margin:2px 0 10px 0;color:#ffd54a;font-size:34px;line-height:1.1;font-weight:800;text-shadow:0 2px 0 rgba(0,0,0,.25)}
+  .field{display:flex;flex-direction:column;gap:8px}
+  .field label{font-size:13px;color:#c9c2ff;opacity:.95}
+  /* Inputs/selects oscuros con borde violeta y texto claro (como la referencia) */
+  #formBar .input,#formBar .select{
+    padding:12px 14px;
+    border-radius:14px;
+    border:2px solid rgba(128,90,213,0.55);
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.22));
+    color:#eef1ff;
+    min-height:42px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 6px 18px rgba(0,0,0,0.20);
+  }
+  #formBar .input::placeholder{ color:#bdb7ff }
+  #formBar .input:focus,#formBar .select:focus{ outline:2px solid rgba(147,197,253,0.7); outline-offset:2px }
+
+  /* Botones estilo cartoon (como la imagen): borde blanco, gradiente vivo, sin glow */
+  .btn{
+    all:unset; cursor:pointer; display:inline-grid; place-items:center; text-align:center;
+    padding:10px 18px; border-radius:18px; font-weight:800; letter-spacing:.3px; color:#ffffff;
+    text-shadow: 0 2px 0 rgba(0,0,0,0.25);
+    background: linear-gradient(180deg, #a855f7, #7e22ce); /* morado por defecto */
+    border:4px solid #ffffff;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.25), 0 4px 0 rgba(0,0,0,0.18);
+    transition: transform .08s ease, filter .12s ease;
+  }
+  .btn:hover{ filter: brightness(1.04) }
+  .btn:active{ transform: translateY(2px); box-shadow: 0 6px 12px rgba(0,0,0,0.25), 0 3px 0 rgba(0,0,0,0.18) }
+  .btn:focus{ outline:2px solid rgba(255,255,255,0.6); outline-offset:2px }
+
+  /* Variantes vivas (sin brillos extra) */
+  .btn.primary{ background: linear-gradient(180deg, #fb923c, #ea580c); } /* naranja */
+  .btn.good{    background: linear-gradient(180deg, #34d399, #16a34a); } /* verde */
+  .btn.warn{    background: linear-gradient(180deg, #facc15, #f59e0b); } /* amarillo/ámbar */
+  .btn.bad{     background: linear-gradient(180deg, #f87171, #dc2626); } /* rojo */
+
+  /* Botones dentro del formulario (#formBar) con estilo de la referencia (píldora morada, sin borde blanco grueso) */
+  #formBar .btn{
+    padding:10px 16px; border-radius:16px; font-weight:700; letter-spacing:.2px;
+    background: linear-gradient(180deg,#8b5cf6,#5b21b6);
+    border:1px solid rgba(255,255,255,0.25);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.20), 0 6px 16px rgba(0,0,0,0.25);
+    text-shadow:none;
+  }
+  #formBar .btn:hover{ filter:brightness(1.05) }
+  #formBar .btn:active{ transform:translateY(1px) }
+  /* Específicos */
+  #formBar #btnStart{ background:linear-gradient(180deg,#a78bfa,#6d28d9) }
+  #formBar #btnRandLikes{ background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.20)); color:#e5e7eb }
   .hint{font-size:12px;opacity:.8}
   .err{color:#fecaca;font-size:12px;display:none}
   .col-3{grid-column:span 3}.col-4{grid-column:span 4}.col-6{grid-column:span 6}.col-12{grid-column:span 12}
   @media (max-width:960px){.col-3,.col-4,.col-6{grid-column:1/-1}}
 
 
-  #likesWrap{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:8px;max-height:240px;overflow:auto;padding:8px;border:1px dashed rgba(0,0,0,0.08);border-radius:12px;background:rgba(24,36,48,0.5);}
+  #likesWrap{
+    display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:8px;max-height:260px;overflow:auto;padding:8px;
+    border:1px solid rgba(255,255,255,0.10); border-radius:14px;
+    background: linear-gradient(180deg, rgba(12,9,28,0.85), rgba(14,11,32,0.90));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  /* Scrollbar del contenedor de gustos (WebKit) */
+  #likesWrap::-webkit-scrollbar{ width:10px }
+  #likesWrap::-webkit-scrollbar-track{ background: rgba(255,255,255,0.08); border-radius:8px }
+  #likesWrap::-webkit-scrollbar-thumb{ background: rgba(255,255,255,0.35); border-radius:8px; border:2px solid rgba(255,255,255,0.18) }
   @media (max-width:960px){#likesWrap{grid-template-columns:repeat(2,minmax(150px,1fr));max-height:280px}}
-  .chip{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid rgba(255,255,255,0.06);border-radius:999px;background:rgba(255,255,255,0.04);font-size:13px;white-space:nowrap;color:#eef7fb}
-  .chip input{accent-color:#60a5fa;width:18px;height:18px}
+  .chip{
+    display:flex;align-items:center;gap:8px;padding:7px 10px;
+    border:1px solid rgba(255,255,255,0.18); border-radius:12px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0.18));
+    font-size:13px; white-space:nowrap; color:#e9e6ff;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.10);
+  }
+  .chip:hover{ background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.20)) }
+  /* Checkbox personalizado en chips */
+  .chip input[type="checkbox"]{appearance:none;-webkit-appearance:none;display:inline-grid;place-items:center;width:16px;height:16px;border-radius:5px;background:#f2cfe6;border:0;box-shadow:inset 0 -1px 0 rgba(0,0,0,0.15), 0 1px 0 rgba(255,255,255,0.20)}
+  .chip input[type="checkbox"]:checked{background:#3f2bbf}
+  .chip input[type="checkbox"]:checked::after{content:"";width:9px;height:9px;display:block;background-repeat:no-repeat;background-position:center;background-size:100%;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='white'><path d='M7.5 13.5 4.5 10.5 3 12l4.5 4.5L17 7.5 15.5 6z'/></svg>");}
   .chip.disabled{opacity:.45;filter:grayscale(40%)}
   .chip.disabled input{pointer-events:none}
   .limitNote{font-size:12px;margin-top:4px;color:#93c5fd}
+  /* Estado seleccionado (si el navegador soporta :has): chip amarillo con texto oscuro */
+  #likesWrap .chip:has(input:checked){
+    background: linear-gradient(180deg, #ffd84d, #ffb822);
+    color:#1a1835; border-color:rgba(255,255,255,0.70);
+    box-shadow: 0 2px 0 rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.25);
+  }
+  #likesWrap .chip:has(input:checked) input[type="checkbox"]{ background:#2b236c }
 
   /* Avatar grid for visual selection */
   #avatarGrid{display:flex;gap:8px;align-items:center}
@@ -54,17 +135,33 @@
   .avatar-option img{width:100%;height:100%;object-fit:cover;border-radius:8px;display:block}
   .avatar-option.selected{outline:2px solid rgba(100,160,220,0.85);box-shadow:0 4px 14px rgba(16,24,32,0.45)}
 
+  /* Tarjeta oscura para el bloque de avatar y subir foto (primera columna) */
+  #formInner .col-3:first-of-type{
+    background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0.28));
+    border:1px solid rgba(255,255,255,0.10);
+    border-radius:16px; padding:14px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+  #fGenderPreview{ border:3px solid #ffe066 !important; width:56px !important; height:56px !important }
+
 
   /* Mostrar canvas principal por defecto (antes estaba oculto) */
   /* Usar svh para móviles (evita barra de direcciones) con fallback a vh */
   #world{display:block;width:100vw;height:100svh;height:100vh;position:fixed;inset:0;z-index:1;touch-action:none}
-  .card{background:var(--card);border:1px solid rgba(0,0,0,0.06);border-radius:12px;padding:10px 12px;backdrop-filter:blur(4px);position:relative}
+  .card{
+    background: var(--card);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:14px; padding:12px 14px; position:relative;
+    box-shadow: 0 14px 36px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.08);
+    backdrop-filter: blur(6px);
+  }
   /* UI menus shown inside the map: darker bluish with more transparency for subtle overlay */
   #uiDock .card, #docDock .card, #govDock .card {
-    background: rgba(12,18,26,0.78); /* stronger, darker bluish-gray at 78% opacity */
-    border-color: rgba(5,10,18,0.24);
-    color: #f3f8fb; /* light text for contrast */
-    backdrop-filter: blur(6px);
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.18)),
+      rgba(12,18,26,0.78);
+    border-color: rgba(255,255,255,0.10);
+  color: #d1d5db; /* texto más suave */
+    backdrop-filter: blur(8px);
   }
   #uiDock, #docDock, #govDock{position:fixed;top:calc(10px + env(safe-area-inset-top));z-index:24;display:none;width:min(360px,92vw);display:flex;flex-direction:column;gap:10px;pointer-events:auto}
   #uiDock{left:10px;}
@@ -90,9 +187,9 @@
   #zoomFab{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:26;display:flex;flex-direction:column;gap:10px;pointer-events:auto}
   .fab{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:var(--brand);border:1px solid rgba(0,0,0,0.06);box-shadow:0 8px 20px rgba(0,0,0,.06);font-size:22px;cursor:pointer;user-select:none;color:var(--text)}
   .fab:active{transform:scale(.96)}
-  /* Botón flotante Seguir (sin texto) en esquina inferior izquierda */
-  #followFab{position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:26;pointer-events:auto;background:var(--brand);border:1px solid rgba(0,0,0,0.06)}
-  #followFab{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;box-shadow:0 8px 20px rgba(0,0,0,.06)}
+  /* Botón flotante Seguir (sin brillos) */
+  #followFab{position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:26;pointer-events:auto;background:linear-gradient(180deg,#f1f5f9,#e2e8f0);border:1px solid rgba(15,23,42,0.12)}
+  #followFab{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;box-shadow:0 6px 14px rgba(0,0,0,0.12)}
   /* Icono de mira (crosshair) dibujado con SVG como background, sin texto */
   #followFab::before{content:"";display:block;width:100%;height:100%;background-repeat:no-repeat;background-position:center;background-size:64%;
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' stroke='%23ffffff' stroke-width='6' fill='none'><circle cx='50' cy='50' r='28'/><line x1='50' y1='10' x2='50' y2='32'/><line x1='50' y1='68' x2='50' y2='90'/><line x1='10' y1='50' x2='32' y2='50'/><line x1='68' y1='50' x2='90' y2='50'/></svg>");
@@ -114,16 +211,14 @@
   #uiDock h4{ font-size:14px; }
   #uiDock .actions{ gap:6px }
   /* Botones del UI más pequeños (menos altos) y con borde más oscuro que el botón */
-  #uiDock .btn{ padding:4px 7px; border-radius:7px; font-size:11px; border:1px solid rgba(0,0,0,0.38); min-height:26px; line-height:1.1; }
-  #uiDock .btn.primary{ border-color: rgba(0,0,0,0.45); }
-  #uiDock .btn.good{ border-color: #186333; }
+  #uiDock .btn{ padding:8px 12px; border-radius:16px; font-size:13px; min-height:34px; line-height:1.1; }
+  /* Las variantes .primary y .good heredan de las definiciones globales */
   #uiDock .select, #uiDock .input{ padding:6px 8px; border-radius:7px; font-size:11px; min-height:26px }
   #uiDock pre{ font-size:11px }
 
   /* Reducir tamaño de botones del menú de crear personaje (solo dentro del formulario) */
   #formInner .btn{ padding:6px 10px; border-radius:8px; font-size:12px; min-height:30px; line-height:1.1 }
-  /* Mantener el botón principal del modal de contraseña más cómodo */
-  #formInner #btnSaveNewPwd{ font-size:16px; min-height:40px; padding:10px 12px; border-radius:10px }
+  /* (Removido) estilos del modal de contraseña */
 
 
   #shopList{display:grid;grid-template-columns:1fr;gap:8px;max-height:260px;overflow-y:auto;padding:8px;border:1px solid rgba(0,0,0,0.06);border-radius:10px;background:var(--card)}
@@ -133,14 +228,12 @@
   #mini canvas{width:100%;height:100%;display:block}
   #mini .hint{position:absolute;left:6px;bottom:4px;font-size:10px;opacity:.7}
 
-  /* El botón Seguir ahora vive dentro del UI y hereda estilos de .btn */
+  /* Botón Seguir: se usa el botón flotante en el mapa (no en el UI dock) */
 
 
   #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:40;display:none;background:rgba(255,245,157,0.9);border:1px solid rgba(0,0,0,0.06);color:var(--text);padding:8px 12px;border-radius:10px;font-size:13px}
   /* Botones de salida/cerrar en rojo */
-  #btnLogout{background:var(--bad) !important;color:#fff !important;border-color:#b91c1c !important}
-  #btnLogout:hover{filter:brightness(1.05)}
-  #btnLogout:active{transform:scale(.98)}
+  /* #btnLogout hereda .btn.bad */
   #btnGovClose, #btnDocClose, #btnMarriedClose{all:unset;cursor:pointer;display:grid;place-items:center;width:30px;height:30px;border-radius:8px;background:var(--bad);color:#fff;font-weight:800;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.25)}
   #btnGovClose:hover, #btnDocClose:hover, #btnMarriedClose:hover{filter:brightness(1.05)}
   #btnGovClose:active, #btnDocClose:active, #btnMarriedClose:active{transform:scale(.96)}
@@ -170,6 +263,45 @@
   #formInner .btn{ min-height:30px !important; padding:6px 10px; font-size:12px }
   /* Aumentar tamaño de letra para Documento y Casados */
   #docBody, #marriedList { font-size: 22px !important; line-height: 1.5; }
+
+  /* ===== Login (sólo este menú vuelve a la apariencia anterior) ===== */
+  #authModal .modalBox{
+    background:#fff7e6; color:#1f2937;
+    border:1px solid #eadfc8; border-radius:18px;
+    box-shadow:0 14px 36px rgba(0,0,0,0.20);
+  }
+  #authModal h3{ color:#0f172a; font-weight:800 }
+  #authModal .hint{ color:#6b7280 }
+  #authModal .field label{ color:#8b5cf6; font-weight:600 }
+  #authModal .input, #authModal .select{
+    background:#ffffff; color:#111827; min-height:34px;
+    border:1px solid #cbd5e1; border-radius:8px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+    padding:8px 10px;
+  }
+  #authModal .input:focus, #authModal .select:focus{ outline:2px solid #a78bfa; outline-offset:1px }
+  /* Botón principal naranja */
+  #authModal #btnAuthLogin, #authModal .loginOnly.btn{
+    background:linear-gradient(180deg,#f59e0b,#ea580c);
+    color:#fff; border:1px solid rgba(0,0,0,0.06);
+    border-radius:16px; box-shadow:0 6px 12px rgba(0,0,0,0.20);
+    text-shadow: none; padding:10px 18px;
+  }
+  /* Botón Registrar (cuando se muestra) estilo verde clásico */
+  #authModal #btnAuthRegister{
+    background:linear-gradient(180deg,#22c55e,#16a34a);
+    color:#fff; border:1px solid rgba(0,0,0,0.06);
+    border-radius:16px; box-shadow:0 6px 12px rgba(0,0,0,0.20);
+    text-shadow:none; padding:10px 18px;
+  }
+  /* Botón secundario con fondo claro y texto azul */
+  #authModal #authToggle{
+    background:#f3f4f6 !important; color:#2563eb !important;
+    border:1px solid #e5e7eb !important; border-radius:16px;
+    box-shadow:0 6px 12px rgba(0,0,0,0.12);
+    padding:10px 16px;
+  }
+  /* Imagen de fondo clara con leve oscurecido (ya aplicado inline en JS) */
 </style>
 </head> 
 <body>
@@ -186,12 +318,12 @@
   <button type="button" class="avatar-option" data-src="assets/avatar3.png"><img src="assets/avatar3.png" alt="F1"/></button>
   <button type="button" class="avatar-option" data-src="assets/avatar4.png"><img src="assets/avatar4.png" alt="F2"/></button>
       </div>
-      <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+  <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <input id="avatarFile" type="file" accept="image/*" style="display:none" />
-  <button id="btnUploadAvatar" type="button" class="btn">Subir foto</button>
-  <button id="btnRemoveAvatar" type="button" class="btn">Quitar foto</button>
+  <button id="btnUploadAvatar" type="button" class="btn" style="background:linear-gradient(180deg,#a78bfa,#6d28d9);border-color:#fff">Subir foto</button>
+  <button id="btnRemoveAvatar" type="button" class="btn" style="background:linear-gradient(180deg,#6b7280,#374151);border-color:#fff">Quitar foto</button>
   <img id="fGenderPreview" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'><rect width='100%' height='100%' fill='white'/><text x='50%' y='52%' text-anchor='middle' dominant-baseline='middle' font-size='84' font-family='Segoe UI, Arial, sans-serif' fill='%239ca3af'>?</text></svg>" alt="Vista previa" style="width:48px;height:48px;border-radius:50%;border:1px solid #2b3553;background:#fff;object-fit:cover" />
-        <span class="hint">Puedes subir una foto para usarla como avatar. Se mostrará en el panel y en tu agente.</span>
+    <span class="hint" style="color:#c9c2ff">Puedes subir una foto para usarla como avatar. Se mostrará en el panel y en tu agente.</span>
       </div>
     </div>
   <div class="field col-3"><label>Nombre</label><input id="fName" type="text" maxlength="12" class="input" placeholder="nombre de usuario" autocomplete="username"/></div>
@@ -200,25 +332,12 @@
     <div style="display:flex;flex-direction:column;gap:10px;align-items:stretch">
       <!-- Campo oculto para compatibilidad con la lógica existente -->
     <input id="fUsd" type="hidden" value="0" />
-    <button id="btnBuy500" type="button" class="btn good" title="Pagar US$5 para obtener +500 créditos">Comprar 500 (+US$5)</button>
-    <button id="btnUploadProof" type="button" class="btn" title="Registrar número de documento">N° doc.</button>
-    <div id="proofNumberBox" style="display:none; margin-top:8px; padding:8px; border:1px dashed rgba(0,0,0,0.15); border-radius:8px; background:rgba(255,255,255,0.6)">
-      <div class="field" style="margin-bottom:6px">
-        <label for="proofNumber">Número de documento</label>
-        <input id="proofNumber" type="text" class="input" placeholder="Ej: 123456789" maxlength="40" />
-      </div>
-      <div class="field" style="margin-bottom:6px">
-        <label for="proofUsername">Nombre de usuario</label>
-        <input id="proofUsername" type="text" class="input" placeholder="Tu usuario" maxlength="24" />
-      </div>
-      <div class="actions"><button id="btnSaveProofNumber" type="button" class="btn good">Guardar</button></div>
+  <button id="btnBuy500" type="button" class="btn good" title="Pagar US$5 para obtener +500 créditos">Comprar 500 (+US$5)</button>
     </div>
-    <div id="proofStatus" class="hint" aria-live="polite"></div>
-    </div>
-  <div class="hint">Todos comienzan con 400 créditos gratis. Si compras, se suman +500 créditos al crear tu persona.</div>
+  <div class="hint">Comienzas con 400 créditos gratis. Puedes comprar créditos cuando quieras para construir, abrir negocios y avanzar más rápido en el mundo (+500 por compra).</div>
   </div>
     <div class="field col-12">
-      <label>Elige exactamente 5 gustos</label>
+  <label style="color:#c9c2ff">Elige exactamente 5 gustos</label>
       <div id="likesWrap" aria-label="Lista de gustos">
         <label class="chip"><input type="checkbox" value="música"><span>música</span></label>
         <label class="chip"><input type="checkbox" value="arte"><span>arte</span></label>
@@ -261,26 +380,15 @@
         <label class="chip"><input type="checkbox" value="jugos"><span>jugos</span></label>
         <label class="chip"><input type="checkbox" value="kiosco"><span>kiosco</span></label>
       </div>
-      <div class="limitNote">Seleccionados: <span id="likesCount">0</span>/5</div><div class="hint">Puedes pulsar “Elegir 5 al azar”.</div>
+  <div class="limitNote" style="color:#b6b0ff">Seleccionados: <span id="likesCount">0</span>/5</div><div class="hint" style="color:#b6b0ff">Puedes pulsar “Elegir 5 al azar”.</div>
     </div>
     <div class="col-12" style="display:flex;gap:10px;flex-wrap:wrap">
       <button id="btnRandLikes" type="button" class="btn">Elegir 5 al azar</button>
       <button id="btnStart" type="button" class="btn primary">Comenzar</button>
-      <button id="btnImprovePwd" type="button" class="btn good">Mejorar tu contraseña</button>
       <span id="errBox" class="err">Falta el nombre o no elegiste exactamente 5 gustos.</span>
     </div>
 
-<!-- Modal para mejorar contraseña -->
-<div id="pwdModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.35);align-items:center;justify-content:center;">
-  <div style="background:var(--card);border-radius:14px;padding:24px;max-width:370px;margin:auto;box-shadow:0 8px 32px rgba(0,0,0,0.18);text-align:left;">
-    <h3 style="margin-top:0">Agrega una contraseña más segura</h3>
-    <div style="font-size:16px;margin-bottom:12px;color:#d97706;font-weight:500;">Recomendación: Usa una contraseña con mínimo 8 caracteres, combinando mayúsculas, minúsculas, números y símbolos. Ejemplo: <span style="color:#2563eb;font-weight:600;">Mundo!2025@urbano</span></div>
-  <input id="newPwdInput" type="password" autocomplete="new-password" placeholder="Nueva contraseña" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d4a300;font-size:18px;margin-bottom:12px;" />
-    <button id="btnSaveNewPwd" class="btn good" style="width:100%;font-size:18px;">Guardar nueva contraseña</button>
-    <div id="pwdMsg" style="margin-top:10px;font-size:15px;color:#22c55e;display:none;"></div>
-    <button id="btnClosePwdModal" class="btn" style="margin-top:18px;">Cerrar</button>
-  </div>
-</div>
+<!-- (Removido) Modal para mejorar contraseña -->
   </form>
 </div>
 
@@ -318,7 +426,6 @@
   <button id="btnShowGovDoc" class="btn">� Doc. Gobierno</button>
       <button id="btnShowMarried" class="btn">👨‍👩👧‍👦 Casados</button>
       <button id="btnGovOpen" class="btn">🏛️ Gobierno</button>
-      <button id="btnFollow" class="btn" title="Seguir a mi agente">Seguir agente: OFF</button>
     </div>
   </div>
 
@@ -387,7 +494,7 @@
   <div class="hint">Toca para mover</div>
 </div>
 
-<!-- Botón Seguir ahora está integrado en el UI (arriba) -->
+<!-- Botón Seguir: solo el flotante en el mapa -->
 
 <div id="builderModal">
   <div class="modalBox">

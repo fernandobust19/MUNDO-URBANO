@@ -14,10 +14,37 @@ async function getSheetsClient(){
   return google.sheets({ version: 'v4', auth });
 }
 
+// Evita re-escribir encabezados múltiples veces por ejecución
+const ENSURED_TABS = new Set();
+async function ensureHeaders({ sheets, spreadsheetId, sheetName, headers = ['Fecha','UserID','Username','Número'] }){
+  const key = `${spreadsheetId}|${sheetName}`;
+  if(ENSURED_TABS.has(key)) return true;
+  try{
+    const range = `${sheetName}!A1:D1`;
+    const r = await sheets.spreadsheets.values.get({ spreadsheetId, range });
+    const row = (r.data && r.data.values && r.data.values[0]) || null;
+    const isEmpty = !row || row.every(v => String(v||'').trim() === '');
+    if(isEmpty){
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: { values: [headers] }
+      });
+    }
+    ENSURED_TABS.add(key);
+    return true;
+  }catch(_){
+    // Si falla la lectura/actualización, continuar sin bloquear el append
+    return false;
+  }
+}
+
 async function appendRow({ spreadsheetId, sheetName, values }){
   const sheets = await getSheetsClient();
   const resource = { values: [values] };
   async function doAppend(tab){
+    await ensureHeaders({ sheets, spreadsheetId, sheetName: tab });
     const range = `${tab}!A1`;
     return sheets.spreadsheets.values.append({
       spreadsheetId,
