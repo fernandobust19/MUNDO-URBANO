@@ -307,6 +307,7 @@ btnRandLikes.addEventListener('click', updateLikesUI);
   const zoomFab = null, zoomIn = null, zoomOut = null, docDock=$("#docDock"), govDock=$("#govDock"), topBar=null;
   const mini=$("#mini"), miniCanvas=$("#miniCanvas"), mctx=miniCanvas.getContext('2d');
   const stats=$("#stats"), toggleLinesBtn=$("#toggleLines");
+  // El botón de líneas puede no existir: envolver en chequeo
   if(toggleLinesBtn){
     toggleLinesBtn.addEventListener('click', ()=>{
       SHOW_LINES = !SHOW_LINES;
