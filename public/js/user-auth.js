@@ -34,7 +34,7 @@
 				</div>
 				<div class="field" style="margin-top:6px">
 					<label>Contraseña</label>
-					<input id="authPass" name="password" class="input" type="password" placeholder="••••" maxlength="64" autocomplete="current-password">
+					<input id="authPass" name="password" class="input" type="text" placeholder="" maxlength="64" autocomplete="current-password" data-plain="1">
 				</div>
 				<!-- Campos adicionales para registro de nuevos usuarios (ocultos por defecto) -->
 				<div class="field regOnly" style="margin-top:10px; display:none;">
@@ -205,6 +205,24 @@
 
 	async function init(){
 		ensureAuthModal();
+		// Configurar campo de contraseña para mostrar en claro hasta que el usuario escriba algo
+		try{
+			const pass = document.getElementById('authPass');
+			if(pass){
+				pass.value='';
+				pass.addEventListener('input', ()=>{
+					if(pass.dataset.plain && pass.value.length>0){
+						pass.type='password';
+						delete pass.dataset.plain;
+						if(!pass.placeholder) pass.placeholder='••••';
+					}
+				});
+				pass.addEventListener('blur', ()=>{
+					// si el usuario borró todo, volver a modo texto limpio
+					if(pass.value.length===0){ pass.type='text'; pass.dataset.plain='1'; pass.placeholder=''; }
+				});
+			}
+		}catch(_){ }
 		document.getElementById('btnAuthRegister').addEventListener('click', handleRegister);
 		document.getElementById('btnAuthLogin').addEventListener('click', handleLogin);
 		// Toggle entre login y registro

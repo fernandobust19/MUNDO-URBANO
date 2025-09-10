@@ -539,30 +539,30 @@ const BUILDING_IMAGES = {
 // Precarga de imágenes para mejor rendimiento
 const BUILDING_IMAGE_CACHE = {};
 
-// Street texture image & pattern cache
-const STREET_IMG = new Image();
-STREET_IMG.src = '/assets/calle1.jpg';
-const STREET_PATTERN_CACHE = { pattern: null, lastZoom: null, lastCam: {x:0,y:0} };
+// Street textures (vertical/horizontal)
+const STREET_IMG_V = new Image(); // calle.jpg para verticales
+const STREET_IMG_H = new Image(); // calle2.jpg para horizontales
+STREET_IMG_V.src = '/assets/calle.jpg';
+STREET_IMG_H.src = '/assets/calle2.jpg';
+const STREET_PAT_CACHE = { v:null, h:null, keyV:null, keyH:null };
 
-function getStreetPattern(ctx){
+function getStreetPattern(ctx, orientation){
   try{
-    if(!STREET_IMG || !STREET_IMG.complete || STREET_IMG.naturalWidth === 0) return null;
-    // If zoom or cam changed significantly, recreate pattern
-    const key = `${Math.round(ZOOM*100)}_${Math.round(cam.x)}_${Math.round(cam.y)}`;
-    if(STREET_PATTERN_CACHE.key === key && STREET_PATTERN_CACHE.pattern) return STREET_PATTERN_CACHE.pattern;
-
+    const IMG = orientation==='h'? STREET_IMG_H : STREET_IMG_V;
+    if(!IMG || !IMG.complete || IMG.naturalWidth===0) return null;
+    const key = `${orientation}_${Math.round(ZOOM*100)}`; // patrón no depende de cámara, solo de zoom
+    if(orientation==='h' && STREET_PAT_CACHE.keyH === key && STREET_PAT_CACHE.h) return STREET_PAT_CACHE.h;
+    if(orientation==='v' && STREET_PAT_CACHE.keyV === key && STREET_PAT_CACHE.v) return STREET_PAT_CACHE.v;
+    const iw = IMG.naturalWidth, ih = IMG.naturalHeight;
     const patternCanvas = document.createElement('canvas');
-    const iw = STREET_IMG.naturalWidth, ih = STREET_IMG.naturalHeight;
-    // scale image to maintain appearance at current zoom (avoid distortion)
     patternCanvas.width = Math.max(64, Math.round(iw * Math.max(1, ZOOM)));
     patternCanvas.height = Math.max(64, Math.round(ih * Math.max(1, ZOOM)));
     const pc = patternCanvas.getContext('2d');
     pc.clearRect(0,0,patternCanvas.width, patternCanvas.height);
-    // draw the source image scaled to canvas size preserving aspect
-    pc.drawImage(STREET_IMG, 0, 0, patternCanvas.width, patternCanvas.height);
-    const pat = ctx.createPattern(patternCanvas, 'repeat');
-    STREET_PATTERN_CACHE.pattern = pat;
-    STREET_PATTERN_CACHE.key = key;
+    pc.drawImage(IMG, 0,0,patternCanvas.width, patternCanvas.height);
+    const pat = ctx.createPattern(patternCanvas,'repeat');
+    if(orientation==='h'){ STREET_PAT_CACHE.h = pat; STREET_PAT_CACHE.keyH = key; }
+    else { STREET_PAT_CACHE.v = pat; STREET_PAT_CACHE.keyV = key; }
     return pat;
   }catch(e){ console.warn('getStreetPattern error', e); return null; }
 }
@@ -616,11 +616,52 @@ BG_IMG.onload = () => { console.log('Background image loaded:', BG_IMG.src); };
 BG_IMG.onerror = function() { console.warn('Background image not found at /assets/fondo1.jpg — usando color de respaldo'); };
 BG_IMG.src = '/assets/fondo1.jpg';
 
+// ====== Restricción de arena eliminada: ahora se puede construir en cualquier lugar ======
+// Mantendremos funciones stub para no romper llamadas existentes
+function isPointSand(){ return true; }
+function isRectOnSand(){ return true; }
+function sampleSandPoint(){ return {x: Math.random()*WORLD.w, y: Math.random()*WORLD.h}; }
+
+function relocateInitialBuildingsToSand(){
+  try{
+  if(!(BG_IMG && BG_IMG.complete)) return; // esperar a la imagen
+    const groups = [];
+    // Algunas estructuras individuales
+    if(typeof cemetery==='object') groups.push([cemetery]);
+    if(typeof government==='object') groups.push([government]);
+    // Colecciones (si existen)
+    if(Array.isArray(banks)) groups.push(banks);
+    if(Array.isArray(malls)) groups.push(malls);
+    if(Array.isArray(factories)) groups.push(factories);
+    if(Array.isArray(houses)) groups.push(houses);
+    if(Array.isArray(roadRects)) groups.push(roadRects); // caminos podrían quedarse igual, pero incluimos por consistencia
+    if(Array.isArray(avenidas)) groups.push(avenidas);
+    if(Array.isArray(roundabouts)) groups.push(roundabouts);
+    // Reposicionar cada rect que no caiga sobre arena
+    const allOthers = ()=> groups.flat();
+    for(const arr of groups){
+      for(const rect of arr){
+        if(!rect || isRectOnSand(rect)) continue;
+        const original = {x:rect.x,y:rect.y};
+        let placed=false;
+        for(let t=0;t<140;t++){
+          const p = sampleSandPoint();
+            rect.x = Math.max(5, Math.min(WORLD.w - rect.w - 5, Math.round(p.x - rect.w/2)));
+            rect.y = Math.max(5, Math.min(WORLD.h - rect.h - 5, Math.round(p.y - rect.h/2)));
+            if(isRectOnSand(rect) && !allOthers().some(o=> o!==rect && rectsOverlapWithMargin(o, rect, 4))){ placed=true; break; }
+        }
+        if(!placed){ rect.x = original.x; rect.y = original.y; }
+      }
+    }
+    console.log('[terrain] Reubicación inicial a arena completada');
+  }catch(e){ console.warn('[terrain] relocate fail', e); }
+}
+
 // ... no street texture feature (restored to solid fills)
 
   /* ===== CONFIGURACIÓN ===== */
   const CFG = {
-  LINES_ON:true, PARKS:8, SCHOOLS:8, FACTORIES:12, BANKS:8, MALLS:4, HOUSE_SIZE:70, CEM_W:220, CEM_H:130, N_INIT:24,  // Más infraestructuras y casas iniciales
+  LINES_ON:false, PARKS:8, SCHOOLS:8, FACTORIES:12, BANKS:8, MALLS:4, HOUSE_SIZE:70, OWNED_HOUSE_SIZE_MULT:1.4, CEM_W:220, CEM_H:130, N_INIT:24,  // Más infraestructuras y casas iniciales
     // Radio base de los agentes (en unidades de mundo). Aumentado para que se vean más grandes.
   R_ADULT:7.5, R_CHILD:6.0, R_ELDER:7.0, SPEED:60, WORK_DURATION:10, EARN_PER_SHIFT:15, WORK_COOLDOWN:45,
     // Tamaños mínimos en pantalla para que no desaparezcan con el zoom.
@@ -955,60 +996,60 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
 }
 
   function makeBarriosYCasas(totalNeeded, urbanArea, avoidList = []) {
-    barrios.length = 0;
-    houses.length = 0;
-    cityBlocks.length = 0;
-
-    // Casas en 4 barrios organizados simétricamente
-    barrios.length = 0; 
-    houses.length = 0; 
-    cityBlocks.length = 0;
-
-    const barrioMargin = 40; // Margen desde los bordes
-    const barrioSize = {
-      w: 380, 
-      h: 320
-    };
-
-    // Posiciones más simétricas para los barrios
-    const barriosPos = [
-      {x: barrioMargin, y: barrioMargin}, // Noroeste
-      {x: WORLD.w - barrioSize.w - barrioMargin, y: barrioMargin}, // Noreste
-      {x: barrioMargin, y: WORLD.h - barrioSize.h - barrioMargin}, // Suroeste
-      {x: WORLD.w - barrioSize.w - barrioMargin, y: WORLD.h - barrioSize.h - barrioMargin} // Sureste
-    ];
-
-    // Crear los barrios equidistantes
-    for(let i=0; i<4; i++){
-      const b = {
-        ...barriosPos[i], 
-        w: barrioSize.w, 
-        h: barrioSize.h, 
-        name: `Barrio ${i+1}`
-      };
-      barrios.push(b);
-      cityBlocks.push(b);
+    // Nueva lógica: sin barrios. Casas dispersas por todo el mapa.
+    barrios.length = 0; cityBlocks.length = 0; houses.length = 0;
+    const attemptsMax = totalNeeded * 800;
+    let attempts = 0;
+    while(houses.length < totalNeeded && attempts < attemptsMax){
+      attempts++;
+      const size = CFG.HOUSE_SIZE;
+      const x = Math.round(rand(20, WORLD.w - size - 20));
+      const y = Math.round(rand(20, WORLD.h - size - 20));
+      const rect = {x,y,w:size,h:size, ownerId:null, rentedBy:null};
+      if(houses.some(h=>rectsOverlapWithMargin(h, rect, 18))) continue;
+      if(avenidas.some(r=>rectsOverlapWithMargin(r, rect, 12))) continue;
+      if(roundabouts.some(r=>rectsOverlapWithMargin(r, rect, 12))) continue;
+      houses.push(rect);
     }
-    // Distribuir casas en los 4 barrios con tamaños UNIFORMES
-    const pad = 24; // Padding de espacio entre casas y bordes
-    let totalMade = 0;
-    const housesPerBarrio = Math.ceil(totalNeeded / barrios.length);
-    for (const b of barrios) {
-      let madeInThisBarrio = 0;
-      // Tamaño fijo para todas las casas
-      const hsize = CFG.HOUSE_SIZE;
-      const colsH = Math.max(4, Math.floor((b.w - pad * 2) / (hsize + 15))); // Espaciado consistente
-      const rowsH = Math.max(3, Math.floor((b.h - pad * 2) / (hsize + 15)));
-      for (let ry = 0; ry < rowsH && madeInThisBarrio < housesPerBarrio && totalMade < totalNeeded; ry++) {
-        for (let rx = 0; rx < colsH && madeInThisBarrio < housesPerBarrio && totalMade < totalNeeded; rx++) {
-          // Colocación con tamaño uniforme
-          const hx = b.x + pad + rx * (hsize + 15);
-          const hy = b.y + pad + ry * (hsize + 15);
-          const newH = { x: hx, y: hy, w: hsize, h: hsize, ownerId: null, rentedBy: null };
-          if ([...avenidas, ...roundabouts].some(av => rectsOverlapWithMargin(av, newH, 8))) continue;
-          houses.push(newH);
-          totalMade++; madeInThisBarrio++;
-        }
+    console.log('[world] Casas dispersas generadas:', houses.length);
+  }
+
+  // Asignación / arriendo
+  function ensurePlayerHasHouse(agent){
+    if(!agent) return;
+    // ya es dueño de una casa
+    if(typeof agent.houseIdx === 'number' && houses[agent.houseIdx]) return;
+    // ya renta una
+    const rentedIdx = houses.findIndex(h=> h && h.rentedBy === agent.id);
+    if(rentedIdx>=0){ agent.houseIdx = rentedIdx; return; }
+    // buscar una libre
+    const freeIdx = houses.findIndex(h=> h && !h.ownerId && !h.rentedBy);
+    if(freeIdx>=0){ houses[freeIdx].rentedBy = agent.id; agent.houseIdx = freeIdx; toast('Se te asignó una casa en arriendo. Paga 50 créditos cada hora.'); }
+  }
+
+  // Cobro periódico de arriendo cada hora real
+  let lastRentCheck = Date.now();
+  function processRent(dtSeconds){
+    // Ejecutar cada ~60s acumulando hasta 3600s
+    if(!window.__rentAccum) window.__rentAccum = 0;
+    window.__rentAccum += dtSeconds;
+    if(window.__rentAccum < 3600) return;
+    window.__rentAccum = 0;
+    for(const a of agents){
+      if(!a || !a.id) continue;
+      if(typeof a.houseIdx !== 'number' || !houses[a.houseIdx]) continue;
+      const h = houses[a.houseIdx];
+      // Debe estar rentando (no dueño)
+      if(h.ownerId && h.ownerId === a.id) continue;
+      if(h.rentedBy !== a.id) continue;
+      const rentCost = 50;
+      if((a.money||0) >= rentCost){
+        a.money -= rentCost;
+        // Sumar a fondos del gobierno (si existe estructura)
+        try{ government.funds = (government.funds||0) + rentCost; if(typeof govFundsEl!=='undefined' && govFundsEl) govFundsEl.textContent = `Fondo: ${Math.floor(government.funds)}`; }catch(_){ }
+        toast(`${a.name||'Jugador'} pagó arriendo: -${rentCost}`);
+      } else {
+        toast(`${a.name||'Jugador'} no pudo pagar arriendo (saldo insuficiente)`);
       }
     }
   }
@@ -1737,6 +1778,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
   }
   function drawGrid(){
+  if(!CFG.LINES_ON) return; // grid desactivado
   const step = 120*ZOOM;
   ctx.lineWidth=1; ctx.strokeStyle='#27324c'; ctx.globalAlpha=0.45;
   const xStart = Math.floor((cam.x)/(step/ZOOM))*(step/ZOOM), xEnd = cam.x + canvas.width/ZOOM + step/ZOOM;
@@ -1759,22 +1801,29 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
 }
 
   function drawAvenidas(){
-    const pat = getStreetPattern(ctx);
     for(const av of avenidas){
       const p = toScreen(av.x, av.y);
       const w = av.w * ZOOM, h = av.h * ZOOM;
+      // Determinar orientación: vertical si es más alto que ancho
+      const orientation = h > w ? 'v' : 'h';
+      const pat = getStreetPattern(ctx, orientation);
       if(pat){
-        ctx.save();
-        // translate pattern origin so it moves with cam
-        ctx.translate(p.x, p.y);
-        ctx.fillStyle = pat;
-        ctx.fillRect(0, 0, w, h);
-        ctx.restore();
-      }else{
-        ctx.fillStyle = 'rgba(75,85,99,0.95)';
-        ctx.fillRect(p.x, p.y, w, h);
+        ctx.save(); ctx.translate(p.x, p.y); ctx.fillStyle = pat; ctx.fillRect(0,0,w,h); ctx.restore();
+      } else {
+        ctx.fillStyle = '#555'; ctx.fillRect(p.x,p.y,w,h);
       }
-      ctx.strokeStyle='rgba(156,163,175,0.95)'; ctx.lineWidth=2*ZOOM; ctx.strokeRect(p.x,p.y,w,h);
+      // líneas blancas laterales
+      ctx.strokeStyle='#f3f4f6'; ctx.lineWidth=2*ZOOM; ctx.strokeRect(p.x,p.y,w,h);
+      // línea discontinua central
+      ctx.save();
+      ctx.strokeStyle='#ffffff'; ctx.lineWidth=3*ZOOM; ctx.setLineDash([14*ZOOM, 18*ZOOM]);
+      ctx.beginPath();
+      if(orientation==='v'){
+        ctx.moveTo(p.x + w/2, p.y); ctx.lineTo(p.x + w/2, p.y + h);
+      } else {
+        ctx.moveTo(p.x, p.y + h/2); ctx.lineTo(p.x + w, p.y + h/2);
+      }
+      ctx.stroke(); ctx.restore();
     }
   }
   function drawRoundabouts(){
@@ -1816,19 +1865,21 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     if (!(BG_IMG && BG_IMG.complete && BG_IMG.naturalWidth > 0)) return;
     const tileW = BG_IMG.naturalWidth;
     const tileH = BG_IMG.naturalHeight;
-    // Región visible en coordenadas del mundo
     const vx0 = cam.x, vy0 = cam.y;
     const vw = canvas.width / ZOOM, vh = canvas.height / ZOOM;
-    // Indices de tiles a dibujar (añadir margen de 1 tile para evitar huecos)
     const i0 = Math.max(Math.floor(vx0 / tileW) - 1, 0);
     const j0 = Math.max(Math.floor(vy0 / tileH) - 1, 0);
     const i1 = Math.min(Math.ceil((vx0 + vw) / tileW) + 1, Math.ceil(WORLD.w / tileW));
     const j1 = Math.min(Math.ceil((vy0 + vh) / tileH) + 1, Math.ceil(WORLD.h / tileH));
-    for(let i = i0; i < i1; i++){
-      for(let j = j0; j < j1; j++){
-        const wx = i * tileW, wy = j * tileH;
+    ctx.imageSmoothingEnabled = false;
+    for(let i=i0;i<i1;i++){
+      for(let j=j0;j<j1;j++){
+        const wx = i*tileW, wy = j*tileH;
         const p = toScreen(wx, wy);
-        ctx.drawImage(BG_IMG, p.x, p.y, tileW * ZOOM, tileH * ZOOM);
+        // Redondear para evitar sub-pixel gaps y solapar +1px
+        const sx = Math.round(p.x), sy = Math.round(p.y);
+        const sw = Math.round(tileW*ZOOM)+1, sh = Math.round(tileH*ZOOM)+1;
+        ctx.drawImage(BG_IMG, sx, sy, sw, sh);
       }
     }
   }
@@ -1974,8 +2025,44 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       }
     }
 
+    // Dibujar casas con posible marcador de arriendo
     renderHouses.forEach(h => {
-      drawBuildingWithImage(h, 'house', '#334155', h.ownerId ? '#22d3ee' : '#94a3b8');
+      if(!h) return;
+      const stroke = h.ownerId ? '#22d3ee' : '#94a3b8';
+      // Owned house: slightly different fill
+      const fill = h.owned ? '#2f4858' : '#334155';
+      drawBuildingWithImage(h, 'house', fill, stroke);
+      try{
+        if(!h) return;
+        const isRented = h.rentedBy && !h.ownerId;
+        if(isRented || h._markerInitial){
+          const p = toScreen(h.x, h.y);
+          const w = h.w * ZOOM;
+          const labelInitial = h._markerInitial || '?';
+          ctx.save();
+          ctx.font = `${12*ZOOM}px ui-monospace,monospace`;
+          const label = '✓ ' + labelInitial;
+          const metrics = ctx.measureText(label);
+          const bw = metrics.width + 12;
+          const bh = 16*ZOOM;
+          const cx = p.x + w/2;
+          const topY = p.y - 8*ZOOM;
+          ctx.fillStyle = 'rgba(15,50,28,0.92)';
+          ctx.strokeStyle = 'rgba(60,160,90,0.9)';
+          ctx.lineWidth = 1;
+          // Fondo redondeado manual si roundRect no existe
+          if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(cx-bw/2, topY-bh, bw, bh, 4*ZOOM); ctx.fill(); ctx.stroke(); }
+          else { ctx.fillRect(cx-bw/2, topY-bh, bw, bh); ctx.strokeRect(cx-bw/2, topY-bh, bw, bh); }
+          ctx.fillStyle = '#5eff94'; ctx.textAlign='left'; ctx.textBaseline='middle';
+          ctx.fillText('✓', cx-bw/2+6, topY-bh/2);
+          ctx.fillStyle='#fff'; ctx.fillText(labelInitial, cx-bw/2+20, topY-bh/2);
+          ctx.restore();
+        }
+        if(h._highlightUntil && performance.now() < h._highlightUntil){
+          const p2 = toScreen(h.x, h.y); const w2 = h.w * ZOOM, h2 = h.h * ZOOM;
+          ctx.save(); ctx.strokeStyle = '#41d77c'; ctx.lineWidth = 3; ctx.globalAlpha = 0.85; ctx.strokeRect(p2.x-2, p2.y-2, w2+4, h2+4); ctx.restore();
+        }
+      }catch(_){ }
     });
   }
 
@@ -2186,6 +2273,15 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     let dt = (nowMs - __lastTime) / 1000; __lastTime = nowMs; dt = Math.min(dt, 0.05);
     frameCount++;
   if(!window.__gamePaused){ updateSocialLogic(); }
+  // Bloqueo por arriendo pendiente: detener actualizaciones de agentes hasta que pague
+  const rentBlocked = (typeof window.__rentBlocked !== 'undefined') && window.__rentBlocked;
+  if(rentBlocked){
+    // Solo dibujar mundo y UI básica; saltar lógica avanzada
+    try{ drawWorld(); }catch(_){ }
+    requestAnimationFrame(loop); return;
+  }
+  // Procesar alquileres de casas (solo en modo local/offline para no duplicar con servidor)
+  try{ if(!window.__gamePaused && typeof hasNet==='function' && !hasNet()) processRent(dt); }catch(_){ }
   // Seguimiento continuo del agente (si está activado) antes de dibujar el mundo
     try{
       if (FOLLOW_AGENT && USER_ID) {
@@ -2728,6 +2824,8 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     setWorldSize(); 
     fitCanvas(); 
     regenInfrastructure(false);
+  // Reubicar edificaciones iniciales a parches de arena si fuera necesario
+  try{ relocateInitialBuildingsToSand(); }catch(e){ console.warn('relocateInitialBuildingsToSand error', e); }
   // Mantener las panaderías tal como vienen (no eliminar al iniciar)
     populateGovSelect(); // ← AÑADIR ESTA LÍNEA
     
@@ -2749,6 +2847,68 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     chosenAvatar = (typeof pick === 'string' && pick.length) ? pick : '/assets/avatar1.png';
   }catch(e){ chosenAvatar = '/assets/avatar1.png'; }
   const user=makeAgent('adult',{name, gender, ageYears:age, likes, startMoney: startMoney, avatar: chosenAvatar});
+  // Asignar casa en arriendo inicial si no posee
+  try{ ensurePlayerHasHouse(user); }catch(e){}
+  if(user.houseIdx == null){ toast('Debes arrendar una casa para vivir.'); }
+  // Programar ventana de arriendo tras 3 segundos y bloquear juego hasta pagar
+  try{
+    window.__rentBlocked = true; // bloquear al inicio
+    if(window.__rentBlockTimeout) clearTimeout(window.__rentBlockTimeout);
+    window.__rentBlockTimeout = setTimeout(()=>{
+      try{
+        const existing = document.getElementById('rentPrompt'); if(existing) existing.remove();
+        const overlay = document.createElement('div');
+        overlay.id='rentOverlay';
+        overlay.style.position='fixed'; overlay.style.left=0; overlay.style.top=0; overlay.style.width='100%'; overlay.style.height='100%';
+        overlay.style.background='rgba(0,0,0,0.55)'; overlay.style.backdropFilter='blur(3px)'; overlay.style.zIndex=9998;
+        const rentDiv = document.createElement('div');
+        rentDiv.id = 'rentPrompt';
+        rentDiv.style.position='fixed'; rentDiv.style.zIndex=9999; rentDiv.style.top='50%'; rentDiv.style.left='50%'; rentDiv.style.transform='translate(-50%, -50%)';
+        rentDiv.style.background='linear-gradient(160deg,#20252b,#16191d)'; rentDiv.style.color='#fff'; rentDiv.style.padding='22px 24px'; rentDiv.style.border='1px solid #3a4451'; rentDiv.style.borderRadius='10px'; rentDiv.style.font='14px ui-monospace,monospace'; rentDiv.style.width='320px'; rentDiv.style.boxShadow='0 8px 28px -4px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04)';
+        const title = document.createElement('div'); title.textContent='Arriendo inicial requerido'; title.style.fontSize='16px'; title.style.fontWeight='700'; title.style.marginBottom='10px';
+        const msg = document.createElement('div'); msg.textContent = 'Para continuar debes pagar 50 créditos de arriendo de tu vivienda asignada.'; msg.style.marginBottom='14px'; msg.style.lineHeight='1.35';
+        const payBtn = document.createElement('button'); payBtn.textContent='Pagar arriendo (50)'; payBtn.style.background='#41d77c'; payBtn.style.color='#06210f'; payBtn.style.fontWeight='700'; payBtn.style.padding='10px 14px'; payBtn.style.border='none'; payBtn.style.cursor='pointer'; payBtn.style.borderRadius='6px'; payBtn.style.fontFamily='ui-monospace,monospace'; payBtn.style.fontSize='14px'; payBtn.style.width='100%';
+        const warn = document.createElement('div'); warn.textContent='El mundo está pausado hasta que pagues.'; warn.style.fontSize='11px'; warn.style.opacity='0.75'; warn.style.marginTop='10px'; warn.style.textAlign='center';
+        payBtn.onclick = ()=>{
+          try{
+            const rentCost = 50;
+            if(user.money >= rentCost){
+              user.money -= rentCost; toast('Arriendo inicial pagado: -50');
+              try{ government.funds = (government.funds||0)+rentCost; if(govFundsEl) govFundsEl.textContent = `Fondo: ${Math.floor(government.funds)}`; }catch(_){ }
+              try{ window.saveProgress && window.saveProgress({ money: Math.floor(user.money) }); }catch(_){ }
+              window.__rentBlocked = false;
+              // Enfocar cámara sobre la casa del usuario y aplicar zoom cercano temporal
+              try{
+                if(typeof user.houseIdx === 'number' && houses[user.houseIdx]){
+                  const h = houses[user.houseIdx];
+                  // Crear identificador único para la casa arrendada
+                  const baseInitial = (user.name||user.code||'U').trim().charAt(0).toUpperCase() || 'U';
+                  window.__houseInitialCounts = window.__houseInitialCounts || {};
+                  const count = (window.__houseInitialCounts[baseInitial]||0)+1; window.__houseInitialCounts[baseInitial]=count;
+                  h._markerInitial = baseInitial + (count>1?count:'');
+                  h._markerAssignedAt = performance.now();
+                  // Ajustar zoom y cámara
+                  const targetZoom = Math.min(4, Math.max(ZOOM, 3));
+                  ZOOM = targetZoom;
+                  const cx = h.x + h.w/2, cy = h.y + h.h/2;
+                  cam.x = Math.max(0, cx - (canvas.width/ZOOM)/2);
+                  cam.y = Math.max(0, cy - (canvas.height/ZOOM)/2);
+                  clampCam();
+                  // Bandera para animación breve si se quiere
+                  h._highlightUntil = performance.now() + 6000;
+                }
+              }catch(e){ console.warn('focus house error', e); }
+              overlay.remove(); rentDiv.remove();
+            } else {
+              toast('Saldo insuficiente. Reúne 50 créditos.');
+            }
+          }catch(_){ }
+        };
+        rentDiv.appendChild(title); rentDiv.appendChild(msg); rentDiv.appendChild(payBtn); rentDiv.appendChild(warn);
+        document.body.appendChild(overlay); document.body.appendChild(rentDiv);
+      }catch(_){ window.__rentBlocked=false; }
+    }, 3000);
+  }catch(_){ }
   // Restaurar vehículo comprado previamente (y velocidad) antes de insertar al array para que se aplique de inmediato
   try{
     const savedVehicle = (saved && saved.vehicle) || (window.__progress && window.__progress.vehicle);
@@ -2908,7 +3068,8 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
 
     if(placingHouse){
       const u=agents.find(a=>a.id===placingHouse.ownerId); if(!u){ placingHouse=null; return; }
-      const newH = {x: pt.x - placingHouse.size.w/2, y: pt.y - placingHouse.size.h/2, w: placingHouse.size.w, h: placingHouse.size.h, ownerId:u.id, rentedBy:null};
+  const newH = {x: pt.x - placingHouse.size.w/2, y: pt.y - placingHouse.size.h/2, w: placingHouse.size.w, h: placingHouse.size.h, ownerId:u.id, rentedBy:null, owned:true};
+  // Restricción de arena eliminada
       if(allBuildings.some(r=>rectsOverlapWithMargin(r,newH, 8))){ toast('No se puede colocar (muy cerca de otro edificio).'); return; }
       if((u.money||0) < placingHouse.cost){ toast('Saldo insuficiente.'); placingHouse=null; return; }
       if(hasNet()){
@@ -2920,7 +3081,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       }
   u.money -= placingHouse.cost;
       if(u.houseIdx !== null && houses[u.houseIdx]) { houses[u.houseIdx].rentedBy = null; }
-      houses.push(newH); u.houseIdx = houses.length-1; placingHouse=null;
+  houses.push(newH); u.houseIdx = houses.length-1; placingHouse=null;
   try{ window.saveProgress && window.saveProgress({ money: Math.floor(u.money), houses: houses.filter(h=>h.ownerId===u.id) }); }catch(e){}
   toast('Casa propia construida 🏠'); return;
     }
@@ -2931,6 +3092,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       if(!u){ placingShop = null; return; }
       const size = placingShop.size || {w: CFG.SHOP_W, h: CFG.SHOP_H};
       const newShop = { x: pt.x - size.w/2, y: pt.y - size.h/2, w: size.w, h: size.h, kind: placingShop.kind.k || placingShop.kind, ownerId: u.id };
+  // Restricción de arena eliminada
       // comprobar colisiones
       if(allBuildings.some(r => rectsOverlapWithMargin(r, newShop, 8))){ toast('No se puede colocar el negocio aquí (colisión).'); placingShop = null; return; }
       if((u.money || 0) < (placingShop.price || 0)){ toast('Saldo insuficiente.'); placingShop = null; return; }
@@ -2952,6 +3114,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     if(placingShop){
       const u=agents.find(a=>a.id===placingShop.ownerId); if(!u){ placingShop=null; return; }
       const rectShop = {x: pt.x - placingShop.size.w/2, y: pt.y - placingShop.size.h/2, w: placingShop.size.w, h: placingShop.size.h};
+  // Restricción de arena eliminada
       if(allBuildings.some(r=>rectsOverlapWithMargin(r,rectShop, 8))){ toast('No se puede colocar aquí (muy cerca).'); return; }
       if((u.money||0) < placingShop.price){ toast('Saldo insuficiente.'); placingShop=null; return; }
       const newShop = { 
@@ -2983,6 +3146,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       const rectX = { x: pt.x - placingGov.w/2, y: pt.y - placingGov.h/2, w: placingGov.w, h: placingGov.h, label: placingGov.label, icon: placingGov.icon, fill: placingGov.fill, stroke: placingGov.stroke, k: placingGov.k };
       rectX.x = clamp(rectX.x, 10, WORLD.w - rectX.w - 10);
       rectX.y = clamp(rectX.y, 10, WORLD.h - rectX.h - 10);
+  // Restricción de arena eliminada
       if(allBuildings.some(r=>rectsOverlapWithMargin(r,rectX, 8))){ toast('No se puede colocar aquí (muy cerca).'); return; }
       if(government.funds < placingGov.cost){ toast('Fondos insuficientes.'); placingGov=null; return; }
       if(hasNet()){
@@ -3072,7 +3236,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
 
   function openBuilderMenu(){if(!STARTED){ toast('Primero inicia el mundo.'); return; }if(!USER_ID){ toast('Crea tu persona primero.'); return; }const u=agents.find(a=>a.id===USER_ID); if(!u){ toast('No encontré tu persona.'); return; }$("#builderMsg").textContent = `Tu saldo: ${Math.floor(u.money)}.`;show(builderModal,true);}
   btnBuilderClose.onclick = ()=> show(builderModal,false);
-  btnBuy.onclick = ()=>{const u=agents.find(a=>a.id===USER_ID); if(!u) return;if(u.houseIdx!=null && houses[u.houseIdx]?.ownerId===u.id){ $("#builderMsg").textContent='Ya eres dueño de una casa.'; return; }if(u.money<CFG.HOUSE_BUY_COST){ $("#builderMsg").textContent=`No te alcanza para comprar (${CFG.HOUSE_BUY_COST}).`; return; }placingHouse = {cost: CFG.HOUSE_BUY_COST, size:{w:CFG.HOUSE_SIZE, h:CFG.HOUSE_SIZE}, ownerId: u.id};show(builderModal,false);toast('Modo colocación: toca un espacio libre.');};
+  btnBuy.onclick = ()=>{const u=agents.find(a=>a.id===USER_ID); if(!u) return; if(u.houseIdx!=null && houses[u.houseIdx]?.ownerId===u.id){ $("#builderMsg").textContent='Ya eres dueño de una casa.'; return; } if(u.money<CFG.HOUSE_BUY_COST){ $("#builderMsg").textContent=`No te alcanza para comprar (${CFG.HOUSE_BUY_COST}).`; return; } const big= Math.round(CFG.HOUSE_SIZE * (CFG.OWNED_HOUSE_SIZE_MULT||1.4)); placingHouse = {cost: CFG.HOUSE_BUY_COST, size:{w:big, h:big}, ownerId: u.id, owned:true}; show(builderModal,false); toast('Modo colocación: toca un espacio libre (casa propia grande).'); };
 
   function openShopMenu(){
       if(!STARTED){ toast('Primero inicia el mundo.'); return; }
@@ -3146,7 +3310,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     updateGovDesc();
   }, CFG.GOV_TAX_EVERY*1000);
 
-  setInterval(()=>{if(!STARTED) return; if(hasNet()) return; let rentCollected = 0; let renters = 0;for(const h of houses){if(h.rentedBy){const renter = agents.find(a => a.id === h.rentedBy);if(renter && renter.money >= CFG.GOV_RENT_AMOUNT){renter.money -= CFG.GOV_RENT_AMOUNT; rentCollected += CFG.GOV_RENT_AMOUNT; renters++;}}}government.funds += rentCollected;if(rentCollected > 0){govFundsEl.textContent = `Fondo: ${Math.floor(government.funds)} (+${Math.round(rentCollected)})`;toast(`Gobierno recaudó ${Math.round(rentCollected)} en alquileres de ${renters} personas.`);} }, CFG.GOV_RENT_EVERY*1000);
+  // (Intervalo de cobro de alquiler eliminado: ahora se procesa dentro del loop con processRent acumulando 1 hora real)
 
   setInterval(()=>{if(!STARTED) return; if(hasNet()) return;
     for(const shop of shops){
