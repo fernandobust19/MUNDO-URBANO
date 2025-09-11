@@ -2,14 +2,16 @@
 
 ## Casas y Arriendo
 
-- Al ingresar al mundo pasan 3 segundos y aparece una ventana que exige pagar el arriendo inicial (50 créditos). La simulación se pausa hasta pagar.
-- Al pagar:
+- En la PRIMERA sesión de un jugador nuevo, tras ~3 segundos aparece una ventana que exige pagar el arriendo inicial (50 créditos). La simulación se pausa hasta pagar.
+- Una vez pagado el arriendo inicial se guarda la bandera `initialRentPaid` y NO se vuelve a mostrar ese mensaje en futuras sesiones.
+- La casa asignada en arriendo se persiste mediante `rentedHouseIdx`; al volver a iniciar sesión el jugador reaparece con la misma casa sin volver a pagar el arriendo inicial.
+- Al pagar por primera vez:
   - Se descuenta 50 del saldo del jugador.
   - Se suma a los fondos del gobierno.
   - La cámara hace zoom y centra la casa asignada.
   - La casa recibe un marcador con ✓ y una inicial única (si la inicial ya existe se agrega un número secuencial).
   - Se resalta la casa unos segundos con un borde verde.
-- El arriendo periódico (cada hora) descuenta 50 si hay saldo; si no, muestra mensaje de saldo insuficiente.
+- El arriendo periódico (cada hora real acumulada de simulación local/offline) descuenta 50 si hay saldo; si no, muestra mensaje de saldo insuficiente (sin expulsar todavía).
 
 ## Casas Propias (Compra)
 
@@ -26,7 +28,18 @@
 
 ## Persistencia
 
-- Al pagar arriendo inicial y en cada cobro periódico se intenta guardar progreso (`saveProgress`) reflejando el nuevo saldo.
+- Campos persistidos clave:
+  - `initialRentPaid`: evita que el prompt de arriendo vuelva a aparecer.
+  - `rentedHouseIdx`: índice de la casa arrendada para restaurarla en futuras sesiones.
+  - `money`, `houses` (propias), `shops` (negocios del jugador), `vehicle`.
+- Al pagar arriendo inicial y en compras/pagos relevantes se llama a `saveProgress`.
+
+## Negocios y Caja (Cashbox)
+
+- Cada negocio comprado acumula ganancias en `cashbox` cuando otros agentes realizan compras.
+- Se muestra un rótulo flotante sobre el negocio con el formato `💰 <monto>` mientras el monto sea > 0 (con un desvanecido gradual si no cambia por un tiempo).
+- El dueño puede "gestionar" su negocio (rol interno `manage_shop`): al llegar se transfiere TODO el monto de la caja a su dinero y la caja se reinicia a 0.
+- La acción de gestión genera un `toast` y persiste el nuevo saldo y listado de negocios del jugador.
 
 ## Configuración Relevante en `original.js`
 
@@ -49,3 +62,5 @@
 - Panel de listado de casas (arrendadas vs. propias) con teletransporte.
 - Historial de pagos en UI del gobierno.
 - Animación suave de zoom (easing) al enfocar la casa.
+- Panel de resumen de negocios (ver caja total y retirar sin desplazarse físicamente).
+- Indicadores de estado del agente (trabajando, explorando, descansando) en la UI.

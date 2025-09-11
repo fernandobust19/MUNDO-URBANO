@@ -662,8 +662,9 @@ function relocateInitialBuildingsToSand(){
   /* ===== CONFIGURACIÓN ===== */
   const CFG = {
   LINES_ON:false, PARKS:8, SCHOOLS:8, FACTORIES:12, BANKS:8, MALLS:4, HOUSE_SIZE:70, OWNED_HOUSE_SIZE_MULT:1.4, CEM_W:220, CEM_H:130, N_INIT:24,  // Más infraestructuras y casas iniciales
+  HOME_REST_DURATION:120,
     // Radio base de los agentes (en unidades de mundo). Aumentado para que se vean más grandes.
-  R_ADULT:7.5, R_CHILD:6.0, R_ELDER:7.0, SPEED:60, WORK_DURATION:10, EARN_PER_SHIFT:15, WORK_COOLDOWN:45,
+  R_ADULT:7.5, R_CHILD:6.0, R_ELDER:7.0, SPEED:60, WORK_DURATION:6, EARN_PER_SHIFT:20, WORK_COOLDOWN:45,
     // Tamaños mínimos en pantalla para que no desaparezcan con el zoom.
   MIN_AGENT_PX: 12,
   NAME_FONT_PX: 13,
@@ -675,6 +676,8 @@ function relocateInitialBuildingsToSand(){
     WEALTH_TAX_MAX: 0.06,      // 6% tope de seguridad
     EMPLOYEE_SALARY: 25, SALARY_PAY_EVERY: 120,
     GOV_RENT_EVERY: 10*60, GOV_RENT_AMOUNT: 5, 
+  POST_DEPOSIT_EXPLORE: 30, // segundos de exploración tras depositar (visitar negocios)
+  SHOP_PURCHASE_INTERVAL: 300, // 5 min entre compras máximas
     COST_ROAD: 40,
     COST_PARK: 80, COST_SCHOOL: 120, COST_LIBRARY: 150, COST_POLICE: 200, COST_HOSPITAL: 250, COST_POWER: 350,
     SHOP_W:120, SHOP_H:80, VISIT_RADIUS:220, VISIT_RATE: 0.003, PRICE_MIN:1, PRICE_MAX:3,
@@ -1024,7 +1027,16 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     if(rentedIdx>=0){ agent.houseIdx = rentedIdx; return; }
     // buscar una libre
     const freeIdx = houses.findIndex(h=> h && !h.ownerId && !h.rentedBy);
-    if(freeIdx>=0){ houses[freeIdx].rentedBy = agent.id; agent.houseIdx = freeIdx; toast('Se te asignó una casa en arriendo. Paga 50 créditos cada hora.'); }
+    if(freeIdx>=0){
+      houses[freeIdx].rentedBy = agent.id; agent.houseIdx = freeIdx; toast('Se te asignó una casa en arriendo. Paga 50 créditos cada hora.');
+      try{
+        // Guardar índice de casa rentada para próximas sesiones si todavía no se guardó
+        if(window.saveProgress){
+          window.__progress = Object.assign({}, window.__progress||{}, { rentedHouseIdx: freeIdx });
+          if(!window.__savedRentedIdxOnce){ window.saveProgress({ rentedHouseIdx: freeIdx }); window.__savedRentedIdxOnce = true; }
+        }
+      }catch(_){ }
+    }
   }
 
   // Cobro periódico de arriendo cada hora real
@@ -1979,6 +1991,42 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       drawBuildingWithImage(s, s.kind, '#8B5CF6', '#c4b5fd');
     });
 
+    // Mostrar dinero acumulado de cada negocio comprado
+    try{
+      for(const s of renderShops){
+        if(!s || !s.ownerId) continue; // solo negocios con dueño
+        const amount = Math.floor(s.cashbox || 0);
+        if(amount <= 0) continue; // no mostrar cuando está vacío
+        const p = toScreen(s.x, s.y);
+        const w = s.w * ZOOM;
+        const now = performance.now();
+        const age = now - (s._lastCashboxChange || 0);
+        // Fade suave después de 12s sin cambios
+        let alpha = 1.0;
+        const FADE_DELAY = 12000, FADE_LEN = 6000;
+        if(age > FADE_DELAY){
+          alpha = Math.max(0.15, 1 - (age-FADE_DELAY)/FADE_LEN);
+        }
+        const label = `💰 ${amount}`;
+        ctx.save();
+        ctx.font = `${11*ZOOM}px ui-monospace,monospace`;
+        const metrics = ctx.measureText(label);
+        const bw = metrics.width + 14;
+        const bh = 16*ZOOM;
+        const cx = p.x + w/2;
+        const topY = p.y - 4*ZOOM;
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = 'rgba(30,41,59,0.90)';
+        ctx.strokeStyle = 'rgba(234,179,8,0.85)';
+        ctx.lineWidth = 1;
+        if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(cx-bw/2, topY-bh, bw, bh, 4*ZOOM); ctx.fill(); ctx.stroke(); }
+        else { ctx.fillRect(cx-bw/2, topY-bh, bw, bh); ctx.strokeRect(cx-bw/2, topY-bh, bw, bh); }
+        ctx.fillStyle = '#fcd34d'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(label, cx, topY-bh/2+1);
+        ctx.restore();
+      }
+    }catch(_){ }
+
   // Etiquetas de edificaciones ocultas por solicitud del usuario
 
     for(const inst of renderGovernmentPlaced){
@@ -2308,7 +2356,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         const myWorkplace = shops.find(s => s.id === a.employedAtShopId);
         if (myWorkplace) { a.target = centerOf(myWorkplace); a.targetRole = 'work_shop'; }
       }
-  if (!a.forcedShopId && !a.workingUntil && !a.goingToBank && !a.employedAtShopId && (!a.targetRole || a.targetRole==='idle') && nowS >= (a.nextWorkAt || 0)) {
+  if (!a.forcedShopId && !a.workingUntil && !a.goingToBank && !a.employedAtShopId && (!a.targetRole || a.targetRole==='idle') && nowS >= (a.nextWorkAt || 0) && !(a.restUntil && nowS < a.restUntil) && !(a.exploreUntil && nowS < a.exploreUntil)) {
   const myOwnedShops = shops.filter(s => s.ownerId === a.id);
         if (myOwnedShops.length > 0 && Math.random() < CFG.OWNER_MANAGE_VS_WORK_RATIO) {
           const shopToManage = myOwnedShops[(Math.random() * myOwnedShops.length) |  0];
@@ -2329,14 +2377,24 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         a.workingUntil=null; a.pendingDeposit += CFG.EARN_PER_SHIFT; a.goingToBank=true;
         const b=banks[(Math.random()*banks.length)|0]; if(b){ a.target=centerOf(b); a.targetRole='bank'; }
       }
-      if(a.goingToBank && a.target){
+    if(a.goingToBank && a.target){
         const c=a.target; if(Math.hypot(a.x-c.x,a.y-c.y)<14){
-          a.money += a.pendingDeposit; a.pendingDeposit=0; a.goingToBank=false; a.nextWorkAt = nowS + CFG.WORK_COOLDOWN;
-          if(a.houseIdx!=null){ const h=houses[a.houseIdx]; if(h) a.target=centerOf(h), a.targetRole='home'; else a.target=null, a.targetRole='idle'; }
-          else { a.target=null, a.targetRole='idle'; }
+      a.money += a.pendingDeposit; a.pendingDeposit=0; a.goingToBank=false;
+      // Inicia fase de exploración posterior al depósito
+      a.exploreUntil = nowS + (CFG.POST_DEPOSIT_EXPLORE||30);
+      a.targetRole='explore'; a.target=null; // se generará destino exploración más abajo
+      a.nextWorkAt = null; // se definirá tras descanso en casa
         }
       }
-  if(!a.forcedShopId && !a.workingUntil && !a.goingToBank && !a.employedAtShopId && (!a.targetRole || a.targetRole==='idle' || a.targetRole==='home')) {
+      // Transición de exploración -> ir a casa para descanso
+      if(a.exploreUntil && nowS >= a.exploreUntil){
+        a.exploreUntil = null;
+        if(a.houseIdx!=null){ const h=houses[a.houseIdx]; if(h){ a.target=centerOf(h); a.targetRole='home'; a.restUntil = nowS + (CFG.HOME_REST_DURATION||60); } }
+      }
+      // Tras descanso en casa, habilitar próximo trabajo
+      if(a.restUntil && nowS >= a.restUntil){ a.restUntil = null; a.nextWorkAt = nowS; }
+
+  if(!a.forcedShopId && !a.workingUntil && !a.goingToBank && !a.employedAtShopId && (!a.targetRole || a.targetRole==='idle' || a.targetRole==='home' || a.targetRole==='explore')) {
         if (!a.forcedShopId && Math.random() < CFG.VISIT_RATE) {
           // Sólo considerar negocios que ya tienen dueño (comprados). Las panaderías y otros tipos
           // que no estén comprados no deberían atraer visitas porque no existen físicamente.
@@ -2363,7 +2421,19 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         const c=a.target;
         if(Math.hypot(a.x-c.x,a.y-c.y)<16){
           const s = shops.find(q=>q.id===a._shopTargetId);
-          if(s){ const price = clamp(s.price, CFG.PRICE_MIN, CFG.PRICE_MAX); if(a.money>=price){ a.money-=price; const bonus = Math.round((s.buyCost || 0) * CFG.SHOP_PROFIT_FACTOR); const saleProfit = price + bonus; s.cashbox = (s.cashbox || 0) + saleProfit; } }
+          if(s){
+            // Comprar sólo si pasó intervalo de compra y tiene dinero
+            const okInterval = (nowS - (a.lastPurchaseAt||0)) >= (CFG.SHOP_PURCHASE_INTERVAL||300);
+            if(okInterval){
+              const price = clamp(s.price, CFG.PRICE_MIN, CFG.PRICE_MAX);
+              if(a.money>=price){
+                a.money-=price;
+                const bonus = Math.round((s.buyCost || 0) * CFG.SHOP_PROFIT_FACTOR);
+                const saleProfit = price + bonus; s.cashbox = (s.cashbox || 0) + saleProfit; s._lastCashboxChange = performance.now();
+                a.lastPurchaseAt = nowS;
+              }
+            }
+          }
           a.target=null; a.targetRole='idle'; a._shopTargetId=null;
         }
       }
@@ -2371,8 +2441,21 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         const c=a.target;
         if(Math.hypot(a.x-c.x,a.y-c.y)<16){
           const s = shops.find(q => q.id === a._shopTargetId);
-          const paid = payoutChunkToOwner(s, CFG.SHOP_PAYOUT_CHUNK);
-          if(!paid){ toast(`${a.code} gestionó ${s?.kind ?? 'su negocio'}, pero la caja no alcanza ${CFG.SHOP_PAYOUT_CHUNK}.`); }
+          if(s && s.ownerId === a.id){
+            const amount = Math.floor(s.cashbox || 0);
+            if(amount > 0){
+              a.money = (a.money || 0) + amount;
+              s.cashbox = 0; s._lastCashboxChange = performance.now();
+              toast(`${a.code} gestionó ${s.kind || 'negocio'} +${amount} créditos.`);
+              try{ window.saveProgress && window.saveProgress({ money: Math.floor(a.money), shops: shops.filter(sh=>sh.ownerId===a.id) }); }catch(_){ }
+            } else {
+              toast(`Caja vacía en ${s.kind || 'negocio'}.`);
+            }
+          } else {
+            // fallback al método anterior por si acaso
+            const paid = payoutChunkToOwner(s, CFG.SHOP_PAYOUT_CHUNK);
+            if(!paid){ toast(`${a.code} gestionó ${s?.kind ?? 'su negocio'}, pero la caja está vacía.`); }
+          }
           a.nextWorkAt = nowS + CFG.WORK_COOLDOWN; a.target=null; a.targetRole='idle'; a._shopTargetId=null;
         }
       }
@@ -2847,14 +2930,41 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     chosenAvatar = (typeof pick === 'string' && pick.length) ? pick : '/assets/avatar1.png';
   }catch(e){ chosenAvatar = '/assets/avatar1.png'; }
   const user=makeAgent('adult',{name, gender, ageYears:age, likes, startMoney: startMoney, avatar: chosenAvatar});
-  // Asignar casa en arriendo inicial si no posee
+  // Restaurar casa rentada previa si existe en progreso
+  try{
+    if(typeof saved.rentedHouseIdx === 'number' && houses[saved.rentedHouseIdx]){
+      const hRest = houses[saved.rentedHouseIdx];
+      if(!hRest.ownerId && (!hRest.rentedBy || hRest.rentedBy === user.id)){
+        hRest.rentedBy = user.id; user.houseIdx = saved.rentedHouseIdx;
+      }
+    }
+  }catch(_){ }
+  // Asignar casa en arriendo inicial si no posee (nueva sesión sin registro previo)
   try{ ensurePlayerHasHouse(user); }catch(e){}
   if(user.houseIdx == null){ toast('Debes arrendar una casa para vivir.'); }
+  // Colocar al jugador en el centro de su casa al inicio
+  try{ if(typeof user.houseIdx==='number' && houses[user.houseIdx]){ const h=houses[user.houseIdx]; user.x = h.x + h.w/2; user.y = h.y + h.h/2; } }catch(_){ }
   // Programar ventana de arriendo tras 3 segundos y bloquear juego hasta pagar
   try{
-    window.__rentBlocked = true; // bloquear al inicio
+  const alreadyPaid = !!(window.__progress && window.__progress.initialRentPaid);
+    window.__rentBlocked = !alreadyPaid; // bloquear solo si no ha pagado antes
     if(window.__rentBlockTimeout) clearTimeout(window.__rentBlockTimeout);
-    window.__rentBlockTimeout = setTimeout(()=>{
+    if(alreadyPaid){
+      // Para usuarios que regresan, asegurar marcador en su casa asignada
+      try{
+        if(typeof user.houseIdx==='number' && houses[user.houseIdx]){
+          const h=houses[user.houseIdx];
+          if(!h._markerInitial){
+            const baseInitial = (user.name||user.code||'U').trim().charAt(0).toUpperCase() || 'U';
+            window.__houseInitialCounts = window.__houseInitialCounts || {};
+            const count = (window.__houseInitialCounts[baseInitial]||0)+1; window.__houseInitialCounts[baseInitial]=count;
+            h._markerInitial = baseInitial + (count>1?count:'');
+          }
+        }
+      }catch(_){ }
+      /* no mostrar prompt */
+    }
+    else window.__rentBlockTimeout = setTimeout(()=>{
       try{
         const existing = document.getElementById('rentPrompt'); if(existing) existing.remove();
         const overlay = document.createElement('div');
@@ -2875,7 +2985,11 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
             if(user.money >= rentCost){
               user.money -= rentCost; toast('Arriendo inicial pagado: -50');
               try{ government.funds = (government.funds||0)+rentCost; if(govFundsEl) govFundsEl.textContent = `Fondo: ${Math.floor(government.funds)}`; }catch(_){ }
-              try{ window.saveProgress && window.saveProgress({ money: Math.floor(user.money) }); }catch(_){ }
+              // Guardar bandera de pago inicial en progreso persistente
+              try{
+                window.__progress = Object.assign({}, window.__progress||{}, { initialRentPaid: true, money: Math.floor(user.money), rentedHouseIdx: user.houseIdx });
+                window.saveProgress && window.saveProgress({ initialRentPaid: true, money: Math.floor(user.money), rentedHouseIdx: user.houseIdx });
+              }catch(_){ }
               window.__rentBlocked = false;
               // Enfocar cámara sobre la casa del usuario y aplicar zoom cercano temporal
               try{
@@ -2907,7 +3021,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         rentDiv.appendChild(title); rentDiv.appendChild(msg); rentDiv.appendChild(payBtn); rentDiv.appendChild(warn);
         document.body.appendChild(overlay); document.body.appendChild(rentDiv);
       }catch(_){ window.__rentBlocked=false; }
-    }, 3000);
+  }, 3000);
   }catch(_){ }
   // Restaurar vehículo comprado previamente (y velocidad) antes de insertar al array para que se aplique de inmediato
   try{

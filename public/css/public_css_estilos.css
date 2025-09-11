@@ -30,6 +30,12 @@ body {
   color: #000 !important;
   --text: #000;
 }
+/* Concesionario: forzar texto negro dentro del menú y selector */
+#carTypeSelect, #carTypeSelect * { color:#000 !important; }
+#carTypeSelect option { background:#fff; color:#000 !important; }
+#carMsg { color:#000; }
+/* Si existe un contenedor general del concesionario */
+#carDealerModal, #carDealerModal * { color:#000 !important; }
 
 /* contenedor principal */
 .container { max-width: 1100px; margin: 0 auto; padding: 18px; }
