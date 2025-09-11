@@ -30,9 +30,18 @@ body {
   color: #000 !important;
   --text: #000;
 }
-/* Concesionario: forzar texto negro dentro del menú y selector */
-#carTypeSelect, #carTypeSelect * { color:#000 !important; }
+/* Concesionario: selector de vehículos
+  - Texto normal negro
+  - Placeholder (opción inicial) gris */
+#carTypeSelect { color:#000 !important; background:#f3e8ff !important; border:1px solid #b794f4 !important; }
 #carTypeSelect option { background:#fff; color:#000 !important; }
+#carTypeSelect option[disabled],
+#carTypeSelect option.placeholder,
+#carTypeSelect option[value=""],
+#carTypeSelect option[value="null"],
+#carTypeSelect option[value="undefined"] { color: #6b7280 !important; }
+/* Safari / fallback: aplicar gris al primer option si actúa como placeholder */
+#carTypeSelect option:first-child { color:#6b7280; }
 #carMsg { color:#000; }
 /* Si existe un contenedor general del concesionario */
 #carDealerModal, #carDealerModal * { color:#000 !important; }
@@ -50,7 +59,7 @@ header.app-header h1 { font-size: 1.4rem; color: var(--accent); }
   border: 1px solid rgba(0,0,0,0.06);
   border-radius: 10px;
   padding: 12px;
-  box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+  box-shadow: none;
 }
 
 /* elemento govDesc que mencionaste antes */

@@ -10,7 +10,7 @@ const LEDGER_PATH = path.join(__dirname, 'saldos.ledger.json');
 
 let db = {
 	users: [], // { id, username, passHash, createdAt, lastLoginAt, gender?, country?, email?, phone? }
-	// userId -> { money, bank, vehicle, vehicles:[], shops:[], houses:[], name, avatar, likes:[], gender, age }
+	// userId -> { money, bank, vehicle, vehicles:[], shops:[], houses:[], name, avatar, likes:[], gender, age, initialRentPaid?, rentedHouseIdx? }
 	progress: {},
 	government: { funds: 0, placed: [] },
 	activityLog: [] // { ts, type, userId, details }
@@ -149,7 +149,7 @@ function getUserById(userId) {
 }
 
 function ensureProgress(userId) {
-	if (!db.progress[userId]) db.progress[userId] = { money: 400, bank: 0, vehicle: null, vehicles: [], shops: [], houses: [], name: null, avatar: null, likes: [], gender: null, age: null };
+	if (!db.progress[userId]) db.progress[userId] = { money: 400, bank: 0, vehicle: null, vehicles: [], shops: [], houses: [], name: null, avatar: null, likes: [], gender: null, age: null, initialRentPaid: false, rentedHouseIdx: null };
 	// backfill para repos anteriores
 	const p = db.progress[userId];
 	if(!('vehicles' in p)) p.vehicles = [];
@@ -160,6 +160,8 @@ function ensureProgress(userId) {
 	if(!Array.isArray(p.likes)) p.likes = [];
 	if(!('gender' in p)) p.gender = null;
 	if(!('age' in p)) p.age = null;
+	if(!('initialRentPaid' in p)) p.initialRentPaid = false;
+	if(!('rentedHouseIdx' in p)) p.rentedHouseIdx = null;
 	return p;
 }
 
@@ -209,7 +211,7 @@ function updateProgress(userId, patch) {
 	const p = ensureProgress(userId);
 	if (patch == null || typeof patch !== 'object') return { ok: false };
 	// Solo campos permitidos
-	const allowed = ['money', 'bank', 'vehicle', 'vehicles', 'shops', 'houses', 'name', 'avatar', 'likes', 'gender', 'age', 'country', 'email', 'phone'];
+	const allowed = ['money', 'bank', 'vehicle', 'vehicles', 'shops', 'houses', 'name', 'avatar', 'likes', 'gender', 'age', 'country', 'email', 'phone', 'initialRentPaid', 'rentedHouseIdx'];
 	for (const k of allowed) {
 		if (k in patch) {
 			if (k === 'shops' || k === 'houses' || k === 'vehicles' || k === 'likes') {

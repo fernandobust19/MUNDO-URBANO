@@ -25,6 +25,18 @@
   window.addEventListener('error', e => { try{toast('⚠️ Error: '+(e.message||'JS'));}catch(_){} });
   window.addEventListener('unhandledrejection', e => { try{toast('⚠️ Promesa: '+(e.reason?.message||'error'));}catch(_){} });
 
+  // Salvaguarda temprana: si el progreso ya indica que pagó el arriendo inicial,
+  // impedir que cualquier lógica posterior muestre el prompt o bloquee el juego.
+  // (Se refuerza luego dentro de startWorldWithUser, pero esto evita parpadeos.)
+  try{
+    const pr = (window.__progress||{});
+    if(pr.initialRentPaid){
+      window.__rentBlocked = false; // asegurar desbloqueado
+      // Marcar una bandera para que la creación de UI de arriendo se salte siempre
+      window.__skipInitialRentPrompt = true;
+    }
+  }catch(_){ }
+
   // Red: helpers para multijugador
   const hasNet = () => !!(window.sock && window.sock.connected);
   let __lastNetSend = 0;
@@ -1780,14 +1792,15 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     const p = toScreen(rect.x, rect.y);
     ctx.font = `700 ${Math.max(8, 12 * ZOOM)}px system-ui,Segoe UI,Arial`;
     ctx.fillStyle = 'rgba(255,255,255,0.95)';
-    ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = 2 * ZOOM;
+  // sombra de texto eliminada
+  ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
     ctx.textAlign = 'left'; ctx.fillText(label, p.x + 10 * ZOOM, p.y + 20 * ZOOM);
     ctx.font = `700 ${Math.max(10, iconSize * ZOOM)}px system-ui,Segoe UI,Arial,emoji`;
     ctx.textAlign = 'center';
     const iconX = p.x + (rect.w * ZOOM) - (10 * ZOOM);
     const iconY = p.y + (rect.h * ZOOM) / 2 + (iconSize * 0.18) * ZOOM;
     ctx.fillText(emoji, iconX, iconY);
-    ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
+  ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; // asegurado sin sombra
   }
   function drawGrid(){
   if(!CFG.LINES_ON) return; // grid desactivado
@@ -1866,9 +1879,10 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       ctx.font = `700 ${Math.max(10, 14 * ZOOM)}px system-ui,Segoe UI`;
       ctx.fillStyle = 'rgba(34,34,34,0.95)';
       // Dar sombra ligera para mejorar legibilidad
-      ctx.shadowColor = 'rgba(255,255,255,0.6)'; ctx.shadowBlur = 2 * ZOOM;
+  // sombra de texto eliminada
+  ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
       ctx.fillText(b.name, p.x + 8 * ZOOM, p.y + 18 * ZOOM);
-      ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
+  ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; // asegurado sin sombra
     }
   }
 
@@ -2949,7 +2963,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   const alreadyPaid = !!(window.__progress && window.__progress.initialRentPaid);
     window.__rentBlocked = !alreadyPaid; // bloquear solo si no ha pagado antes
     if(window.__rentBlockTimeout) clearTimeout(window.__rentBlockTimeout);
-    if(alreadyPaid){
+  if(alreadyPaid || window.__skipInitialRentPrompt){
       // Para usuarios que regresan, asegurar marcador en su casa asignada
       try{
         if(typeof user.houseIdx==='number' && houses[user.houseIdx]){
@@ -2963,8 +2977,8 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         }
       }catch(_){ }
       /* no mostrar prompt */
-    }
-    else window.__rentBlockTimeout = setTimeout(()=>{
+  }
+  else if(!window.__skipInitialRentPrompt) window.__rentBlockTimeout = setTimeout(()=>{
       try{
         const existing = document.getElementById('rentPrompt'); if(existing) existing.remove();
         const overlay = document.createElement('div');
@@ -2974,7 +2988,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         const rentDiv = document.createElement('div');
         rentDiv.id = 'rentPrompt';
         rentDiv.style.position='fixed'; rentDiv.style.zIndex=9999; rentDiv.style.top='50%'; rentDiv.style.left='50%'; rentDiv.style.transform='translate(-50%, -50%)';
-        rentDiv.style.background='linear-gradient(160deg,#20252b,#16191d)'; rentDiv.style.color='#fff'; rentDiv.style.padding='22px 24px'; rentDiv.style.border='1px solid #3a4451'; rentDiv.style.borderRadius='10px'; rentDiv.style.font='14px ui-monospace,monospace'; rentDiv.style.width='320px'; rentDiv.style.boxShadow='0 8px 28px -4px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04)';
+  rentDiv.style.background='linear-gradient(160deg,#20252b,#16191d)'; rentDiv.style.color='#fff'; rentDiv.style.padding='22px 24px'; rentDiv.style.border='1px solid #3a4451'; rentDiv.style.borderRadius='10px'; rentDiv.style.font='14px ui-monospace,monospace'; rentDiv.style.width='320px'; rentDiv.style.boxShadow='none';
         const title = document.createElement('div'); title.textContent='Arriendo inicial requerido'; title.style.fontSize='16px'; title.style.fontWeight='700'; title.style.marginBottom='10px';
         const msg = document.createElement('div'); msg.textContent = 'Para continuar debes pagar 50 créditos de arriendo de tu vivienda asignada.'; msg.style.marginBottom='14px'; msg.style.lineHeight='1.35';
         const payBtn = document.createElement('button'); payBtn.textContent='Pagar arriendo (50)'; payBtn.style.background='#41d77c'; payBtn.style.color='#06210f'; payBtn.style.fontWeight='700'; payBtn.style.padding='10px 14px'; payBtn.style.border='none'; payBtn.style.cursor='pointer'; payBtn.style.borderRadius='6px'; payBtn.style.fontFamily='ui-monospace,monospace'; payBtn.style.fontSize='14px'; payBtn.style.width='100%';
@@ -3657,7 +3671,7 @@ function ensureChatUI(){
   dock.id = 'chatDock';
   dock.style.position='fixed'; dock.style.right='16px'; dock.style.bottom='16px'; dock.style.zIndex='65';
   dock.style.width='min(320px, 90vw)'; dock.style.maxHeight='60vh'; dock.style.display='none';
-  dock.style.background='rgba(17,24,39,0.92)'; dock.style.border='1px solid #334155'; dock.style.borderRadius='10px'; dock.style.boxShadow='0 10px 30px rgba(0,0,0,0.4)';
+  dock.style.background='rgba(17,24,39,0.92)'; dock.style.border='1px solid #334155'; dock.style.borderRadius='10px'; dock.style.boxShadow='none';
   dock.innerHTML = `
     <div id="chatHeader" style="padding:8px 10px;border-bottom:1px solid #334155;display:flex;align-items:center;gap:8px;justify-content:space-between">
       <div id="chatTitle" style="font-weight:600">Chat</div>
