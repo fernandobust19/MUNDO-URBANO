@@ -106,6 +106,16 @@ app.post('/api/login', (req, res) => {
 
 app.post('/api/logout', (req, res) => { try{ const uid = getSessionUserId(req); if(uid){ try{ brain.saveMoneySnapshot(uid, 'logout'); }catch(e){} } clearSession(res); return res.json({ ok:true }); }catch(e){ return res.status(500).json({ ok:false }); } });
 
+// Guardar snapshot sin cerrar la sesión (para "Guardar y salir" sin pedir login luego)
+app.post('/api/snapshot', (req, res) => {
+  try{
+    const uid = getSessionUserId(req);
+    if(!uid) return res.status(401).json({ ok:false });
+    try{ brain.saveMoneySnapshot(uid, 'save-exit'); }catch(_){ }
+    return res.json({ ok:true });
+  }catch(e){ return res.status(500).json({ ok:false }); }
+});
+
 app.get('/api/me', (req, res) => {
   const uid = getSessionUserId(req);
   if(!uid) return res.status(401).json({ ok:false });

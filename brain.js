@@ -210,8 +210,8 @@ function updateProgress(userId, patch) {
 	if (!userId) return { ok: false };
 	const p = ensureProgress(userId);
 	if (patch == null || typeof patch !== 'object') return { ok: false };
-	// Solo campos permitidos
-	const allowed = ['money', 'bank', 'vehicle', 'vehicles', 'shops', 'houses', 'name', 'avatar', 'likes', 'gender', 'age', 'country', 'email', 'phone', 'initialRentPaid', 'rentedHouseIdx', 'governmentFunds', 'rentalHouse'];
+		// Solo campos permitidos
+		const allowed = ['money', 'bank', 'vehicle', 'vehicles', 'shops', 'houses', 'name', 'avatar', 'likes', 'gender', 'age', 'country', 'email', 'phone', 'initialRentPaid', 'rentedHouseIdx', 'governmentFunds', 'rentalHouse', 'world'];
 	for (const k of allowed) {
 		if (k in patch) {
 			if (k === 'shops' || k === 'houses' || k === 'vehicles' || k === 'likes') {
@@ -221,7 +221,7 @@ function updateProgress(userId, patch) {
 			}
 		}
 	}
-	// Si viene governmentFunds actualizar objeto gobierno global
+		// Si viene governmentFunds actualizar objeto gobierno global
 	try{
 		if('governmentFunds' in patch && typeof patch.governmentFunds === 'number'){
 			const g = getGovernment();
@@ -235,6 +235,24 @@ function updateProgress(userId, patch) {
 			if(rh.initial && typeof rh.initial==='string') norm.initial = rh.initial.slice(0,3);
 			p.rentalHouse = norm;
 		}
+			// Guardar estado del mundo (posición y temporizadores relativos)
+			if('world' in patch && patch.world && typeof patch.world==='object'){
+				const w = patch.world;
+				const out = {};
+				if(Number.isFinite(w.x)) out.x = Math.floor(w.x);
+				if(Number.isFinite(w.y)) out.y = Math.floor(w.y);
+				if(typeof w.goingToWork === 'boolean') out.goingToWork = w.goingToWork;
+				if(Number.isFinite(w.workFactoryId)) out.workFactoryId = Math.floor(w.workFactoryId);
+				if(typeof w.targetRole === 'string') out.targetRole = String(w.targetRole).slice(0,16);
+				if(w.target && Number.isFinite(w.target.x) && Number.isFinite(w.target.y)) out.target = { x: Math.floor(w.target.x), y: Math.floor(w.target.y) };
+				// Duraciones restantes en segundos
+				const clampPos = (v)=> Number.isFinite(v) ? Math.max(0, Math.min(3600, v)) : 0; // limitar a 1h por seguridad
+				if(w.workingLeft != null) out.workingLeft = clampPos(Math.floor(w.workingLeft));
+				if(w.exploreLeft != null) out.exploreLeft = clampPos(Math.floor(w.exploreLeft));
+				if(w.restLeft != null) out.restLeft = clampPos(Math.floor(w.restLeft));
+				if(w.cooldownLeft != null) out.cooldownLeft = clampPos(Math.floor(w.cooldownLeft));
+				p.world = out;
+			}
 	}catch(_){ }
 	log('progress_update', userId, { keys: Object.keys(patch || {}) });
 	schedulePersist();

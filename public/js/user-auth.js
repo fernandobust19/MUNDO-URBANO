@@ -139,6 +139,8 @@
 		try {
 			window.__user = out.user;
 			window.__progress = out.progress || {};
+			// Recordar username localmente para prellenar en próximas visitas
+			try{ if(out.user && out.user.username){ localStorage.setItem('lastUsername', out.user.username); } }catch(_){ }
 			// Sincronizar género al progreso:
 			// 1) Si el usuario tiene M/F y al progreso le falta, úsalo.
 			// 2) Si el usuario no tiene M/F pero en el modal se eligió uno válido, tomarlo para esta sesión.
@@ -254,7 +256,7 @@
 		// Enviar con Enter: por defecto, intentar login
 		const form = document.getElementById('authForm');
 		if(form){ form.addEventListener('submit', (e)=>{ e.preventDefault(); handleLogin(); }); }
-		// Botón SALIR (el servidor hace snapshot de dinero en /api/logout)
+		// Botón SALIR: guardar primero y luego cerrar sesión para volver a la pantalla de usuario y contraseña
 		const btnLogout = document.getElementById('btnLogout');
 		if(btnLogout){ btnLogout.addEventListener('click', async ()=>{
 			try{
@@ -281,20 +283,45 @@
 					try{ if(typeof prog.rentedHouseIdx === 'number') payload.rentedHouseIdx = prog.rentedHouseIdx; }catch(_){ }
 					// Datos básicos del perfil
 					['name','avatar','likes','gender','age','country','email','phone'].forEach(k=>{ if(prog && (k in prog)) payload[k]=prog[k]; });
+					// Agregar estado del mundo (posición/temporizadores) inmediato
+					try{
+						if(window.agents && (window.USER_ID || window.playerId)){
+							const me = window.agents.find(a=> a.id===window.USER_ID || a.id===window.playerId);
+							if(me){
+								const nowS = performance.now()/1000;
+								const world = { x: Math.floor(me.x||0), y: Math.floor(me.y||0), goingToWork: !!me.goingToWork, workFactoryId: (typeof me.workFactoryId==='number'? me.workFactoryId : null), targetRole: me.targetRole || null };
+								if(me.target && typeof me.target.x==='number' && typeof me.target.y==='number') world.target = { x: Math.floor(me.target.x), y: Math.floor(me.target.y) };
+								const left = (t)=> (typeof t==='number' && t>nowS) ? Math.floor(t - nowS) : 0;
+								world.workingLeft = left(me.workingUntil);
+								world.exploreLeft = left(me.exploreUntil);
+								world.restLeft = left(me.restUntil);
+								world.cooldownLeft = left(me.nextWorkAt);
+								payload.world = world;
+							}
+						}
+					}catch(_){ }
 				}catch(_){ }
-				// Guardar snapshot
+				// Guardar snapshot en progreso
 				try{ await call('POST','/api/progress', payload); }catch(_){ }
-				// Guardar snapshot de dinero al ledger mediante logout normal
+				// Cerrar sesión para ir a la pantalla de login (el servidor guarda snapshot en ledger)
 				try{ await call('POST','/api/logout'); }catch(_){ }
 			}finally{
 				location.reload();
 			}
 		}); }
-		// Forzar mostrar la ventana de autenticación primero
+		// Comprobar si hay sesión activa y avanzar directo; si no, mostrar modal y prellenar usuario recordado
 		const me = await checkMe().catch(()=>null);
-		showAuth(true);
-		// Si hay sesión existente, prellenar el usuario para facilitar continuar
-		try{ if(me && me.ok && me.user?.username){ const u=document.getElementById('authUser'); if(u) u.value = me.user.username; } }catch(e){}
+		if(me && me.ok){
+			applyLogin(me);
+			showAuth(false);
+		}else{
+			showAuth(true);
+			try{
+				const uEl = document.getElementById('authUser');
+				const last = localStorage.getItem('lastUsername');
+				if(uEl && last) uEl.value = last;
+			}catch(_){ }
+		}
 	}
 
 	// Exponer helper para que original.js aplique progreso inicial a la entidad del jugador

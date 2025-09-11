@@ -3008,6 +3008,41 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     chosenAvatar = (typeof pick === 'string' && pick.length) ? pick : '/assets/avatar1.png';
   }catch(e){ chosenAvatar = '/assets/avatar1.png'; }
   const user=makeAgent('adult',{name, gender, ageYears:age, likes, startMoney: startMoney, avatar: chosenAvatar});
+  // Restaurar posición y temporizadores si existen en progreso
+  try{
+    if(saved.world && typeof saved.world==='object'){
+      const w = saved.world;
+      if(Number.isFinite(w.x) && Number.isFinite(w.y)){ user.x = w.x; user.y = w.y; }
+      if(typeof w.goingToWork==='boolean') user.goingToWork = w.goingToWork;
+      if(Number.isFinite(w.workFactoryId)) user.workFactoryId = w.workFactoryId;
+      if(typeof w.targetRole==='string') user.targetRole = w.targetRole;
+      if(w.target && Number.isFinite(w.target.x) && Number.isFinite(w.target.y)) user.target = { x:w.target.x, y:w.target.y };
+      const nowS0 = performance.now()/1000;
+      // Guardado periódico de estado del jugador (posición + temporizadores restantes)
+      try{
+        window.__lastWorldSaveAt = window.__lastWorldSaveAt || 0;
+        if(nowS - window.__lastWorldSaveAt > 2){
+          window.__lastWorldSaveAt = nowS;
+          const me = agents && (typeof USER_ID!=='undefined' ? agents.find(a=>a.id===USER_ID) : null);
+          if(me){
+            const world = { x: Math.floor(me.x||0), y: Math.floor(me.y||0), goingToWork: !!me.goingToWork, workFactoryId: (typeof me.workFactoryId==='number'? me.workFactoryId : null), targetRole: me.targetRole || null };
+            if(me.target && typeof me.target.x==='number' && typeof me.target.y==='number') world.target = { x: Math.floor(me.target.x), y: Math.floor(me.target.y) };
+            // Convertir tiempos absolutos a restantes
+            const left = (t)=> (typeof t==='number' && t>nowS) ? Math.floor(t - nowS) : 0;
+            world.workingLeft = left(me.workingUntil);
+            world.exploreLeft = left(me.exploreUntil);
+            world.restLeft = left(me.restUntil);
+            world.cooldownLeft = left(me.nextWorkAt);
+            window.saveProgress && window.saveProgress({ world });
+          }
+        }
+      }catch(_){ }
+      if(Number.isFinite(w.workingLeft) && w.workingLeft>0){ user.workingUntil = nowS0 + w.workingLeft; }
+      if(Number.isFinite(w.exploreLeft) && w.exploreLeft>0){ user.exploreUntil = nowS0 + w.exploreLeft; }
+      if(Number.isFinite(w.restLeft) && w.restLeft>0){ user.restUntil = nowS0 + w.restLeft; }
+      if(Number.isFinite(w.cooldownLeft) && w.cooldownLeft>0){ user.nextWorkAt = nowS0 + w.cooldownLeft; }
+    }
+  }catch(_){ }
   // Restaurar casa rentada previa si existe en progreso
   try{
     if(typeof saved.rentedHouseIdx === 'number' && houses[saved.rentedHouseIdx]){
@@ -3030,13 +3065,14 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   // Asignar casa en arriendo inicial si no posee (nueva sesión sin registro previo)
   try{ ensurePlayerHasHouse(user); }catch(e){}
   if(user.houseIdx == null){ toast('Debes arrendar una casa para vivir.'); }
-  // Colocar al jugador en el centro de su casa al inicio
-  try{ if(typeof user.houseIdx==='number' && houses[user.houseIdx]){ const h=houses[user.houseIdx]; user.x = h.x + h.w/2; user.y = h.y + h.h/2; } }catch(_){ }
+  // Colocar al jugador en el centro de su casa solo si no había posición persistida
+  try{ if((!saved.world || !Number.isFinite(saved.world.x) || !Number.isFinite(saved.world.y)) && typeof user.houseIdx==='number' && houses[user.houseIdx]){ const h=houses[user.houseIdx]; user.x = h.x + h.w/2; user.y = h.y + h.h/2; } }catch(_){ }
   // Restaurar fondos de gobierno al UI si venían en progreso
   try{ if(saved && typeof saved.governmentFunds==='number'){ if(window.government) window.government.funds = saved.governmentFunds; const el=document.getElementById('govFunds'); if(el) el.textContent = `Fondo: ${Math.floor(saved.governmentFunds)}`; } }catch(_){ }
-  // Forzar primer objetivo: fábrica más cercana para trabajar inmediatamente
+  // Solo forzar ir a trabajar si no había estado previo
   try{
-    if(factories && factories.length){
+    const hadState = !!(saved.world && (Number.isFinite(saved.world.x)||saved.world.goingToWork||saved.world.workingLeft||saved.world.exploreLeft||saved.world.restLeft||saved.world.cooldownLeft));
+    if(!hadState && factories && factories.length){
       let bestF=null, bestD=1e12; const ux=user.x, uy=user.y;
       for(const f of factories){ const c=centerOf(f); const d=Math.hypot(ux-c.x, uy-c.y); if(d<bestD){ bestD=d; bestF=f; } }
       if(bestF){
@@ -3044,7 +3080,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         user.workFactoryId = factories.indexOf(bestF);
         user.target = centerOf(bestF);
         user.targetRole = 'go_work';
-        user.nextWorkAt = 0; // listo desde el inicio
+        user.nextWorkAt = 0;
       }
     }
   }catch(_){ }
