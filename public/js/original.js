@@ -374,23 +374,31 @@ btnRandLikes.addEventListener('click', updateLikesUI);
 
   // Seguimiento de agente (btn flotante)
   let FOLLOW_AGENT = false;
+  const CAM_FOLLOW_SMOOTH = 0.18; // 0..1 (más alto = más rápido)
   const followFab = document.getElementById('followFab');
   if (followFab){
     followFab.addEventListener('click', ()=>{
-      FOLLOW_AGENT = !FOLLOW_AGENT;
-      if(FOLLOW_AGENT){ followFab.classList.add('on'); } else { followFab.classList.remove('on'); }
-      // Al activar, centra inmediatamente
-      if (FOLLOW_AGENT) {
-        try{
-          const me = agents.find(a=>a.id===USER_ID);
-          if(me){
-            const vw = canvas.width/ZOOM, vh = canvas.height/ZOOM;
-            cam.x = Math.max(0, Math.min(me.x - vw/2, Math.max(0, WORLD.w - vw)));
-            cam.y = Math.max(0, Math.min(me.y - vh/2, Math.max(0, WORLD.h - vh)));
-            clampCam();
-          }
-        }catch(_){ }
-      }
+      try{
+        if(!STARTED){ return; }
+        if(typeof USER_ID==='undefined' || !agents){ return; }
+        const me = agents.find(a=>a && a.id===USER_ID);
+        if(!me){
+          try{ toast('Crea tu personaje para usar Seguir.'); }catch(_){ }
+          FOLLOW_AGENT = false; followFab.classList.remove('on');
+          return;
+        }
+        FOLLOW_AGENT = !FOLLOW_AGENT;
+        if(FOLLOW_AGENT){ followFab.classList.add('on'); } else { followFab.classList.remove('on'); }
+        // Al activar, centra suavemente hacia el agente (una aproximación inicial)
+        if(FOLLOW_AGENT){
+          const vw = canvas.width/ZOOM, vh = canvas.height/ZOOM;
+          const wantX = Math.max(0, Math.min(me.x - vw/2, Math.max(0, WORLD.w - vw)));
+          const wantY = Math.max(0, Math.min(me.y - vh/2, Math.max(0, WORLD.h - vh)));
+          cam.x = (cam.x*0.5) + (wantX*0.5);
+          cam.y = (cam.y*0.5) + (wantY*0.5);
+          clampCam();
+        }
+      }catch(_){ /* evitar reventar el handler */ }
     });
   }
   // Abrir panel de Gobierno desde el botón del UI
@@ -2377,12 +2385,17 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   try{ if(!window.__gamePaused && typeof hasNet==='function' && !hasNet()) processRent(dt); }catch(_){ }
   // Seguimiento continuo del agente (si está activado) antes de dibujar el mundo
     try{
-      if (FOLLOW_AGENT && USER_ID) {
-        const me = agents.find(a => a.id === USER_ID);
+      if (FOLLOW_AGENT && typeof USER_ID !== 'undefined' && agents) {
+        const me = agents.find(a => a && a.id === USER_ID);
         if (me) {
           const vw = canvas.width / ZOOM, vh = canvas.height / ZOOM;
-          cam.x = Math.max(0, Math.min(me.x - vw / 2, Math.max(0, WORLD.w - vw)));
-          cam.y = Math.max(0, Math.min(me.y - vh / 2, Math.max(0, WORLD.h - vh)));
+          const wantX = Math.max(0, Math.min(me.x - vw / 2, Math.max(0, WORLD.w - vw)));
+          const wantY = Math.max(0, Math.min(me.y - vh / 2, Math.max(0, WORLD.h - vh)));
+          // Suavizado dependiente de dt (aprox. exponencial)
+          const s = CAM_FOLLOW_SMOOTH;
+          const alpha = 1 - Math.pow(1 - s, Math.max(1, 60*dt));
+          cam.x += (wantX - cam.x) * alpha;
+          cam.y += (wantY - cam.y) * alpha;
           clampCam();
         }
       }
