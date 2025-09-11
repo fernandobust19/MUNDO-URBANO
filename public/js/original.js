@@ -365,7 +365,7 @@ btnRandLikes.addEventListener('click', updateLikesUI);
   const btnShowMarried = $("#btnShowMarried"), marriedDock = $("#marriedDock"), marriedList = $("#marriedList");
   const builderModal=$("#builderModal"), btnBuy=$("#btnBuy"), btnBuilderClose=$("#btnBuilderClose"), builderMsg=$("#builderMsg");
   const shopModal=$("#shopModal"), shopList=$("#shopList"), shopMsg=$("#shopMsg"), btnShopClose=$("#btnShopClose");
-  const govFundsEl=$("#govFunds"), govDescEl = $("#govDesc");
+  let govFundsEl=$("#govFunds"), govDescEl = $("#govDesc");
   const govSelectEl=$("#govSelect"), btnGovPlace=$("#btnGovPlace");
   const btnGovOpen = document.getElementById('btnGovOpen');
   // Botones de mostrar/ocultar el UI (flechas azules) usando variables existentes
@@ -674,9 +674,9 @@ function relocateInitialBuildingsToSand(){
   /* ===== CONFIGURACIÓN ===== */
   const CFG = {
   LINES_ON:false, PARKS:8, SCHOOLS:8, FACTORIES:12, BANKS:8, MALLS:4, HOUSE_SIZE:70, OWNED_HOUSE_SIZE_MULT:1.4, CEM_W:220, CEM_H:130, N_INIT:24,  // Más infraestructuras y casas iniciales
-  HOME_REST_DURATION:120,
+  HOME_REST_DURATION:0,
     // Radio base de los agentes (en unidades de mundo). Aumentado para que se vean más grandes.
-  R_ADULT:7.5, R_CHILD:6.0, R_ELDER:7.0, SPEED:60, WORK_DURATION:6, EARN_PER_SHIFT:20, WORK_COOLDOWN:45,
+  R_ADULT:7.5, R_CHILD:6.0, R_ELDER:7.0, SPEED:60, WORK_DURATION:20, EARN_PER_SHIFT:20, WORK_COOLDOWN:2,
     // Tamaños mínimos en pantalla para que no desaparezcan con el zoom.
   MIN_AGENT_PX: 12,
   NAME_FONT_PX: 13,
@@ -688,7 +688,13 @@ function relocateInitialBuildingsToSand(){
     WEALTH_TAX_MAX: 0.06,      // 6% tope de seguridad
     EMPLOYEE_SALARY: 25, SALARY_PAY_EVERY: 120,
     GOV_RENT_EVERY: 10*60, GOV_RENT_AMOUNT: 5, 
-  POST_DEPOSIT_EXPLORE: 30, // segundos de exploración tras depositar (visitar negocios)
+  POST_DEPOSIT_EXPLORE: 0, // desactivado: ir directo a trabajar otra vez
+  WORK_EXPLORE_TIME: 60, // segundos vagando tras cada turno de trabajo
+  WORK_COIN_INTERVAL: 1, // cada segundo una moneda animada
+  WORK_COIN_LIFE: 1600, // ms visible
+  MANAGE_DURATION: 12, // segundos gestionando negocio antes de cobrar caja
+  MANAGE_BOOST_TIME: 120, // segundos de impulso de ventas tras gestionar
+  MANAGE_BOOST_MULT: 1.2, // multiplicador a ganancias de cada compra durante el boost
   SHOP_PURCHASE_INTERVAL: 300, // 5 min entre compras máximas
     COST_ROAD: 40,
     COST_PARK: 80, COST_SCHOOL: 120, COST_LIBRARY: 150, COST_POLICE: 200, COST_HOSPITAL: 250, COST_POWER: 350,
@@ -708,6 +714,31 @@ function relocateInitialBuildingsToSand(){
     auto_compacto:  { name:'Auto Compacto',  cost:800,  speed: 260, icon:'🚗' },
     auto_deportivo: { name:'Auto Deportivo', cost:2500, speed: 360, icon:'🏎️' }
   };
+
+  // === Efectos de monedas durante el trabajo ===
+  const workCoins = []; // {x,y,spawn,life,vy}
+  function spawnWorkCoin(x,y){
+    workCoins.push({ x, y, spawn: performance.now(), life: (CFG.WORK_COIN_LIFE||1500), vy: -0.02 - Math.random()*0.04 });
+  }
+  function updateAndDrawWorkCoins(dt){
+    const now = performance.now();
+    const dtMs = (dt||0) * 1000; // dt en segundos -> ms
+    for(let i=workCoins.length-1;i>=0;i--){
+      const c = workCoins[i];
+      const t = now - c.spawn;
+      if(t > c.life){ workCoins.splice(i,1); continue; }
+      c.y += c.vy * dtMs; // movimiento vertical suave
+    }
+    for(const c of workCoins){
+      const t = now - c.spawn;
+      const alpha = 1 - (t / c.life);
+      const p = toScreen(c.x, c.y);
+      ctx.save(); ctx.globalAlpha = Math.max(0, alpha);
+      ctx.fillStyle = '#facc15'; ctx.beginPath(); ctx.arc(p.x, p.y, 6*ZOOM, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#92400e'; ctx.font = `${10*ZOOM}px ui-monospace,monospace`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('$', p.x, p.y+0.5*ZOOM);
+      ctx.restore();
+    }
+  }
 
   /* ===== Tipos de Instituciones (25) ===== */
   const GOV_TYPES = [
@@ -1070,7 +1101,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       if((a.money||0) >= rentCost){
         a.money -= rentCost;
         // Sumar a fondos del gobierno (si existe estructura)
-        try{ government.funds = (government.funds||0) + rentCost; if(typeof govFundsEl!=='undefined' && govFundsEl) govFundsEl.textContent = `Fondo: ${Math.floor(government.funds)}`; }catch(_){ }
+  try{ government.funds = (government.funds||0) + rentCost; if(!govFundsEl) govFundsEl=document.getElementById('govFunds'); if(govFundsEl) govFundsEl.textContent = `Fondo: ${Math.floor(government.funds)}`; }catch(_){ }
         toast(`${a.name||'Jugador'} pagó arriendo: -${rentCost}`);
       } else {
         toast(`${a.name||'Jugador'} no pudo pagar arriendo (saldo insuficiente)`);
@@ -2359,6 +2390,9 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   drawWorld();
   if(!window.__gamePaused){ drawSocialLines(); }
 
+    // Dibujar efectos de monedas (después de dibujar el mundo para que queden sobre fábricas)
+  try{ updateAndDrawWorkCoins(dt); }catch(_){ }
+
     // ======= Jugadores remotos con smoothing nuevo =======
   try{ if(!window.__gamePaused) renderRemotePlayers(); }catch(e){}
 
@@ -2370,7 +2404,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         const myWorkplace = shops.find(s => s.id === a.employedAtShopId);
         if (myWorkplace) { a.target = centerOf(myWorkplace); a.targetRole = 'work_shop'; }
       }
-  if (!a.forcedShopId && !a.workingUntil && !a.goingToBank && !a.employedAtShopId && (!a.targetRole || a.targetRole==='idle') && nowS >= (a.nextWorkAt || 0) && !(a.restUntil && nowS < a.restUntil) && !(a.exploreUntil && nowS < a.exploreUntil)) {
+  if (!a.forcedShopId && !a.workingUntil && !a.exploreUntil && !a.restUntil && !a.employedAtShopId && (!a.targetRole || a.targetRole==='idle') && nowS >= (a.nextWorkAt || 0)) {
   const myOwnedShops = shops.filter(s => s.ownerId === a.id);
         if (myOwnedShops.length > 0 && Math.random() < CFG.OWNER_MANAGE_VS_WORK_RATIO) {
           const shopToManage = myOwnedShops[(Math.random() * myOwnedShops.length) |  0];
@@ -2388,25 +2422,17 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         }
       }
   if(a.workingUntil && nowS>=a.workingUntil){
-        a.workingUntil=null; a.pendingDeposit += CFG.EARN_PER_SHIFT; a.goingToBank=true;
-        const b=banks[(Math.random()*banks.length)|0]; if(b){ a.target=centerOf(b); a.targetRole='bank'; }
+        a.workingUntil=null; a.target=null; a.targetRole='idle';
+        a.exploreUntil = nowS + (CFG.WORK_EXPLORE_TIME||60);
+        a.restUntil = null; a.nextWorkAt = a.exploreUntil + 5; // luego de explorar irá a casa
       }
-    if(a.goingToBank && a.target){
-        const c=a.target; if(Math.hypot(a.x-c.x,a.y-c.y)<14){
-      a.money += a.pendingDeposit; a.pendingDeposit=0; a.goingToBank=false;
-      // Inicia fase de exploración posterior al depósito
-      a.exploreUntil = nowS + (CFG.POST_DEPOSIT_EXPLORE||30);
-      a.targetRole='explore'; a.target=null; // se generará destino exploración más abajo
-      a.nextWorkAt = null; // se definirá tras descanso en casa
-        }
-      }
-      // Transición de exploración -> ir a casa para descanso
-      if(a.exploreUntil && nowS >= a.exploreUntil){
-        a.exploreUntil = null;
-        if(a.houseIdx!=null){ const h=houses[a.houseIdx]; if(h){ a.target=centerOf(h); a.targetRole='home'; a.restUntil = nowS + (CFG.HOME_REST_DURATION||60); } }
-      }
-      // Tras descanso en casa, habilitar próximo trabajo
-      if(a.restUntil && nowS >= a.restUntil){ a.restUntil = null; a.nextWorkAt = nowS; }
+    // Exploración -> hogar
+    if(a.exploreUntil && nowS>=a.exploreUntil){
+        a.exploreUntil=null;
+        if(a.houseIdx!=null && houses[a.houseIdx]){ a.target=centerOf(houses[a.houseIdx]); a.targetRole='home'; a.restUntil = nowS + 8; }
+    }
+    // Descanso en casa completo -> habilitar nuevo turno de trabajo tras cooldown
+    if(a.restUntil && nowS>=a.restUntil){ a.restUntil=null; a.nextWorkAt = nowS + (CFG.WORK_COOLDOWN||2); }
 
   if(!a.forcedShopId && !a.workingUntil && !a.goingToBank && !a.employedAtShopId && (!a.targetRole || a.targetRole==='idle' || a.targetRole==='home' || a.targetRole==='explore')) {
         if (!a.forcedShopId && Math.random() < CFG.VISIT_RATE) {
@@ -2443,7 +2469,9 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
               if(a.money>=price){
                 a.money-=price;
                 const bonus = Math.round((s.buyCost || 0) * CFG.SHOP_PROFIT_FACTOR);
-                const saleProfit = price + bonus; s.cashbox = (s.cashbox || 0) + saleProfit; s._lastCashboxChange = performance.now();
+                let saleProfit = price + bonus; 
+                if(s._managedBoostUntil && nowS < s._managedBoostUntil){ saleProfit = Math.round(saleProfit * (CFG.MANAGE_BOOST_MULT||1.2)); }
+                s.cashbox = (s.cashbox || 0) + saleProfit; s._lastCashboxChange = performance.now();
                 a.lastPurchaseAt = nowS;
               }
             }
@@ -2455,22 +2483,34 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         const c=a.target;
         if(Math.hypot(a.x-c.x,a.y-c.y)<16){
           const s = shops.find(q => q.id === a._shopTargetId);
-          if(s && s.ownerId === a.id){
-            const amount = Math.floor(s.cashbox || 0);
-            if(amount > 0){
-              a.money = (a.money || 0) + amount;
-              s.cashbox = 0; s._lastCashboxChange = performance.now();
-              toast(`${a.code} gestionó ${s.kind || 'negocio'} +${amount} créditos.`);
-              try{ window.saveProgress && window.saveProgress({ money: Math.floor(a.money), shops: shops.filter(sh=>sh.ownerId===a.id) }); }catch(_){ }
-            } else {
-              toast(`Caja vacía en ${s.kind || 'negocio'}.`);
-            }
-          } else {
-            // fallback al método anterior por si acaso
-            const paid = payoutChunkToOwner(s, CFG.SHOP_PAYOUT_CHUNK);
-            if(!paid){ toast(`${a.code} gestionó ${s?.kind ?? 'su negocio'}, pero la caja está vacía.`); }
+          // Inicia fase de gestión cronometrada si no estaba
+          if(!a.managingUntil){
+            a.managingUntil = nowS + (CFG.MANAGE_DURATION||10);
+            a.vx=0; a.vy=0; // quedarse quieto
+            a._manageShopRef = s ? s.id : null;
+            if(s){ s._beingManagedUntil = a.managingUntil; }
           }
-          a.nextWorkAt = nowS + CFG.WORK_COOLDOWN; a.target=null; a.targetRole='idle'; a._shopTargetId=null;
+          // Si ya terminó el tiempo de gestión, pagar y aplicar boost
+          if(a.managingUntil && nowS >= a.managingUntil){
+            const s2 = shops.find(q=>q.id===a._manageShopRef);
+            if(s2 && s2.ownerId === a.id){
+              const amount = Math.floor(s2.cashbox||0);
+              if(amount>0){
+                a.money = (a.money||0) + amount; s2.cashbox=0; s2._lastCashboxChange = performance.now();
+                s2._managedBoostUntil = nowS + (CFG.MANAGE_BOOST_TIME||120);
+                toast(`${a.code} cobró caja (+${amount}) y aplicó impulso.`);
+                try{ window.saveProgress && window.saveProgress({ money: Math.floor(a.money), shops: shops.filter(sh=>sh.ownerId===a.id) }); }catch(_){ }
+              } else {
+                s2._managedBoostUntil = nowS + (CFG.MANAGE_BOOST_TIME||120);
+                toast(`Impulso aplicado (caja vacía).`);
+              }
+            }
+            a.managingUntil=null; a._manageShopRef=null; a._shopTargetId=null; a.target=null; a.targetRole='idle';
+            a.nextWorkAt = nowS + CFG.WORK_COOLDOWN;
+          }
+        } else {
+          // si se aleja antes de terminar, cancelar
+          if(a.managingUntil && nowS < a.managingUntil && Math.hypot(a.x-c.x,a.y-c.y)>40){ a.managingUntil=null; a._manageShopRef=null; }
         }
       }
       
@@ -2485,6 +2525,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         const c = a.target;
         if (Math.hypot(a.x - c.x, a.y - c.y) < 16) {
           a.goingToWork = false; a.workingUntil = nowS + CFG.WORK_DURATION; a.vx = 0; a.vy = 0; a.target = null; a.targetRole = 'work';
+          a._lastWorkCoinSpawn = performance.now(); // para animaciones
         }
       }
       if(a.target){
@@ -2496,7 +2537,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         if (dd < CFG.EXPLORE_REACH_RADIUS) {
           // marcar sector visitado si era exploración
           if(a.targetRole === 'explore'){ markVisitedAt(a.x, a.y); a.target = null; a.targetRole = 'idle'; }
-          else if (['work', 'work_shop', 'home', 'bank', 'shop', 'manage_shop', 'go_work'].includes(a.targetRole)) { a.target = null; a.targetRole = 'idle'; }
+          else if (['work', 'work_shop', 'home', 'bank', 'shop', 'manage_shop'].includes(a.targetRole)) { a.target = null; a.targetRole = 'idle'; }
         }
       } else {
         const isWorkingInFactory = a.workingUntil && nowS < a.workingUntil;
@@ -2509,6 +2550,29 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
           const spd = Math.hypot(a.vx, a.vy) || 1;
           const cap = currentSpeed;
           if (spd > cap) { a.vx = (a.vx/spd)*cap; a.vy = (a.vy/spd)*cap; }
+        }
+      }
+
+      // Watchdog: si no está trabajando ni yendo al banco ni tiene target y pasó cooldown, enviar a trabajar de nuevo
+  // Reinicio si desincroniza
+  if(a.workingUntil && nowS - a.workingUntil > 5){ a.workingUntil=null; a.exploreUntil=null; a.restUntil=null; a.nextWorkAt=nowS; }
+
+      // Generar moneda y sumar dinero en tiempo real cada segundo durante trabajo en fábrica
+      if(a.targetRole==='work' && a.workingUntil && nowS < a.workingUntil){
+        const fac = factories[a.workFactoryId|0];
+        const nowPerf = performance.now();
+        if(fac){
+          if(!a._lastWorkCoinSpawn){ a._lastWorkCoinSpawn = nowPerf; }
+          const intervalMs = (CFG.WORK_COIN_INTERVAL||1)*1000;
+          while(nowPerf - a._lastWorkCoinSpawn >= intervalMs){
+            a._lastWorkCoinSpawn += intervalMs;
+            const c = centerOf(fac);
+            spawnWorkCoin(c.x + rand(-10,10), c.y + rand(-8,8));
+            // Pago distribuido: EARN_PER_SHIFT proporcional al progreso de 20s
+            const perCoin = (CFG.EARN_PER_SHIFT || 20) / (CFG.WORK_DURATION || 20);
+            a.money += perCoin;
+            try{ if(a.id===USER_ID){ const mEl=document.getElementById('money'); if(mEl) mEl.textContent = Math.floor(a.money); } }catch(_){ }
+          }
         }
       }
       a.x += a.vx * dt; a.y += a.vy * dt;
@@ -2953,11 +3017,37 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       }
     }
   }catch(_){ }
+  // Restaurar marcador e inicial de casa rentada persistente
+  try{
+    if(saved.rentalHouse && typeof saved.rentalHouse==='object'){
+      const rh = saved.rentalHouse;
+      if(typeof user.houseIdx==='number' && houses[user.houseIdx]){
+        const h=houses[user.houseIdx];
+        if(rh.initial){ h._markerInitial = rh.initial; }
+      }
+    }
+  }catch(_){ }
   // Asignar casa en arriendo inicial si no posee (nueva sesión sin registro previo)
   try{ ensurePlayerHasHouse(user); }catch(e){}
   if(user.houseIdx == null){ toast('Debes arrendar una casa para vivir.'); }
   // Colocar al jugador en el centro de su casa al inicio
   try{ if(typeof user.houseIdx==='number' && houses[user.houseIdx]){ const h=houses[user.houseIdx]; user.x = h.x + h.w/2; user.y = h.y + h.h/2; } }catch(_){ }
+  // Restaurar fondos de gobierno al UI si venían en progreso
+  try{ if(saved && typeof saved.governmentFunds==='number'){ if(window.government) window.government.funds = saved.governmentFunds; const el=document.getElementById('govFunds'); if(el) el.textContent = `Fondo: ${Math.floor(saved.governmentFunds)}`; } }catch(_){ }
+  // Forzar primer objetivo: fábrica más cercana para trabajar inmediatamente
+  try{
+    if(factories && factories.length){
+      let bestF=null, bestD=1e12; const ux=user.x, uy=user.y;
+      for(const f of factories){ const c=centerOf(f); const d=Math.hypot(ux-c.x, uy-c.y); if(d<bestD){ bestD=d; bestF=f; } }
+      if(bestF){
+        user.goingToWork = true;
+        user.workFactoryId = factories.indexOf(bestF);
+        user.target = centerOf(bestF);
+        user.targetRole = 'go_work';
+        user.nextWorkAt = 0; // listo desde el inicio
+      }
+    }
+  }catch(_){ }
   // Programar ventana de arriendo tras 3 segundos y bloquear juego hasta pagar
   try{
   const alreadyPaid = !!(window.__progress && window.__progress.initialRentPaid);
@@ -2973,6 +3063,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
             window.__houseInitialCounts = window.__houseInitialCounts || {};
             const count = (window.__houseInitialCounts[baseInitial]||0)+1; window.__houseInitialCounts[baseInitial]=count;
             h._markerInitial = baseInitial + (count>1?count:'');
+            try{ window.__progress = Object.assign({}, window.__progress||{}, { rentalHouse: { x:h.x,y:h.y,w:h.w,h:h.h, initial:h._markerInitial } }); window.saveProgress && window.saveProgress({ rentalHouse: window.__progress.rentalHouse }); }catch(_){ }
           }
         }
       }catch(_){ }
@@ -2998,7 +3089,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
             const rentCost = 50;
             if(user.money >= rentCost){
               user.money -= rentCost; toast('Arriendo inicial pagado: -50');
-              try{ government.funds = (government.funds||0)+rentCost; if(govFundsEl) govFundsEl.textContent = `Fondo: ${Math.floor(government.funds)}`; }catch(_){ }
+              try{ government.funds = (government.funds||0)+rentCost; if(!govFundsEl) govFundsEl=document.getElementById('govFunds'); if(govFundsEl) govFundsEl.textContent = `Fondo: ${Math.floor(government.funds)}`; }catch(_){ }
               // Guardar bandera de pago inicial en progreso persistente
               try{
                 window.__progress = Object.assign({}, window.__progress||{}, { initialRentPaid: true, money: Math.floor(user.money), rentedHouseIdx: user.houseIdx });
@@ -3015,6 +3106,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
                   const count = (window.__houseInitialCounts[baseInitial]||0)+1; window.__houseInitialCounts[baseInitial]=count;
                   h._markerInitial = baseInitial + (count>1?count:'');
                   h._markerAssignedAt = performance.now();
+                    try{ window.__progress = Object.assign({}, window.__progress||{}, { rentalHouse: { x:h.x,y:h.y,w:h.w,h:h.h, initial:h._markerInitial } }); window.saveProgress && window.saveProgress({ rentalHouse: window.__progress.rentalHouse }); }catch(_){ }
                   // Ajustar zoom y cámara
                   const targetZoom = Math.min(4, Math.max(ZOOM, 3));
                   ZOOM = targetZoom;
@@ -3053,6 +3145,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     USER_ID = user.id;
     // También sincronizar el id local usado por el render de remotos
     window.playerId = user.id;
+  try{ if(typeof user.money==='number'){ window.__progress = Object.assign({}, window.__progress||{}, { money: Math.floor(user.money) }); } }catch(_){ }
   }catch(e){}
   // Reflejar también banco (si se usa en UI) como propiedad del agente para cálculos locales
   if(typeof saved.bank === 'number') try{ user.bank = Math.max(0, Math.floor(saved.bank)); }catch(e){}
@@ -3115,6 +3208,43 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   try{ window.updateCarMenuHighlight && window.updateCarMenuHighlight(); }catch(e){}
   // Refrescar panel del banco con el nuevo jugador
   try{ window.updateBankPanel && window.updateBankPanel(); }catch(e){}
+  // Cargar iniciales compartidas (casas rentadas de otros usuarios)
+  try{
+    (async function(){
+      try{
+        const res = await fetch('/api/rentals');
+        if(!res.ok) return;
+        const data = await res.json();
+        if(!(data && data.ok && Array.isArray(data.rentals))) return;
+        const rentals = data.rentals;
+        // Evitar duplicar marcador propio
+        const myId = USER_ID;
+        for(const r of rentals){
+          try{
+            if(!r) continue;
+            if(r.userId && r.userId === myId) continue; // ya lo tengo local
+            const idx = typeof r.rentedHouseIdx === 'number' ? r.rentedHouseIdx : null;
+            let targetHouse = null;
+            if(idx!=null && houses[idx]) targetHouse = houses[idx];
+            // Fallback por proximidad geométrica si no coincide índice
+            if(!targetHouse && r.rentalHouse){
+              const rx = r.rentalHouse.x||0, ry = r.rentalHouse.y||0;
+              let best=null, bestD=1e12;
+              for(const h of houses){
+                if(!h) continue;
+                const d = Math.hypot((h.x||0)-rx, (h.y||0)-ry);
+                if(d < bestD){ bestD = d; best = h; }
+              }
+              if(bestD < 25) targetHouse = best; // tolerancia
+            }
+            if(targetHouse && !targetHouse._markerInitial && r.initial){
+              targetHouse._markerInitial = String(r.initial).slice(0,3);
+            }
+          }catch(_){ }
+        }
+      }catch(_){ }
+    })();
+  }catch(_){ }
     try{
   const uiAvatar = document.getElementById('uiAvatar');
   if(uiAvatar && user.avatar) uiAvatar.src = user.avatar;
@@ -3607,6 +3737,9 @@ function makeAgent(state, options = {}) {
 let STARTED = false;
 let USER_ID = null;
 let agents = [];
+// Exponer referencias globales para persistencia/manual save
+try{ window.agents = agents; }catch(_){ }
+try{ Object.defineProperty(window,'USER_ID',{ get(){ return USER_ID; }, set(v){ USER_ID=v; } }); }catch(_){ }
 let frameCount = 0;
 let SHOW_LINES = true;
 let socialConnections = [];

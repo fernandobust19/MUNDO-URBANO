@@ -1,47 +1,79 @@
 {
   "users": [
     {
-      "id": "77af81f5-9786-4212-88da-372c531e2005",
-      "username": "fernando",
-      "passHash": "$2a$10$eRyAGd9WVaXF5hRIUtuvDu.6zX7UFbVbOvBHYV3UAR5oxn1IMykuO",
-      "createdAt": 1757557046654,
-      "lastLoginAt": null,
+      "id": "a5be074e-1e9d-4f66-8e4a-ab0293fb7919",
+      "username": "fer",
+      "passHash": "$2a$10$hnc.QmSkqcmDmKGo7amIg.zUUOXntBJ8WGMf19CGmGxD9mdPXdOaO",
+      "createdAt": 1757563611969,
+      "lastLoginAt": 1757564945506,
       "country": "Ecuador",
       "email": "fernando2000b@hotmail.com",
-      "phone": "0995986366",
+      "phone": "0983801298",
       "gender": "M"
+    },
+    {
+      "id": "89170657-bd55-4aca-8ad8-2892ed153261",
+      "username": "jos",
+      "passHash": "$2a$10$pbH8/kYNT68/3iNvKvSEzuRd4uVaQIL5QTOSMi0Si24xXDNoadXZW",
+      "createdAt": 1757563675155,
+      "lastLoginAt": 1757564959731,
+      "country": "Ecuador",
+      "email": "jos@hotmail.com",
+      "phone": "0983801298",
+      "gender": "F"
     }
   ],
   "progress": {
-    "77af81f5-9786-4212-88da-372c531e2005": {
-      "money": 350,
+    "a5be074e-1e9d-4f66-8e4a-ab0293fb7919": {
+      "money": 160,
       "bank": 0,
-      "vehicle": null,
-      "vehicles": [],
-      "shops": [],
+      "vehicle": "moto",
+      "vehicles": [
+        "moto"
+      ],
+      "shops": [
+        {
+          "x": 5137.093779257009,
+          "y": 2013.9894992919944,
+          "w": 120,
+          "h": 80,
+          "kind": "panadería",
+          "ownerId": "A742394"
+        }
+      ],
       "houses": [],
-      "name": "FER",
-      "avatar": "assets/avatar1.png",
+      "name": "jos",
+      "avatar": "assets/avatar4.png",
       "likes": [
-        "deporte",
-        "baile",
-        "correr",
-        "idiomas",
+        "playa",
+        "ciclismo",
+        "baloncesto",
+        "historia",
         "café"
       ],
-      "gender": "M",
+      "gender": "F",
       "age": 20,
       "initialRentPaid": true,
       "rentedHouseIdx": 0,
       "country": "Ecuador",
-      "email": "fernando2000b@hotmail.com",
-      "phone": "0995986366"
+      "email": "jos@hotmail.com",
+      "phone": "0983801298",
+      "rentalHouse": {
+        "x": 5757,
+        "y": 2095,
+        "w": 70,
+        "h": 70,
+        "initial": "J"
+      },
+      "governmentFunds": 0
     },
-    "eccd0b8f-1604-4999-ab54-79ba618da020": {
-      "money": 350,
+    "2b4de0ff-c8e6-4742-8c1c-8c7ebee0cd3f": {
+      "money": 243,
       "bank": 0,
-      "vehicle": null,
-      "vehicles": [],
+      "vehicle": "moto",
+      "vehicles": [
+        "moto"
+      ],
       "shops": [],
       "houses": [],
       "name": null,
@@ -51,6 +83,49 @@
       "age": null,
       "initialRentPaid": false,
       "rentedHouseIdx": null
+    },
+    "89170657-bd55-4aca-8ad8-2892ed153261": {
+      "money": 36,
+      "bank": 0,
+      "vehicle": "moto",
+      "vehicles": [
+        "moto"
+      ],
+      "shops": [
+        {
+          "x": 5137.093779257009,
+          "y": 2013.9894992919944,
+          "w": 120,
+          "h": 80,
+          "kind": "panadería",
+          "ownerId": "A742394"
+        }
+      ],
+      "houses": [],
+      "name": "jos",
+      "avatar": "assets/avatar4.png",
+      "likes": [
+        "playa",
+        "ciclismo",
+        "baloncesto",
+        "historia",
+        "café"
+      ],
+      "gender": "F",
+      "age": 20,
+      "initialRentPaid": true,
+      "rentedHouseIdx": 0,
+      "country": "Ecuador",
+      "email": "jos@hotmail.com",
+      "phone": "0983801298",
+      "rentalHouse": {
+        "x": 5757,
+        "y": 2095,
+        "w": 70,
+        "h": 70,
+        "initial": "J"
+      },
+      "governmentFunds": 0
     }
   },
   "government": {
@@ -59,61 +134,17 @@
   },
   "activityLog": [
     {
-      "ts": 1757557046654,
+      "ts": 1757563611970,
       "type": "register",
-      "userId": "77af81f5-9786-4212-88da-372c531e2005",
+      "userId": "a5be074e-1e9d-4f66-8e4a-ab0293fb7919",
       "details": {
-        "username": "fernando"
+        "username": "fer"
       }
     },
     {
-      "ts": 1757557056570,
+      "ts": 1757563619716,
       "type": "progress_update",
-      "userId": "77af81f5-9786-4212-88da-372c531e2005",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "initialRentPaid",
-          "rentedHouseIdx"
-        ]
-      }
-    },
-    {
-      "ts": 1757557057176,
-      "type": "progress_update",
-      "userId": "77af81f5-9786-4212-88da-372c531e2005",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "initialRentPaid",
-          "rentedHouseIdx"
-        ]
-      }
-    },
-    {
-      "ts": 1757557072150,
-      "type": "progress_update",
-      "userId": "77af81f5-9786-4212-88da-372c531e2005",
+      "userId": "a5be074e-1e9d-4f66-8e4a-ab0293fb7919",
       "details": {
         "keys": [
           "money",
@@ -136,9 +167,99 @@
       }
     },
     {
-      "ts": 1757557085102,
+      "ts": 1757563624100,
       "type": "progress_update",
-      "userId": "77af81f5-9786-4212-88da-372c531e2005",
+      "userId": "a5be074e-1e9d-4f66-8e4a-ab0293fb7919",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "initialRentPaid",
+          "rentedHouseIdx",
+          "country",
+          "email",
+          "phone",
+          "rentalHouse"
+        ]
+      }
+    },
+    {
+      "ts": 1757563633539,
+      "type": "vehicle_add",
+      "userId": "2b4de0ff-c8e6-4742-8c1c-8c7ebee0cd3f",
+      "details": {
+        "vehicle": "moto"
+      }
+    },
+    {
+      "ts": 1757563633949,
+      "type": "progress_update",
+      "userId": "a5be074e-1e9d-4f66-8e4a-ab0293fb7919",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "initialRentPaid",
+          "rentedHouseIdx",
+          "country",
+          "email",
+          "phone",
+          "rentalHouse"
+        ]
+      }
+    },
+    {
+      "ts": 1757563675155,
+      "type": "register",
+      "userId": "89170657-bd55-4aca-8ad8-2892ed153261",
+      "details": {
+        "username": "jos"
+      }
+    },
+    {
+      "ts": 1757563678246,
+      "type": "progress_update",
+      "userId": "89170657-bd55-4aca-8ad8-2892ed153261",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "initialRentPaid",
+          "rentedHouseIdx"
+        ]
+      }
+    },
+    {
+      "ts": 1757563683466,
+      "type": "progress_update",
+      "userId": "89170657-bd55-4aca-8ad8-2892ed153261",
       "details": {
         "keys": [
           "money",
@@ -157,6 +278,488 @@
           "country",
           "email",
           "phone"
+        ]
+      }
+    },
+    {
+      "ts": 1757563687550,
+      "type": "progress_update",
+      "userId": "89170657-bd55-4aca-8ad8-2892ed153261",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "initialRentPaid",
+          "rentedHouseIdx",
+          "country",
+          "email",
+          "phone",
+          "rentalHouse"
+        ]
+      }
+    },
+    {
+      "ts": 1757563784892,
+      "type": "progress_update",
+      "userId": "89170657-bd55-4aca-8ad8-2892ed153261",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "initialRentPaid",
+          "rentedHouseIdx",
+          "country",
+          "email",
+          "phone",
+          "rentalHouse"
+        ]
+      }
+    },
+    {
+      "ts": 1757564455038,
+      "type": "shop_add",
+      "userId": "a5be074e-1e9d-4f66-8e4a-ab0293fb7919",
+      "details": {
+        "id": "S1"
+      }
+    },
+    {
+      "ts": 1757564455446,
+      "type": "progress_update",
+      "userId": "89170657-bd55-4aca-8ad8-2892ed153261",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "initialRentPaid",
+          "rentedHouseIdx",
+          "country",
+          "email",
+          "phone",
+          "rentalHouse"
+        ]
+      }
+    },
+    {
+      "ts": 1757564476458,
+      "type": "progress_update",
+      "userId": "89170657-bd55-4aca-8ad8-2892ed153261",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicles",
+          "governmentFunds",
+          "initialRentPaid",
+          "rentedHouseIdx",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "country",
+          "email",
+          "phone"
+        ]
+      }
+    },
+    {
+      "ts": 1757564485224,
+      "type": "login",
+      "userId": "89170657-bd55-4aca-8ad8-2892ed153261",
+      "details": {
+        "username": "jos"
+      }
+    },
+    {
+      "ts": 1757564489525,
+      "type": "progress_update",
+      "userId": "89170657-bd55-4aca-8ad8-2892ed153261",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "initialRentPaid",
+          "rentedHouseIdx",
+          "country",
+          "email",
+          "phone",
+          "rentalHouse",
+          "governmentFunds"
+        ]
+      }
+    },
+    {
+      "ts": 1757564517365,
+      "type": "progress_update",
+      "userId": "89170657-bd55-4aca-8ad8-2892ed153261",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicles",
+          "governmentFunds",
+          "initialRentPaid",
+          "rentedHouseIdx",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "country",
+          "email",
+          "phone"
+        ]
+      }
+    },
+    {
+      "ts": 1757564530280,
+      "type": "login",
+      "userId": "89170657-bd55-4aca-8ad8-2892ed153261",
+      "details": {
+        "username": "jos"
+      }
+    },
+    {
+      "ts": 1757564538382,
+      "type": "progress_update",
+      "userId": "89170657-bd55-4aca-8ad8-2892ed153261",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "initialRentPaid",
+          "rentedHouseIdx",
+          "country",
+          "email",
+          "phone",
+          "rentalHouse",
+          "governmentFunds"
+        ]
+      }
+    },
+    {
+      "ts": 1757564809411,
+      "type": "login",
+      "userId": "89170657-bd55-4aca-8ad8-2892ed153261",
+      "details": {
+        "username": "jos"
+      }
+    },
+    {
+      "ts": 1757564816007,
+      "type": "login",
+      "userId": "a5be074e-1e9d-4f66-8e4a-ab0293fb7919",
+      "details": {
+        "username": "fer"
+      }
+    },
+    {
+      "ts": 1757564819677,
+      "type": "progress_update",
+      "userId": "a5be074e-1e9d-4f66-8e4a-ab0293fb7919",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "initialRentPaid",
+          "rentedHouseIdx",
+          "country",
+          "email",
+          "phone",
+          "rentalHouse",
+          "governmentFunds"
+        ]
+      }
+    },
+    {
+      "ts": 1757564821250,
+      "type": "progress_update",
+      "userId": "a5be074e-1e9d-4f66-8e4a-ab0293fb7919",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "initialRentPaid",
+          "rentedHouseIdx",
+          "country",
+          "email",
+          "phone",
+          "rentalHouse"
+        ]
+      }
+    },
+    {
+      "ts": 1757564838036,
+      "type": "vehicle_add",
+      "userId": "89170657-bd55-4aca-8ad8-2892ed153261",
+      "details": {
+        "vehicle": "moto"
+      }
+    },
+    {
+      "ts": 1757564838448,
+      "type": "progress_update",
+      "userId": "a5be074e-1e9d-4f66-8e4a-ab0293fb7919",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "initialRentPaid",
+          "rentedHouseIdx",
+          "country",
+          "email",
+          "phone",
+          "rentalHouse",
+          "governmentFunds"
+        ]
+      }
+    },
+    {
+      "ts": 1757564844487,
+      "type": "progress_update",
+      "userId": "a5be074e-1e9d-4f66-8e4a-ab0293fb7919",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicles",
+          "governmentFunds",
+          "initialRentPaid",
+          "rentedHouseIdx",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "country",
+          "email",
+          "phone"
+        ]
+      }
+    },
+    {
+      "ts": 1757564872793,
+      "type": "login",
+      "userId": "89170657-bd55-4aca-8ad8-2892ed153261",
+      "details": {
+        "username": "jos"
+      }
+    },
+    {
+      "ts": 1757564888787,
+      "type": "progress_update",
+      "userId": "89170657-bd55-4aca-8ad8-2892ed153261",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "initialRentPaid",
+          "rentedHouseIdx",
+          "country",
+          "email",
+          "phone",
+          "rentalHouse",
+          "governmentFunds"
+        ]
+      }
+    },
+    {
+      "ts": 1757564936035,
+      "type": "progress_update",
+      "userId": "89170657-bd55-4aca-8ad8-2892ed153261",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "governmentFunds",
+          "initialRentPaid",
+          "rentedHouseIdx",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "country",
+          "email",
+          "phone"
+        ]
+      }
+    },
+    {
+      "ts": 1757564945506,
+      "type": "login",
+      "userId": "a5be074e-1e9d-4f66-8e4a-ab0293fb7919",
+      "details": {
+        "username": "fer"
+      }
+    },
+    {
+      "ts": 1757564950046,
+      "type": "progress_update",
+      "userId": "a5be074e-1e9d-4f66-8e4a-ab0293fb7919",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "initialRentPaid",
+          "rentedHouseIdx",
+          "country",
+          "email",
+          "phone",
+          "rentalHouse",
+          "governmentFunds"
+        ]
+      }
+    },
+    {
+      "ts": 1757564954546,
+      "type": "progress_update",
+      "userId": "a5be074e-1e9d-4f66-8e4a-ab0293fb7919",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "governmentFunds",
+          "initialRentPaid",
+          "rentedHouseIdx",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "country",
+          "email",
+          "phone"
+        ]
+      }
+    },
+    {
+      "ts": 1757564959731,
+      "type": "login",
+      "userId": "89170657-bd55-4aca-8ad8-2892ed153261",
+      "details": {
+        "username": "jos"
+      }
+    },
+    {
+      "ts": 1757564962576,
+      "type": "progress_update",
+      "userId": "89170657-bd55-4aca-8ad8-2892ed153261",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "initialRentPaid",
+          "rentedHouseIdx",
+          "country",
+          "email",
+          "phone",
+          "rentalHouse",
+          "governmentFunds"
         ]
       }
     }

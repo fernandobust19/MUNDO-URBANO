@@ -256,7 +256,40 @@
 		if(form){ form.addEventListener('submit', (e)=>{ e.preventDefault(); handleLogin(); }); }
 		// Botón SALIR (el servidor hace snapshot de dinero en /api/logout)
 		const btnLogout = document.getElementById('btnLogout');
-		if(btnLogout){ btnLogout.addEventListener('click', async ()=>{ try{ await call('POST','/api/logout'); location.reload(); }catch(e){ location.reload(); } }); }
+		if(btnLogout){ btnLogout.addEventListener('click', async ()=>{
+			try{
+				// Construir snapshot completo del progreso actual antes de cerrar sesión
+				let payload = {};
+				try{
+					const prog = window.__progress || {};
+					// Intentar detectar agente local para tomar dinero actual en vivo
+					let liveMoney = null;
+					try{ if(window.agents && window.USER_ID){ const me = window.agents.find(a=>a.id===window.USER_ID); if(me && typeof me.money==='number') liveMoney = Math.floor(me.money); } else if(window.playerId && window.agents){ const me2=window.agents.find(a=>a.id===window.playerId); if(me2 && typeof me2.money==='number') liveMoney=Math.floor(me2.money); } }catch(_){ }
+					if(liveMoney!=null) payload.money = liveMoney; else if(typeof prog.money==='number') payload.money = Math.floor(prog.money);
+					if(typeof prog.bank==='number') payload.bank = Math.floor(prog.bank);
+					if(prog.vehicle) payload.vehicle = prog.vehicle;
+					if(Array.isArray(prog.vehicles)) payload.vehicles = prog.vehicles.slice();
+					// Casas y negocios propios desde el mundo (para reflejar compras recientes)
+					try{ if(window.houses){ const mineH = window.houses.filter(h=>h && h.ownerId===window.USER_ID); if(mineH.length) payload.houses = mineH.map(h=>({ id:h.id||null, x:h.x,y:h.y,w:h.w,h:h.h, ownerId:h.ownerId })); }
+					}catch(_){ }
+					try{ if(window.shops){ const mineS = window.shops.filter(s=>s && s.ownerId===window.USER_ID); if(mineS.length) payload.shops = mineS.map(s=>({ id:s.id||null, kind:s.kind, x:s.x,y:s.y,w:s.w,h:s.h, ownerId:s.ownerId, buyCost:s.buyCost||0, price:s.price||0 })); }
+					}catch(_){ }
+					// Fondos de gobierno (solo lectura local, guardar si existen)
+					try{ if(window.government && typeof window.government.funds==='number'){ payload.governmentFunds = Math.floor(window.government.funds); } }catch(_){ }
+					// Bandera de arriendo inicial pagado y casa rentada
+					try{ if(prog.initialRentPaid) payload.initialRentPaid = true; }catch(_){ }
+					try{ if(typeof prog.rentedHouseIdx === 'number') payload.rentedHouseIdx = prog.rentedHouseIdx; }catch(_){ }
+					// Datos básicos del perfil
+					['name','avatar','likes','gender','age','country','email','phone'].forEach(k=>{ if(prog && (k in prog)) payload[k]=prog[k]; });
+				}catch(_){ }
+				// Guardar snapshot
+				try{ await call('POST','/api/progress', payload); }catch(_){ }
+				// Guardar snapshot de dinero al ledger mediante logout normal
+				try{ await call('POST','/api/logout'); }catch(_){ }
+			}finally{
+				location.reload();
+			}
+		}); }
 		// Forzar mostrar la ventana de autenticación primero
 		const me = await checkMe().catch(()=>null);
 		showAuth(true);

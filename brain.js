@@ -211,7 +211,7 @@ function updateProgress(userId, patch) {
 	const p = ensureProgress(userId);
 	if (patch == null || typeof patch !== 'object') return { ok: false };
 	// Solo campos permitidos
-	const allowed = ['money', 'bank', 'vehicle', 'vehicles', 'shops', 'houses', 'name', 'avatar', 'likes', 'gender', 'age', 'country', 'email', 'phone', 'initialRentPaid', 'rentedHouseIdx'];
+	const allowed = ['money', 'bank', 'vehicle', 'vehicles', 'shops', 'houses', 'name', 'avatar', 'likes', 'gender', 'age', 'country', 'email', 'phone', 'initialRentPaid', 'rentedHouseIdx', 'governmentFunds', 'rentalHouse'];
 	for (const k of allowed) {
 		if (k in patch) {
 			if (k === 'shops' || k === 'houses' || k === 'vehicles' || k === 'likes') {
@@ -221,6 +221,21 @@ function updateProgress(userId, patch) {
 			}
 		}
 	}
+	// Si viene governmentFunds actualizar objeto gobierno global
+	try{
+		if('governmentFunds' in patch && typeof patch.governmentFunds === 'number'){
+			const g = getGovernment();
+			g.funds = Math.max(0, Math.floor(patch.governmentFunds));
+		}
+		// Persistir snapshot de casa rentada (geometría + marcador)
+		if('rentalHouse' in patch && patch.rentalHouse && typeof patch.rentalHouse==='object'){
+			const rh = patch.rentalHouse;
+			// normalizar
+			const norm = { x: Math.floor(rh.x||0), y: Math.floor(rh.y||0), w: Math.floor(rh.w||0)||60, h: Math.floor(rh.h||0)||60 };
+			if(rh.initial && typeof rh.initial==='string') norm.initial = rh.initial.slice(0,3);
+			p.rentalHouse = norm;
+		}
+	}catch(_){ }
 	log('progress_update', userId, { keys: Object.keys(patch || {}) });
 	schedulePersist();
 	return { ok: true };

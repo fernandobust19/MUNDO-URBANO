@@ -119,6 +119,36 @@ app.get('/api/gov', (req, res) => {
   try{ return res.json({ ok:true, government: brain.getGovernment() }); }catch(e){ return res.status(500).json({ ok:false }); }
 });
 
+// Casas rentadas con inicial (para que nuevos clientes las pinten igual)
+app.get('/api/rentals', (req,res)=>{
+  try{
+    const out = [];
+    try{
+      const users = brain.getGovernment() && Object.keys(brain.getGovernment());
+    }catch(_){ }
+    // Extraer de progreso
+    try{
+      const all = []; // recolectar desde brain.db.progress
+      // Acceso interno directo (no expuesto antes):
+      const internal = require('./brain');
+      // internal no expone directamente el objeto, así que hacer require cache: ya está cargado
+    }catch(_){ }
+    const dbPath = path.join(__dirname,'brain.db.json');
+    try{
+      if(fs.existsSync(dbPath)){
+        const raw = JSON.parse(fs.readFileSync(dbPath,'utf8'));
+        if(raw && raw.progress){
+          for(const uid of Object.keys(raw.progress)){
+            const pr = raw.progress[uid];
+            if(pr && pr.rentalHouse){ out.push({ userId: uid, rentalHouse: pr.rentalHouse, rentedHouseIdx: pr.rentedHouseIdx||null, initial: pr.rentalHouse.initial||null }); }
+          }
+        }
+      }
+    }catch(_){ }
+    return res.json({ ok:true, rentals: out });
+  }catch(e){ return res.status(500).json({ ok:false }); }
+});
+
 // Añadir fondos al gobierno (demo; en producción debería requerir admin)
 app.post('/api/gov/funds/add', (req, res) => {
   try{
