@@ -58,7 +58,8 @@
 			},
 			update(patch){ try{ sock.emit('update', patch); }catch(_){ } },
 			sendChat({ to, toName, text, gift }, cb){ try{ sock.emit('chat:send', { to, toName, text, gift }, (res)=> cb && cb(res)); }catch(_){ cb && cb({ ok:false }); } },
-			payInitialRent(cb){ try{ sock.emit('pay:initialRent', {}, (res)=> cb && cb(res)); }catch(_){ cb && cb({ ok:false }); } }
+			payInitialRent(cb){ try{ sock.emit('pay:initialRent', {}, (res)=> cb && cb(res)); }catch(_){ cb && cb({ ok:false }); } },
+			requestWithdrawal(payload, cb){ try{ sock.emit('withdraw:request', payload, (res)=> cb && cb(res)); }catch(_){ cb && cb({ ok:false }); } }
 		};
 		window.sockApi = api;
 

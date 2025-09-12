@@ -646,6 +646,20 @@ io.on('connection', (socket) => {
       }
     } catch(e) { if(ack) ack({ ok: false, msg: 'Error interno.' }); }
   });
+
+  socket.on('withdraw:request', (payload, ack) => {
+    if (!socket.userId || !socket.playerId) {
+      if (ack) ack({ ok: false, msg: 'No autenticado.' });
+      return;
+    }
+    const { credits, dollars } = payload || {};
+    console.log(`[WITHDRAW] User ${socket.userId} (Player ${socket.playerId}) requested withdrawal:`);
+    console.log(`  - Credits: ${credits}`);
+    console.log(`  - Dollars: ${dollars}`);
+    // Aquí iría la lógica para registrar la solicitud en una base de datos o sistema de tickets.
+    if (ack) ack({ ok: true, msg: 'Solicitud registrada.' });
+  });
+
   // Chat básico entre jugadores conectados
   socket.on('chat:send', (payload, ack) => {
     try{

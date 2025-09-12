@@ -768,6 +768,30 @@ function relocateInitialBuildingsToSand(){
     }
   }
 
+  // === Efectos de monedas durante compras en tiendas ===
+  const shopCoins = []; // {x,y,spawn,life,vy}
+  function spawnShopCoin(x,y){
+    shopCoins.push({ x, y, spawn: performance.now(), life: (CFG.WORK_COIN_LIFE||1500), vy: -0.02 - Math.random()*0.04 });
+  }
+  function updateAndDrawShopCoins(dt){
+    const now = performance.now();
+    const dtMs = (dt||0) * 1000;
+    for(let i=shopCoins.length-1;i>=0;i--){
+      const c = shopCoins[i];
+      const t = now - c.spawn;
+      if(t > c.life){ shopCoins.splice(i,1); continue; }
+      c.y += c.vy * dtMs;
+    }
+    for(const c of shopCoins){
+      const t = now - c.spawn;
+      const alpha = 1 - (t / c.life);
+      const p = toScreen(c.x, c.y);
+      ctx.save(); ctx.globalAlpha = Math.max(0, alpha);
+      ctx.fillStyle = '#facc15'; ctx.beginPath(); ctx.arc(p.x, p.y, 18*ZOOM, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#92400e'; ctx.font = `${28*ZOOM}px ui-monospace,monospace`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('$', p.x, p.y+1.5*ZOOM);
+      ctx.restore();
+    }
+  }
   /* ===== Tipos de Instituciones (25) ===== */
   const GOV_TYPES = [
     {k:'parque', label:'Parque', cost:CFG.COST_PARK, w:130,h:90, icon:'🌳', fill:'rgba(12,81,58,0.92)', stroke:'rgba(31,122,90,0.95)'},
@@ -2136,7 +2160,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         ctx.lineWidth = 1;
         if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(cx-bw/2, topY-bh, bw, bh, 4*ZOOM); ctx.fill(); ctx.stroke(); }
         else { ctx.fillRect(cx-bw/2, topY-bh, bw, bh); ctx.strokeRect(cx-bw/2, topY-bh, bw, bh); }
-        ctx.fillStyle = '#fcd34d'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillStyle = '#5eff94'; ctx.textAlign='center'; ctx.textBaseline='middle';
         ctx.fillText(label, cx, topY-bh/2+1);
         ctx.restore();
       }
@@ -2471,6 +2495,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
 
     // Dibujar efectos de monedas (después de dibujar el mundo para que queden sobre fábricas)
   try{ updateAndDrawWorkCoins(dt); }catch(_){ }
+  try{ updateAndDrawShopCoins(dt); }catch(_){ }
 
     // ======= Jugadores remotos con smoothing nuevo =======
   try{ if(!window.__gamePaused) renderRemotePlayers(); }catch(e){}
@@ -2543,24 +2568,39 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       }
       if(a.targetRole==='shop' && a.target){
         const c=a.target;
-        if(Math.hypot(a.x-c.x,a.y-c.y)<16){
+        if(Math.hypot(a.x-c.x,a.y-c.y) < 16){
           const s = shops.find(q=>q.id===a._shopTargetId);
-          if(s){
-            // Comprar sólo si pasó intervalo de compra y tiene dinero
-            const okInterval = (nowS - (a.lastPurchaseAt||0)) >= (CFG.SHOP_PURCHASE_INTERVAL||300);
-            if(okInterval){
-              const price = clamp(s.price, CFG.PRICE_MIN, CFG.PRICE_MAX);
-              if(a.money>=price){
-                a.money-=price;
-                const bonus = Math.round((s.buyCost || 0) * CFG.SHOP_PROFIT_FACTOR);
-                let saleProfit = price + bonus; 
-                if(s._managedBoostUntil && nowS < s._managedBoostUntil){ saleProfit = Math.round(saleProfit * (CFG.MANAGE_BOOST_MULT||1.2)); }
-                s.cashbox = (s.cashbox || 0) + saleProfit; s._lastCashboxChange = performance.now();
-                a.lastPurchaseAt = nowS;
-              }
+          if (s) {
+            if (!a.shoppingUntil) { // Ha llegado, iniciar tiempo de compra
+              a.shoppingUntil = nowS + (CFG.SHOP_DWELL || 5);
+              a.vx = 0; a.vy = 0; // Detenerse
+              a._lastShopCoinSpawn = performance.now();
             }
+            if (nowS < a.shoppingUntil) { // Sigue comprando, generar monedas
+              const nowPerf = performance.now();
+              if (!a._lastShopCoinSpawn) a._lastShopCoinSpawn = nowPerf;
+              if (nowPerf - a._lastShopCoinSpawn >= 1000) {
+                a._lastShopCoinSpawn += 1000;
+                spawnShopCoin(s.x + s.w/2, s.y + s.h/2);
+              }
+            } else { // Tiempo de compra finalizado, procesar pago
+              const okInterval = (nowS - (a.lastPurchaseAt||0)) >= (CFG.SHOP_PURCHASE_INTERVAL||300);
+              if(okInterval){
+                const price = clamp(s.price, CFG.PRICE_MIN, CFG.PRICE_MAX);
+                if(a.money>=price){
+                  a.money-=price;
+                  const bonus = Math.round((s.buyCost || 0) * CFG.SHOP_PROFIT_FACTOR);
+                  let saleProfit = price + bonus; 
+                  if(s._managedBoostUntil && nowS < s._managedBoostUntil){ saleProfit = Math.round(saleProfit * (CFG.MANAGE_BOOST_MULT||1.2)); }
+                  s.cashbox = (s.cashbox || 0) + saleProfit; s._lastCashboxChange = performance.now();
+                  a.lastPurchaseAt = nowS;
+                }
+              }
+              a.target=null; a.targetRole='idle'; a._shopTargetId=null; a.shoppingUntil = null;
+            }
+          } else { // Tienda no encontrada, resetear agente
+            a.target=null; a.targetRole='idle'; a._shopTargetId=null; a.shoppingUntil = null;
           }
-          a.target=null; a.targetRole='idle'; a._shopTargetId=null;
         }
       }
       if(a.targetRole==='manage_shop' && a.target){
@@ -3594,13 +3634,13 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         if(s.hasEmployee){
           const employee = agents.find(a => a.id === s.employeeId);
           if(employee){ employee.employedAtShopId = null; employee.target = null; employee.targetRole = 'idle'; }
-          s.hasEmployee = false; s.employeeId = null; s.wage = 0;
+          s.hasEmployee = false; s.employeeId = null; delete s.lastCommissionPayout;
           toast("Empleado despedido.");
         } else {
           const candidate = agents.find(a => a.id !== USER_ID && !a.employedAtShopId && !shops.some(shop => shop.ownerId === a.id));
           if(candidate){
             s.hasEmployee = true; s.employeeId = candidate.id;
-            s.wage = Math.ceil(CFG.EARN_PER_SHIFT * 1.25);
+            s.lastCommissionPayout = s.cashbox || 0; // Iniciar seguimiento para comisiones
             candidate.employedAtShopId = s.id;
             candidate.target = centerOf(s); candidate.targetRole = 'work_shop';
             candidate.workingUntil = null; candidate.goingToBank = false;
@@ -3733,16 +3773,29 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     updateGovDesc();
   }, CFG.GOV_TAX_EVERY*1000);
 
-  // (Intervalo de cobro de alquiler eliminado: ahora se procesa dentro del loop con processRent acumulando 1 hora real)
-
-  setInterval(()=>{if(!STARTED) return; if(hasNet()) return;
+  // Pago de salarios a empleados (comisión del 30% sobre ganancias)
+  setInterval(()=>{
+    if(!STARTED || hasNet()) return;
     for(const shop of shops){
       if(shop.hasEmployee && shop.employeeId && shop.ownerId){
         const owner = agents.find(a => a.id === shop.ownerId);
         const employee = agents.find(a => a.id === shop.employeeId);
         if(!owner || !employee) continue;
-        if(shop.cashbox >= shop.wage){ shop.cashbox -= shop.wage; employee.money += shop.wage; toast(`Nómina pagada en ${shop.kind}. Caja ahora: ${Math.floor(shop.cashbox)}.`); }
-        else { toast(`Caja insuficiente en ${shop.kind}. ¡El empleado ${employee.code} ha renunciado!`); shop.hasEmployee = false; shop.employeeId = null; shop.wage = 0; employee.employedAtShopId = null; employee.target = null; employee.targetRole = 'idle'; }
+
+        const earnings = (shop.cashbox || 0) - (shop.lastCommissionPayout || 0);
+        if (earnings >= 100) {
+          const commission = Math.floor(earnings * 0.30);
+          if (owner.money >= commission) {
+            owner.money -= commission;
+            employee.money += commission;
+            shop.lastCommissionPayout = (shop.lastCommissionPayout || 0) + earnings;
+            toast(`Dueño de ${shop.kind} pagó comisión: -${commission}.`);
+          } else {
+            toast(`Dueño de ${shop.kind} no pudo pagar la comisión. ¡El empleado ${employee.code} ha renunciado!`);
+            shop.hasEmployee = false; shop.employeeId = null; delete shop.lastCommissionPayout;
+            employee.employedAtShopId = null; employee.target = null; employee.targetRole = 'idle';
+          }
+        }
       }
     }
   }, CFG.SALARY_PAY_EVERY * 1000);

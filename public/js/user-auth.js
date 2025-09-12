@@ -154,8 +154,6 @@
 		try {
 			window.__user = out.user;
 			window.__progress = out.progress || {};
-			// Recordar username localmente para prellenar en próximas visitas
-			try{ if(out.user && out.user.username){ localStorage.setItem('lastUsername', out.user.username); } }catch(_){ }
 			// Sincronizar género al progreso:
 			// 1) Si el usuario tiene M/F y al progreso le falta, úsalo.
 			// 2) Si el usuario no tiene M/F pero en el modal se eligió uno válido, tomarlo para esta sesión.
@@ -344,8 +342,6 @@
 			showAuth(true);
 			try{
 				const uEl = document.getElementById('authUser');
-				const last = localStorage.getItem('lastUsername');
-				if(uEl && last) uEl.value = last;
 				// Foco inmediato al usuario
 				setTimeout(()=>{ try{ uEl && uEl.focus(); }catch(_){ } }, 0);
 			}catch(_){ }
@@ -382,4 +378,3 @@
 	// Iniciar
 	if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
-
