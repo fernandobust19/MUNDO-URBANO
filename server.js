@@ -170,6 +170,18 @@ app.post('/api/gov/funds/add', (req, res) => {
   }catch(e){ return res.status(500).json({ ok:false }); }
 });
 
+// Cobrar arriendo al usuario autenticado (50 por defecto) y registrar todo
+app.post('/api/rent/charge', (req, res) => {
+  try{
+    const uid = getSessionUserId(req);
+    if(!uid) return res.status(401).json({ ok:false });
+    const amount = Number(req.body?.amount||50) || 50;
+    const out = brain.chargeRent(uid, amount, 'rent:manual');
+    if(!(out && out.ok)) return res.status(400).json({ ok:false, msg: out && out.msg || 'fail' });
+    return res.json({ ok:true, money: out.money, bank: out.bank||0, governmentFunds: out.funds||0 });
+  }catch(e){ return res.status(500).json({ ok:false }); }
+});
+
 
 app.post('/api/change-password', (req, res) => {
   const uid = getSessionUserId(req);
@@ -433,78 +445,15 @@ setInterval(() => {
   }
 }, 6000);
 
-// Bots sencillos que deambulan (para siempre ver agentes)
-// Nombres españoles simples
-const MALE_NAMES = ['Carlos','Luis','Javier','Miguel','Andrés','José','Pedro','Diego','Sergio','Fernando','Juan','Víctor','Pablo','Eduardo','Hugo','Mario'];
-const FEMALE_NAMES = ['María','Ana','Lucía','Sofía','Camila','Valeria','Paula','Elena','Sara','Isabella','Daniela','Carla','Laura','Diana','Andrea','Noelia'];
-const LAST_NAMES = ['García','Martínez','López','González','Rodríguez','Pérez','Sánchez','Ramírez','Torres','Flores','Vargas','Castro','Romero','Navarro','Molina','Ortega'];
-function randomPersonName(gender){
-  const first = (gender==='F' ? FEMALE_NAMES : MALE_NAMES)[Math.floor(Math.random()*(gender==='F'?FEMALE_NAMES.length:MALE_NAMES.length))];
-  const last = LAST_NAMES[Math.floor(Math.random()*LAST_NAMES.length)];
-  return `${first} ${last}`;
-}
-
-function ensureBots(n = 3) {
-  const existing = Object.values(state.players).filter(p => p.isBot);
-  for (let i = existing.length; i < n; i++) {
-    const id = 'B' + (i + 1);
-    const gender = Math.random() > 0.5 ? 'M' : 'F';
-    const speed = 120 + Math.random()*120; // 120-240
-    // Avatares base alternados
-    const preset = ['/assets/avatar1.png','/assets/avatar2.png','/assets/avatar3.png','/assets/avatar4.png'];
-    const avatar = preset[Math.floor(Math.random()*preset.length)];
-    state.players[id] = {
-      id,
-      socketId: null,
-      code: randomPersonName(gender),
-      x: Math.random() * 800 + 50,
-      y: Math.random() * 500 + 50,
-      money: 400,
-      gender,
-      avatar,
-      isBot: true,
-      vx: 0,
-      vy: 0,
-      speed,
-      targetX: Math.random()*1800+100,
-      targetY: Math.random()*1000+100,
-      createdAt: now(),
-      updatedAt: now()
-    };
+// Bots del servidor: deshabilitados a pedido. Purga cualquier bot existente y no crea nuevos.
+function ensureBots() {
+  for (const [id, p] of Object.entries(state.players)) {
+    if (p && p.isBot) delete state.players[id];
   }
 }
 
-function tickBots(bounds = { w: 2200, h: 1400 }) {
-  const dt = 0.12; // ~120ms por tick
-  for (const p of Object.values(state.players)) {
-    if (!p.isBot) continue;
-    // nuevo objetivo si llegó o por probabilidad
-    const dx = (p.targetX ?? p.x) - (p.x || 0);
-    const dy = (p.targetY ?? p.y) - (p.y || 0);
-    const dist = Math.hypot(dx, dy);
-    if (!isFinite(dist) || dist < 20 || Math.random() < 0.02) {
-      p.targetX = Math.random() * bounds.w;
-      p.targetY = Math.random() * bounds.h;
-    }
-    // velocidad deseada hacia el objetivo
-    const ddx = (p.targetX - p.x);
-    const ddy = (p.targetY - p.y);
-    const d = Math.hypot(ddx, ddy) || 1;
-    const nx = ddx / d, ny = ddy / d;
-    const desiredVx = nx * (p.speed || 160);
-    const desiredVy = ny * (p.speed || 160);
-    // suavizado (lerp) + pequeño jitter para evitar movimiento robótico
-    p.vx = (p.vx || 0) * 0.85 + desiredVx * 0.15 + (Math.random()*2-1)*4;
-    p.vy = (p.vy || 0) * 0.85 + desiredVy * 0.15 + (Math.random()*2-1)*4;
-    // actualizar posición
-    p.x = Math.max(0, Math.min((p.x || 0) + p.vx * dt, bounds.w));
-    p.y = Math.max(0, Math.min((p.y || 0) + p.vy * dt, bounds.h));
-    // rebote en bordes ajustando objetivo
-    if (p.x <= 0 || p.x >= bounds.w) { p.vx *= -0.6; p.targetX = Math.random() * bounds.w; }
-    if (p.y <= 0 || p.y >= bounds.h) { p.vy *= -0.6; p.targetY = Math.random() * bounds.h; }
-    p.updatedAt = now();
-  }
-}
+// No-op: ticker de bots desactivado (se mantiene la función para compatibilidad)
+function tickBots() { /* no server bots */ }
 
 // Movimiento para jugadores humanos inactivos, para que el mundo se sienta vivo.
 function tickIdlePlayers(bounds = { w: 2200, h: 1400 }) {
@@ -546,11 +495,11 @@ function tickIdlePlayers(bounds = { w: 2200, h: 1400 }) {
 
 // Tick de movimiento automático para todos los jugadores
 setInterval(() => {
-  ensureBots(5); // Aseguramos que haya 5 bots
-  // Usar límites amplios: si el mundo crece, se pueden mapear al menos 1.2x del tamaño base
+  // Purga de bots del servidor y sólo mover jugadores humanos inactivos
+  ensureBots();
   const w =  Math.max(2200, (globalThis.WORLD?.w)||2200);
   const h =  Math.max(1400, (globalThis.WORLD?.h)||1400);
-  tickBots({ w, h });
+  tickBots({ w, h }); // no-op
   tickIdlePlayers({ w, h });
 }, 120);
 
@@ -585,6 +534,20 @@ io.on('connection', (socket) => {
     };
     state.players[id] = player;
     socket.playerId = id;
+    // Si el socket está autenticado como usuario real, cobrar arriendo inicial (50) y registrar en ledger
+    if(socket.userId){
+      try{
+        const rent = brain.chargeRent(socket.userId, 50, 'rent:init');
+        if(rent && rent.ok){
+          // Sincronizar saldo del jugador recién creado
+          player.money = Math.floor(rent.money||player.money||0);
+          // Notificar a este cliente su nuevo saldo y fondos de gobierno
+          io.to(socket.id).emit('rent:charged', { amount: 50, money: player.money, governmentFunds: rent.funds||0 });
+          // Actualizar gobierno en estado público
+          state.government = brain.getGovernment();
+        }
+      }catch(_){ }
+    }
     if (ack) ack({ ok: true, id });
     io.emit('playerJoined', player);
   });

@@ -183,6 +183,20 @@
       clearAvatarSelection(); btn.classList.add('selected');
   // set preview and UI avatar
   try{ if(fGenderPreview) fGenderPreview.src = src; if(uiAvatarEl) uiAvatarEl.src = src; }catch(e){}
+      // Enforce avatar ↔ género: avatar1/2 => M, avatar3/4 => F (no aplica para data URLs/subidos)
+      try{
+        if(typeof src === 'string' && src.startsWith('/assets/avatar')){
+          const low = src.toLowerCase();
+          const implied = (low.includes('avatar1') || low.includes('avatar2')) ? 'M'
+                         : (low.includes('avatar3') || low.includes('avatar4')) ? 'F'
+                         : null;
+          if(implied && fGender && ['M','F'].includes(implied)){
+            if(fGender.value !== implied){ fGender.value = implied; updateGenderPreview(); }
+            // Persistir selección de género para futuras sesiones
+            try{ window.__progress = Object.assign({}, window.__progress||{}, { gender: implied }); window.saveProgress && window.saveProgress({ gender: implied }); }catch(_){ }
+          }
+        }
+      }catch(_){ }
       // set the select value too for form persistence (safe check if avatarSelect isn't declared)
       try{ if(typeof avatarSelect !== 'undefined' && avatarSelect) avatarSelect.value = src; }catch(e){}
       // persist selection so it survives reloads and is applied to UI avatar
@@ -313,8 +327,13 @@ btnRandLikes.addEventListener('click', updateLikesUI);
   /* ===== CANVAS / MUNDO ===== */
   const canvas=$("#world"), ctx=canvas.getContext('2d', {alpha: false});
   const uiDock=$("#uiDock"), uiHideBtn=$("#uiHideBtn"), uiShowBtn=$("#uiShowBtn");
-  // Mantener UI del mundo oculta al cargar; se mostrará tras crear personaje
+  // Mantener UI del mundo y el formulario de personaje ocultos al cargar; solo se muestran tras login/flujo
   try{ if(uiDock) uiDock.style.display='none'; }catch(e){}
+  try{ const fb = document.getElementById('formBar'); if(fb) fb.style.display='none'; }catch(e){}
+  try{ const world = document.getElementById('world'); if(world) world.style.display='none'; }catch(e){}
+  try{ const miniEl = document.getElementById('mini'); if(miniEl) miniEl.style.display='none'; }catch(e){}
+  try{ const showBtnEl = document.getElementById('uiShowBtn'); if(showBtnEl) showBtnEl.style.display='none'; }catch(e){}
+  try{ const followEl = document.getElementById('followFab'); if(followEl) followEl.style.display='none'; }catch(e){}
   // Controles de zoom fueron removidos; mantener referencias nulas para compatibilidad
   const zoomFab = null, zoomIn = null, zoomOut = null, docDock=$("#docDock"), govDock=$("#govDock"), topBar=null;
   const mini=$("#mini"), miniCanvas=$("#miniCanvas"), mctx=miniCanvas.getContext('2d');
@@ -681,7 +700,7 @@ function relocateInitialBuildingsToSand(){
 
   /* ===== CONFIGURACIÓN ===== */
   const CFG = {
-  LINES_ON:false, PARKS:8, SCHOOLS:8, FACTORIES:12, BANKS:8, MALLS:4, HOUSE_SIZE:70, OWNED_HOUSE_SIZE_MULT:1.4, CEM_W:220, CEM_H:130, N_INIT:24,  // Más infraestructuras y casas iniciales
+  LINES_ON:false, PARKS:8, SCHOOLS:8, FACTORIES:12, BANKS:8, MALLS:4, HOUSE_SIZE:70, OWNED_HOUSE_SIZE_MULT:1.4, CEM_W:220, CEM_H:130, N_INIT:0,  // sin NPCs por defecto; usaremos 10 personalizados
   HOME_REST_DURATION:0,
     // Radio base de los agentes (en unidades de mundo). Aumentado para que se vean más grandes.
   R_ADULT:7.5, R_CHILD:6.0, R_ELDER:7.0, SPEED:60, WORK_DURATION:20, EARN_PER_SHIFT:20, WORK_COOLDOWN:2,
@@ -742,8 +761,9 @@ function relocateInitialBuildingsToSand(){
       const alpha = 1 - (t / c.life);
       const p = toScreen(c.x, c.y);
       ctx.save(); ctx.globalAlpha = Math.max(0, alpha);
-      ctx.fillStyle = '#facc15'; ctx.beginPath(); ctx.arc(p.x, p.y, 6*ZOOM, 0, Math.PI*2); ctx.fill();
-      ctx.fillStyle = '#92400e'; ctx.font = `${10*ZOOM}px ui-monospace,monospace`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('$', p.x, p.y+0.5*ZOOM);
+      // Moneda 3x más grande
+      ctx.fillStyle = '#facc15'; ctx.beginPath(); ctx.arc(p.x, p.y, 18*ZOOM, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#92400e'; ctx.font = `${28*ZOOM}px ui-monospace,monospace`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('$', p.x, p.y+1.5*ZOOM);
       ctx.restore();
     }
   }
@@ -821,6 +841,14 @@ function relocateInitialBuildingsToSand(){
 
   /* Áreas clave */
   const builder={x:0,y:0,w:220,h:110}, cemetery={x:0,y:0,w:CFG.CEM_W,h:CFG.CEM_H}, government={x:0,y:0,w:240,h:140,funds:0, placed:[]};
+  // Fuente efectiva de datos de gobierno (prefiere servidor cuando exista)
+  function getEffectiveGovernment(){
+    try{
+      // Preferir la copia inmediata (window.government) para reflejar eventos como rent:charged al instante
+      const g = window.government || (window.gameState && window.gameState.government) || government;
+      return g || government;
+    }catch(_){ return government; }
+  }
   const roadRects=[];
   const cityBlocks = [];
   let urbanZone = {x:0, y:0, w:0, h:0};
@@ -931,6 +959,40 @@ function relocateInitialBuildingsToSand(){
   // Use debug logging to avoid spamming the console every frame; enable by setting window.__verboseRemoval = true
   if (window.__verboseRemoval) console.debug('removeByLabels executed for', Array.from(set));
     }catch(e){ console.warn('removeByLabels error', e); }
+  }
+
+  // ===== Generador de nombres y spawn de NPCs nombrados =====
+  const MALE_NAMES = ['Carlos','Luis','Javier','Miguel','Andrés','José','Pedro','Diego','Sergio','Fernando','Juan','Víctor','Pablo','Eduardo','Hugo','Mario'];
+  const FEMALE_NAMES = ['María','Ana','Lucía','Sofía','Camila','Valeria','Paula','Elena','Sara','Isabella','Daniela','Carla','Laura','Diana','Andrea','Noelia'];
+  const LAST_NAMES = ['García','Martínez','López','González','Rodríguez','Pérez','Sánchez','Ramírez','Torres','Flores','Vargas','Castro','Romero','Navarro','Molina','Ortega'];
+  function randomFullName(g){
+    const arr = (g==='F') ? FEMALE_NAMES : MALE_NAMES;
+    const first = arr[(Math.random()*arr.length)|0];
+    const last  = LAST_NAMES[(Math.random()*LAST_NAMES.length)|0];
+    return `${first} ${last}`;
+  }
+  function spawnCustomNPCs(count=10){
+    // Eliminar NPCs previos (no jugador) para no duplicar
+    for(let i=agents.length-1;i>=0;i--){ const a=agents[i]; if(a && a.id!==USER_ID && (!a.isPlayer)) agents.splice(i,1); }
+    for(let i=0;i<count;i++){
+      const gender = Math.random()<0.5?'M':'F';
+      const npc = makeAgent('adult',{ name: randomFullName(gender), gender, isPlayer:false, startMoney: rand(200,600)|0 });
+      // Asignar casa en arriendo si hay disponibilidad
+      assignRental(npc);
+      // Objetivo inicial: acercarse a la fábrica más cercana para iniciar ciclo de trabajo
+      try{
+        if(factories && factories.length){
+          let best=null, bestD=1e12; for(const f of factories){ const c=centerOf(f); const d=Math.hypot(npc.x-c.x,npc.y-c.y); if(d<bestD){ bestD=d; best=f; } }
+          if(best){
+            npc.goingToWork=true; npc.workFactoryId=factories.indexOf(best);
+            const cBest = centerOf(best);
+            npc.target = { x: Math.max(best.x+4, Math.min(best.x+best.w-4, cBest.x)), y: Math.max(best.y+4, Math.min(best.y+best.h-4, cBest.y)) };
+            npc.targetRole='go_work'; npc.nextWorkAt=0;
+          }
+        }
+      }catch(_){ }
+      agents.push(npc);
+    }
   }
   const inside=(pt,r)=> pt.x>=r.x && pt.x<=r.x+r.w && pt.y>=r.y && pt.y<=r.y+r.h;
   const rectsOverlapWithMargin = (rectA, rectB, margin) => {
@@ -2213,7 +2275,9 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
           const near = d < 28;
           const aOwnsHouse = a.houseIdx !== null && houses[a.houseIdx] && houses[a.houseIdx].ownerId === a.id;
           const bOwnsHouse = b.houseIdx !== null && houses[b.houseIdx] && houses[b.houseIdx].ownerId === b.id;
-          if (near && matches >= 5 && (aOwnsHouse || bOwnsHouse) && a.state === 'single' && b.state === 'single' && a.cooldownSocial <= 0 && b.cooldownSocial <= 0) {
+          const aRents = a.houseIdx !== null && houses[a.houseIdx] && houses[a.houseIdx].rentedBy === a.id;
+          const bRents = b.houseIdx !== null && houses[b.houseIdx] && houses[b.houseIdx].rentedBy === b.id;
+          if (near && matches >= 5 && (aOwnsHouse || bOwnsHouse || aRents || bRents) && a.state === 'single' && b.state === 'single' && a.cooldownSocial <= 0 && b.cooldownSocial <= 0) {
             a.state = 'paired'; b.state = 'paired';
             a.spouseId = b.id; b.spouseId = a.id;
             a.cooldownSocial = 120; b.cooldownSocial = 120;
@@ -2361,8 +2425,10 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   const rpNamePx = CFG.NAME_FONT_PX * ZOOM;
   const rpNameOffset = Math.max(6, 10 * ZOOM);
   if (rpNamePx >= 6) {
-    ctx.font = `700 ${rpNamePx}px ui-monospace,monospace`; ctx.fillStyle='#fff'; ctx.textAlign='center';
-    ctx.fillText(`${p.name||p.code||'P'}`, pt.x, pt.y - (r + rpNameOffset));
+    ctx.font = `700 ${rpNamePx}px ui-monospace,monospace`; ctx.textAlign='center';
+    // Trazado de alto contraste: borde oscuro + relleno claro
+    try{ ctx.save(); ctx.lineWidth = Math.max(2, 2.2*ZOOM); ctx.strokeStyle = 'rgba(17,24,39,0.92)'; ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.strokeText(`${p.name||p.code||'P'}`, pt.x, pt.y - (r + rpNameOffset)); ctx.restore(); }catch(_){ }
+    ctx.fillStyle='#fff'; ctx.fillText(`${p.name||p.code||'P'}`, pt.x, pt.y - (r + rpNameOffset));
   }
     }
   }
@@ -2431,7 +2497,12 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
           a._shopTargetId = shopToManage.id;
                } else {
           const f = factories[(Math.random()*factories.length)|0];
-          if (f) { a.goingToWork = true; a.workFactoryId = factories.indexOf(f); a.target = centerOf(f); a.targetRole = 'go_work'; }
+          if (f) {
+            a.goingToWork = true; a.workFactoryId = factories.indexOf(f);
+            const cBest = centerOf(f);
+            a.target = { x: Math.max(f.x+4, Math.min(f.x+f.w-4, cBest.x)), y: Math.max(f.y+4, Math.min(f.y+f.h-4, cBest.y)) };
+            a.targetRole = 'go_work';
+          }
         }
       }
   if(a.workingUntil && nowS>=a.workingUntil){
@@ -2535,10 +2606,25 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         onRoad = getCurrentRoad(a);
       }
       if (a.goingToWork && a.target && a.targetRole === 'go_work') {
-        const c = a.target;
-        if (Math.hypot(a.x - c.x, a.y - c.y) < 16) {
-          a.goingToWork = false; a.workingUntil = nowS + CFG.WORK_DURATION; a.vx = 0; a.vy = 0; a.target = null; a.targetRole = 'work';
-          a._lastWorkCoinSpawn = performance.now(); // para animaciones
+        const fac = factories[a.workFactoryId|0];
+        // Si la fábrica asignada ya no existe, reasignar a la más cercana
+        if (!fac) {
+          let best=null, bestD=1e12; for(const f of factories){ const c=centerOf(f); const d=Math.hypot(a.x-c.x,a.y-c.y); if(d<bestD){ bestD=d; best=f; } }
+          if (best) { a.workFactoryId = factories.indexOf(best); a.target = centerOf(best); }
+        } else {
+          const c = a.target;
+          const atDist = Math.hypot(a.x - c.x, a.y - c.y);
+          // Solo iniciar trabajo si llegó y está dentro de la fábrica actual
+          if (atDist < 12) {
+            const insideFac = inside({x:a.x,y:a.y}, fac);
+            if (insideFac) {
+              a.goingToWork = false; a.workingUntil = nowS + CFG.WORK_DURATION; a.vx = 0; a.vy = 0; a.target = null; a.targetRole = 'work';
+              a._lastWorkCoinSpawn = performance.now(); // para animaciones
+            } else {
+              // El target no cae dentro de la fábrica (pudo moverse). Reajustar target al centro real
+              a.target = centerOf(fac);
+            }
+          }
         }
       }
       if(a.target){
@@ -2574,7 +2660,15 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       if(a.targetRole==='work' && a.workingUntil && nowS < a.workingUntil){
         const fac = factories[a.workFactoryId|0];
         const nowPerf = performance.now();
-        if(fac){
+        // Debe seguir dentro de la fábrica para continuar trabajando; si no, retomar camino
+        if(!fac || !inside({x:a.x,y:a.y}, fac)){
+          // Cancelar turno y volver a intentar ir a trabajar
+          a.workingUntil = null; a.targetRole = 'idle';
+          // Reasignar fábrica objetivo (la misma si existe, o la más cercana)
+          let targetF = fac;
+          if(!targetF){ let best=null,bestD=1e12; for(const f of factories){ const c=centerOf(f); const d=Math.hypot(a.x-c.x,a.y-c.y); if(d<bestD){ bestD=d; best=f; } } targetF = best; }
+          if(targetF){ a.goingToWork = true; a.workFactoryId = factories.indexOf(targetF); a.target = centerOf(targetF); a.targetRole = 'go_work'; }
+        } else {
           if(!a._lastWorkCoinSpawn){ a._lastWorkCoinSpawn = nowPerf; }
           const intervalMs = (CFG.WORK_COIN_INTERVAL||1)*1000;
           while(nowPerf - a._lastWorkCoinSpawn >= intervalMs){
@@ -2635,19 +2729,22 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   const namePx = CFG.NAME_FONT_PX * ZOOM;
   const nameOffset = Math.max(6, 10 * ZOOM);
   if (namePx >= 6) {
-    ctx.font = `700 ${namePx}px ui-monospace,monospace`; ctx.fillStyle='#fff'; ctx.textAlign='center';
-    ctx.fillText(`${ag.name||ag.code}·${ageYrs}`, pt.x, pt.y - (r + nameOffset));
+    ctx.font = `700 ${namePx}px ui-monospace,monospace`; ctx.textAlign='center';
+    const labelTxt = `${ag.name||ag.code}·${ageYrs}`;
+    try{ ctx.save(); ctx.lineWidth = Math.max(2, 2.2*ZOOM); ctx.strokeStyle='rgba(17,24,39,0.92)'; ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.strokeText(labelTxt, pt.x, pt.y - (r + nameOffset)); ctx.restore(); }catch(_){ }
+    ctx.fillStyle='#fff'; ctx.fillText(labelTxt, pt.x, pt.y - (r + nameOffset));
   }
       }
     }catch(_){ }
     }
     const total$=Math.round(agents.reduce((s,x)=>s+(x.money||0),0));
-    const instCount = government.placed.length;
+    const gEff = getEffectiveGovernment();
+    const instCount = Array.isArray(gEff?.placed) ? gEff.placed.length : government.placed.length;
     try{
       const visibleShops = (window.gameState && Array.isArray(window.gameState.shops)) ? window.gameState.shops.length : shops.length;
-      stats.textContent = `Pob: ${agents.length} | $ total: ${total$} | 🏛️ Fondo: ${Math.floor(government.funds)} | 🏪 ${visibleShops} | Instituciones: ${instCount}/25`;
+      stats.textContent = `Pob: ${agents.length} | $ total: ${total$} | 🏛️ Fondo: ${Math.floor((gEff&&gEff.funds)||government.funds)} | 🏪 ${visibleShops} | Instituciones: ${instCount}/25`;
     }catch(e){
-      stats.textContent = `Pob: ${agents.length} | $ total: ${total$} | 🏛️ Fondo: ${Math.floor(government.funds)} | 🏪 ${shops.length} | Instituciones: ${instCount}/25`;
+      stats.textContent = `Pob: ${agents.length} | $ total: ${total$} | 🏛️ Fondo: ${Math.floor((gEff&&gEff.funds)||government.funds)} | 🏪 ${shops.length} | Instituciones: ${instCount}/25`;
     }
     // Actualizar panel del banco en tiempo real con el jugador local
     try{
@@ -2784,14 +2881,15 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     }).join('');
 
     // Resumen superior
+    const _g = getEffectiveGovernment();
     const summary = `
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
         <div><strong>Jugador:</strong> ${meName} <span style="color:#6b7280">(${meCode})</span></div>
         <div style="text-align:right"><strong>Total créditos:</strong> ${total$}</div>
         <div><strong>Mis negocios comprados:</strong> ${myShopsCount}</div>
-        <div style="text-align:right"><strong>Fondo Gobierno:</strong> ${Math.floor(government.funds)}</div>
+        <div style="text-align:right"><strong>Fondo Gobierno:</strong> ${Math.floor((_g&&_g.funds)||government.funds||0)}</div>
         <div><strong>Negocios en el mundo:</strong> ${(window.gameState?.shops||shops||[]).length}</div>
-        <div style="text-align:right"><strong>Instituciones:</strong> ${(government.placed||[]).length}</div>
+        <div style="text-align:right"><strong>Instituciones:</strong> ${Array.isArray(_g?.placed)?_g.placed.length:(government.placed||[]).length}</div>
       </div>`;
 
     return `
@@ -2810,8 +2908,9 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
 
   function fullGovDocument(){
     // Documento del Gobierno: saldo, edificaciones (instituciones) e impuestos
-    const funds = Math.floor(government.funds || 0);
-    const inst = Array.isArray(government.placed) ? government.placed : [];
+    const _g = getEffectiveGovernment();
+    const funds = Math.floor((_g&&_g.funds) || government.funds || 0);
+    const inst = Array.isArray(_g?.placed) ? _g.placed : (Array.isArray(government.placed) ? government.placed : []);
     const n = inst.length;
     const effRate = Math.min(CFG.WEALTH_TAX_MAX, CFG.WEALTH_TAX_BASE + n*CFG.INSTITUTION_TAX_PER);
     const taxInfo = {
@@ -2982,15 +3081,18 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     // Controles de zoom eliminados
     try{
       const collapsed = document.getElementById('uiDock')?.classList.contains('collapsed-left');
-      // Minimap siempre visible (debajo del UI por z-index)
+      // Mostrar/ocultar elementos del mundo según estado
       document.getElementById('mini').style.display = on ? 'block' : 'none';
-  // Iconos gestionados por CSS; no cambiar texto
-    }catch(_){ mini.style.display = on ? 'block':'none'; }
-  show($("#uiShowBtn"),false);
+      document.getElementById('uiShowBtn').style.display = on ? 'grid' : 'none';
+      document.getElementById('followFab').style.display = on ? 'grid' : 'none';
+    }catch(_){ }
+    show($("#uiShowBtn"),false);
     docDock.style.display = 'none'; govDock.style.display = 'none';
   }
 
   function startWorldWithUser({name,gender,age,likes,usd}){
+  // Protección: no permitir entrar al mundo si no hay sesión
+  try{ if(!(window.isAuthenticated && window.isAuthenticated())){ window.requireLogin && window.requireLogin('auth-required'); return; } }catch(_){ }
   // Al crear persona, ocultar el formulario y mostrar la UI del mundo
   try{ $("#formBar").style.display='none'; }catch(e){}
     setVisibleWorldUI(true); 
@@ -3027,7 +3129,8 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       const w = saved.world;
       if(Number.isFinite(w.x) && Number.isFinite(w.y)){ user.x = w.x; user.y = w.y; }
       if(typeof w.goingToWork==='boolean') user.goingToWork = w.goingToWork;
-      if(Number.isFinite(w.workFactoryId)) user.workFactoryId = w.workFactoryId;
+  if(Number.isFinite(w.workFactoryId) && factories[w.workFactoryId|0]){ user.workFactoryId = w.workFactoryId|0; }
+  else { user.workFactoryId = null; }
       if(typeof w.targetRole==='string') user.targetRole = w.targetRole;
       if(w.target && Number.isFinite(w.target.x) && Number.isFinite(w.target.y)) user.target = { x:w.target.x, y:w.target.y };
       const nowS0 = performance.now()/1000;
@@ -3091,7 +3194,10 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       if(bestF){
         user.goingToWork = true;
         user.workFactoryId = factories.indexOf(bestF);
-        user.target = centerOf(bestF);
+        // Asegurar que el target esté DENTRO del rectángulo de la fábrica
+        const cBest = centerOf(bestF);
+        const clamped = { x: Math.max(bestF.x+4, Math.min(bestF.x+bestF.w-4, cBest.x)), y: Math.max(bestF.y+4, Math.min(bestF.y+bestF.h-4, cBest.y)) };
+        user.target = clamped;
         user.targetRole = 'go_work';
         user.nextWorkAt = 0;
       }
@@ -3247,10 +3353,10 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         }catch(e){}
       }catch(e){}
     }); }catch(e){}
-    if(!hasNet()){
-      for(let i=0;i<CFG.N_INIT;i++) {agents.push(makeAgent('adult',{ageYears:rand(18,60)}));}
-    }
-    agents.forEach(a => { if (assignRental(a)) { const home = houses[a.houseIdx]; if (home) { a.target = centerOf(home); a.targetRole = 'home'; } } });
+  // Spawn 10 NPCs con nombres y comportamiento completo
+  spawnCustomNPCs(10);
+  // Asegurar alquiler para todos los agentes recién creados que no tengan casa
+  agents.forEach(a => { if (a.id!==USER_ID && assignRental(a)) { const home = houses[a.houseIdx]; if (home) { /* sin moverlos a casa de inmediato */ } } });
     const b0=cityBlocks[0]; if(b0){ cam.x = Math.max(0, b0.x - 40); cam.y = Math.max(0, b0.y - 40); clampCam(); }
     updateGovDesc();
   try{ window.updateOwnedShopsUI = updateOwnedShopsUI; updateOwnedShopsUI(); }catch(e){}
@@ -3335,6 +3441,21 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   try{ if((!gender || !['M','F'].includes(gender)) && window.__user && window.__user.gender){ gender = String(window.__user.gender); } }catch(_){ }
   // Último recurso: si el modal sigue en el DOM y tiene un valor válido, úsalo
   try{ if((!gender || !['M','F'].includes(gender))){ const el = document.getElementById('authGender'); if(el && ['M','F'].includes(el.value)) gender = el.value; } }catch(_){ }
+  // Forzar consistencia si el avatar seleccionado implica género
+  try{
+    const av = (window.__selectedAvatarCurrent || localStorage.getItem('selectedAvatar') || '')+'';
+    if(av.startsWith('/assets/avatar')){
+      const low = av.toLowerCase();
+      const implied = (low.includes('avatar1') || low.includes('avatar2')) ? 'M'
+                     : (low.includes('avatar3') || low.includes('avatar4')) ? 'F'
+                     : null;
+      if(implied && implied !== gender){
+        gender = implied; if(fGender) fGender.value = implied; updateGenderPreview();
+        try{ window.__progress = Object.assign({}, window.__progress||{}, { gender: implied }); window.saveProgress && window.saveProgress({ gender: implied }); }catch(_){ }
+        try{ toast('Se ajustó el género según el avatar elegido.'); }catch(_){ }
+      }
+    }
+  }catch(_){ }
   const name=fName.value.trim();
   const age=Math.max(20, Math.min(89, parseInt(fAge.value||'20',10)));
   const likes=getChecked().map(x=>x.value);
@@ -3591,10 +3712,11 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     return GOV_TYPES.find(x=>x.k===k) || GOV_TYPES[0];
   }
   function updateGovDesc(){
-    const n = government.placed.length;
+    const g = getEffectiveGovernment();
+    const n = Array.isArray(g?.placed) ? g.placed.length : 0;
     const rate = Math.min(CFG.WEALTH_TAX_MAX, CFG.WEALTH_TAX_BASE + n*CFG.INSTITUTION_TAX_PER);
-    govDescEl.textContent = `Instituciones: ${n}/25 · Impuesto actual: ${(rate*100).toFixed(1)}% (Base 1.0% + 0.1% × ${n}).`;
-    govFundsEl.textContent = `Fondo: ${Math.floor(government.funds)}`;
+    try{ govDescEl.textContent = `Instituciones: ${n}/25 · Impuesto actual: ${(rate*100).toFixed(1)}% (Base 1.0% + 0.1% × ${n}).`; }catch(_){ }
+    try{ govFundsEl.textContent = `Fondo: ${Math.floor(g?.funds || 0)}`; }catch(_){ }
   }
   btnGovPlace.onclick = ()=>{
     if(!STARTED){ toast('Inicia el mundo primero.'); return; }
@@ -3753,12 +3875,20 @@ function makeAgent(state, options = {}) {
   const presetAvatars = ['/assets/avatar1.png','/assets/avatar2.png','/assets/avatar3.png','/assets/avatar4.png'];
   let finalAvatar = options.avatar || null;
   if(!finalAvatar){
-    // Si es un NPC (no se marcó explicitamente isPlayer), tomar uno al azar
-    if(!options.isPlayer){ finalAvatar = presetAvatars[Math.floor(Math.random()*presetAvatars.length)]; }
+    // Si es un NPC (no se marcó explicitamente isPlayer), elegir acorde al género
+    if(!options.isPlayer){
+      if((options.gender||gender)==='F'){
+        const pool = ['/assets/avatar3.png','/assets/avatar4.png'];
+        finalAvatar = pool[Math.floor(Math.random()*pool.length)];
+      } else {
+        const pool = ['/assets/avatar1.png','/assets/avatar2.png'];
+        finalAvatar = pool[Math.floor(Math.random()*pool.length)];
+      }
+    }
   }
   return {
     id,
-    code,
+  code,
   name: options.name || code,
     state,
     gender,

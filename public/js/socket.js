@@ -90,6 +90,22 @@
 		sock.on('shopPlaced', () => {});
 		sock.on('housePlaced', () => {});
 		sock.on('govPlaced', () => { if (typeof window.updateGovDesc === 'function') window.updateGovDesc(); });
+		// Cobro de arriendo confirmado por el servidor (al crear jugador o manual)
+		sock.on('rent:charged', (payload)=>{
+			try{
+				const amt = Math.floor(payload?.amount||0);
+				const m = Math.floor(payload?.money||0);
+				const gf = (payload && typeof payload.governmentFunds==='number') ? Math.floor(payload.governmentFunds) : null;
+				if(window.playerId && window.gameState && Array.isArray(window.gameState.players)){
+					const me = window.gameState.players.find(p=>p && p.id===window.playerId);
+					if(me){ me.money = m; }
+				}
+				if(gf != null){
+					try{ window.government = window.government || {}; window.government.funds = gf; if(typeof window.updateGovDesc==='function') window.updateGovDesc(); }catch(e){}
+				}
+				try{ if(typeof window.toast==='function'){ window.toast(`Arriendo cobrado: -${amt}`); } }catch(e){}
+			}catch(e){}
+		});
 		// Chat entrante
 		sock.on('chat:msg', (msg)=>{ try{ window.__onChatMessage && window.__onChatMessage(msg); }catch(e){} });
 	}

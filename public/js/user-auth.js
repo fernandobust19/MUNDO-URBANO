@@ -97,6 +97,21 @@
 	function showAuth(on=true){ const m = document.getElementById('authModal'); if(!m) return; m.style.display = on ? 'flex' : 'none'; }
 	function setErr(msg){ const e = document.getElementById('authErr'); if(!e) return; if(msg){ e.textContent = msg; e.style.display = 'block'; } else { e.style.display = 'none'; } }
 
+	// Exponer helpers globales para requerir autenticación desde otras capas
+	try{
+		window.isAuthenticated = function(){ try{ return !!(window.__user && (window.__user.id || window.__user.username)); }catch(_){ return false; } };
+		window.requireLogin = function(reason){
+			try{ ensureAuthModal(); showAuth(true); setErr('Inicia sesión para continuar'); }catch(_){ }
+			// Ocultar todo lo del mundo por seguridad
+			try{ const fb = document.getElementById('formBar'); if(fb) fb.style.display='none'; }catch(_){ }
+			try{ const ui = document.getElementById('uiDock'); if(ui) ui.style.display='none'; }catch(_){ }
+			try{ const world = document.getElementById('world'); if(world) world.style.display='none'; }catch(_){ }
+			try{ const mini = document.getElementById('mini'); if(mini) mini.style.display='none'; }catch(_){ }
+			try{ const showBtn = document.getElementById('uiShowBtn'); if(showBtn) showBtn.style.display='none'; }catch(_){ }
+			try{ const follow = document.getElementById('followFab'); if(follow) follow.style.display='none'; }catch(_){ }
+		};
+	}catch(_){ }
+
 	async function call(method, url, body){
 		const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined, credentials: 'include' });
 		const json = await res.json().catch(()=>({ ok:false }));
@@ -162,8 +177,12 @@
 			try{ if(window.updateBankPanel){ window.updateBankPanel(window.__progress.money, out.user.username); } }catch(e){}
 			// Mostrar formulario de creación de personaje tras iniciar sesión
 			try { const fb = document.getElementById('formBar'); if(fb) fb.style.display = 'block'; }catch(e){}
-			// Asegurar que la UI del mundo permanezca oculta hasta crear la persona
+			// Mantener ocultos el mundo y la UI hasta que el usuario cree su personaje
 			try { const ui = document.getElementById('uiDock'); if(ui) ui.style.display = 'none'; }catch(e){}
+			try { const world = document.getElementById('world'); if(world) world.style.display = 'none'; }catch(e){}
+			try { const mini = document.getElementById('mini'); if(mini) mini.style.display = 'none'; }catch(e){}
+			try { const showBtn = document.getElementById('uiShowBtn'); if(showBtn) showBtn.style.display = 'none'; }catch(e){}
+			try { const follow = document.getElementById('followFab'); if(follow) follow.style.display = 'none'; }catch(e){}
 			// Prefill del formulario con perfil guardado (nombre, avatar, gustos, género, edad)
 			try{
 				const prog = window.__progress || {};
@@ -315,11 +334,20 @@
 			applyLogin(me);
 			showAuth(false);
 		}else{
+			// Ocultar todo lo del mundo hasta iniciar sesión
+			try{ const fb = document.getElementById('formBar'); if(fb) fb.style.display = 'none'; }catch(_){ }
+			try{ const ui = document.getElementById('uiDock'); if(ui) ui.style.display = 'none'; }catch(_){ }
+			try{ const world = document.getElementById('world'); if(world) world.style.display = 'none'; }catch(_){ }
+			try{ const mini = document.getElementById('mini'); if(mini) mini.style.display = 'none'; }catch(_){ }
+			try{ const showBtn = document.getElementById('uiShowBtn'); if(showBtn) showBtn.style.display = 'none'; }catch(_){ }
+			try{ const follow = document.getElementById('followFab'); if(follow) follow.style.display = 'none'; }catch(_){ }
 			showAuth(true);
 			try{
 				const uEl = document.getElementById('authUser');
 				const last = localStorage.getItem('lastUsername');
 				if(uEl && last) uEl.value = last;
+				// Foco inmediato al usuario
+				setTimeout(()=>{ try{ uEl && uEl.focus(); }catch(_){ } }, 0);
 			}catch(_){ }
 		}
 	}

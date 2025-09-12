@@ -304,6 +304,31 @@ function addOwnedVehicle(userId, vehicle){
 	}catch(e){}
 }
 
+// Cobrar arriendo al usuario, registrar en ledger y sumar al fondo del gobierno
+function chargeRent(userId, amount = 50, reasonKey = 'rent'){
+	try{
+		if(!userId) return { ok:false, msg:'no-user' };
+		const p = ensureProgress(userId);
+		const amt = Math.max(0, Math.floor(amount||0));
+		if(amt <= 0) return { ok:false, msg:'bad-amount' };
+		// Considerar que está rentando si existe un índice de casa rentada o un snapshot de rentalHouse
+		const renting = (typeof p.rentedHouseIdx === 'number' && p.rentedHouseIdx >= 0) || (!!p.rentalHouse);
+		// Si no hay marca de arriendo, igual permitir el cobro (política del servidor) — el requerimiento dice "por cada jugador en el mundo"
+		// if(!renting) return { ok:false, msg:'not-renting' };
+		if((p.money||0) < amt) return { ok:false, msg:'insufficient' };
+		const prev = Math.floor(p.money||0);
+		p.money = Math.max(0, prev - amt);
+		schedulePersist();
+		const user = getUserById(userId);
+		const reason = String(reasonKey||'rent');
+		// Registrar movimiento en ledger (delta negativo)
+		recordMoneyChange(userId, user?.username||null, -amt, p.money||0, p.bank||0, reason);
+		// Sumar fondos al gobierno
+		const gov = addGovernmentFunds(amt);
+		return { ok:true, money: p.money, bank: p.bank||0, funds: gov && gov.funds != null ? gov.funds : getGovernment().funds };
+	}catch(e){ console.warn('chargeRent error', e); return { ok:false }; }
+}
+
 // ===== Ledger helpers =====
 function recordMoneyChange(userId, username, delta, newMoney, newBank, reason){
 	try{
