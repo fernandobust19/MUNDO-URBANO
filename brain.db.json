@@ -5,7 +5,7 @@
       "username": "fernando",
       "passHash": "$2a$10$ysDUBc.q0csuyV9yW9NlQei0hhEIFGyXxQcBwMNuJS6Pb54vkuZ1O",
       "createdAt": 1757634474461,
-      "lastLoginAt": 1757639976239,
+      "lastLoginAt": 1757642376552,
       "country": "Ecuador",
       "email": "fernando2000b@hotmail.com",
       "phone": "0983801298",
@@ -14,7 +14,7 @@
   ],
   "progress": {
     "bfa3f472-4b45-4962-8c73-41cb384d873b": {
-      "money": 244,
+      "money": 260,
       "bank": 0,
       "vehicle": "moto",
       "vehicles": [
@@ -23,7 +23,7 @@
       "shops": [],
       "houses": [],
       "name": "1234",
-      "avatar": "assets/avatar2.png",
+      "avatar": "assets/avatar1.png",
       "likes": [
         "jardinería",
         "fotografía",
@@ -671,6 +671,70 @@
           "country",
           "email",
           "phone",
+          "world"
+        ]
+      }
+    },
+    {
+      "ts": 1757642376552,
+      "type": "login",
+      "userId": "bfa3f472-4b45-4962-8c73-41cb384d873b",
+      "details": {
+        "username": "fernando"
+      }
+    },
+    {
+      "ts": 1757642575993,
+      "type": "progress_update",
+      "userId": "bfa3f472-4b45-4962-8c73-41cb384d873b",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "initialRentPaid",
+          "rentedHouseIdx",
+          "country",
+          "email",
+          "phone",
+          "rentalHouse",
+          "governmentFunds",
+          "world"
+        ]
+      }
+    },
+    {
+      "ts": 1757642577548,
+      "type": "progress_update",
+      "userId": "bfa3f472-4b45-4962-8c73-41cb384d873b",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "initialRentPaid",
+          "rentedHouseIdx",
+          "country",
+          "email",
+          "phone",
+          "rentalHouse",
+          "governmentFunds",
           "world"
         ]
       }

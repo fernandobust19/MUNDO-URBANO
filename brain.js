@@ -325,8 +325,8 @@ function chargeRent(userId, amount = 50, reasonKey = 'rent'){
 		recordMoneyChange(userId, user?.username||null, -amt, p.money||0, p.bank||0, reason);
 		// Sumar fondos al gobierno
 		const gov = addGovernmentFunds(amt);
-		return { ok:true, money: p.money, bank: p.bank||0, funds: gov && gov.funds != null ? gov.funds : getGovernment().funds };
-	}catch(e){ console.warn('chargeRent error', e); return { ok:false }; }
+		return { ok:true, money: p.money, bank: p.bank||0, funds: (gov && gov.funds != null) ? gov.funds : getGovernment().funds };
+	}catch(e){ console.warn('chargeRent error', e); return { ok:false, msg: 'Error interno del servidor.' }; }
 }
 
 // ===== Ledger helpers =====
@@ -437,4 +437,3 @@ module.exports = {
 	addGovernmentFunds,
 	placeGovernment
 };
-

@@ -497,9 +497,8 @@ function tickIdlePlayers(bounds = { w: 2200, h: 1400 }) {
 setInterval(() => {
   // Purga de bots del servidor y sólo mover jugadores humanos inactivos
   ensureBots();
-  const w =  Math.max(2200, (globalThis.WORLD?.w)||2200);
-  const h =  Math.max(1400, (globalThis.WORLD?.h)||1400);
-  tickBots({ w, h }); // no-op
+  const w = 30000; // Un mundo grande y fijo para el movimiento de inactivos
+  const h = 20000;
   tickIdlePlayers({ w, h });
 }, 120);
 
@@ -534,20 +533,7 @@ io.on('connection', (socket) => {
     };
     state.players[id] = player;
     socket.playerId = id;
-    // Si el socket está autenticado como usuario real, cobrar arriendo inicial (50) y registrar en ledger
-    if(socket.userId){
-      try{
-        const rent = brain.chargeRent(socket.userId, 50, 'rent:init');
-        if(rent && rent.ok){
-          // Sincronizar saldo del jugador recién creado
-          player.money = Math.floor(rent.money||player.money||0);
-          // Notificar a este cliente su nuevo saldo y fondos de gobierno
-          io.to(socket.id).emit('rent:charged', { amount: 50, money: player.money, governmentFunds: rent.funds||0 });
-          // Actualizar gobierno en estado público
-          state.government = brain.getGovernment();
-        }
-      }catch(_){ }
-    }
+    
     if (ack) ack({ ok: true, id });
     io.emit('playerJoined', player);
   });
@@ -641,6 +627,25 @@ io.on('connection', (socket) => {
     if (ack) ack({ ok:true });
   });
 
+  socket.on('pay:initialRent', (payload, ack) => {
+    if(!socket.userId || !socket.playerId) {
+      if(ack) ack({ ok: false, msg: 'No autenticado.' });
+      return;
+    }
+    try {
+      const rent = brain.chargeRent(socket.userId, 50, 'rent:init');
+      if(rent && rent.ok) {
+        const player = state.players[socket.playerId];
+        if(player) player.money = Math.floor(rent.money || player.money || 0);
+        io.to(socket.id).emit('rent:charged', { amount: 50, money: player.money });
+        state.government = brain.getGovernment();
+        io.emit('gov:updated', state.government);
+        if(ack) ack({ ok: true });
+      } else {
+        if(ack) ack({ ok: false, msg: rent?.msg || 'Error al procesar pago.' });
+      }
+    } catch(e) { if(ack) ack({ ok: false, msg: 'Error interno.' }); }
+  });
   // Chat básico entre jugadores conectados
   socket.on('chat:send', (payload, ack) => {
     try{

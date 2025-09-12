@@ -2683,8 +2683,8 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         }
       }
       a.x += a.vx * dt; a.y += a.vy * dt;
-      if(a.x<4||a.x>WORLD.w-4){ a.vx*=-1; a.x=clamp(a.x,4,WORLD.w-4); }
-      if(a.y<4||a.y>WORLD.h-4){ a.vy*=-1; a.y=clamp(a.y,4,WORLD.h-4); }
+      if(a.x<4||a.x>WORLD.w-4){ a.vx*=-0.5; a.x=clamp(a.x,5,WORLD.w-5); }
+      if(a.y<4||a.y>WORLD.h-4){ a.vy*=-0.5; a.y=clamp(a.y,5,WORLD.h-5); }
 
       const age = (yearsSince(a.bornEpoch)|0);
       if (a.state === 'paired' && a.cooldownSocial <= 0 && age > 22 && age < 45 && Math.random() < 0.00015) {
@@ -3102,7 +3102,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     regenInfrastructure(false);
   // Reubicar edificaciones iniciales a parches de arena si fuera necesario
   try{ relocateInitialBuildingsToSand(); }catch(e){ console.warn('relocateInitialBuildingsToSand error', e); }
-  // Mantener las panaderías tal como vienen (no eliminar al iniciar)
+  // Mantener las panaderías tal como vienen (no eliminar al iniciar) y poblar el selector de gobierno
     populateGovSelect(); // ← AÑADIR ESTA LÍNEA
     
   const addCredits = Math.max(0, parseInt(usd||'0',10))*100;
@@ -3240,49 +3240,44 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         const payBtn = document.createElement('button'); payBtn.textContent='Pagar arriendo (50)'; payBtn.style.background='#41d77c'; payBtn.style.color='#06210f'; payBtn.style.fontWeight='700'; payBtn.style.padding='10px 14px'; payBtn.style.border='none'; payBtn.style.cursor='pointer'; payBtn.style.borderRadius='6px'; payBtn.style.fontFamily='ui-monospace,monospace'; payBtn.style.fontSize='14px'; payBtn.style.width='100%';
         const warn = document.createElement('div'); warn.textContent='El mundo está pausado hasta que pagues.'; warn.style.fontSize='11px'; warn.style.opacity='0.75'; warn.style.marginTop='10px'; warn.style.textAlign='center';
         payBtn.onclick = ()=>{
-          try{
-            const rentCost = 50;
-            if(user.money >= rentCost){
-              user.money -= rentCost; toast('Arriendo inicial pagado: -50');
-              try{ government.funds = (government.funds||0)+rentCost; if(!govFundsEl) govFundsEl=document.getElementById('govFunds'); if(govFundsEl) govFundsEl.textContent = `Fondo: ${Math.floor(government.funds)}`; }catch(_){ }
-              // Guardar bandera de pago inicial en progreso persistente
-              try{
-                window.__progress = Object.assign({}, window.__progress||{}, { initialRentPaid: true, money: Math.floor(user.money), rentedHouseIdx: user.houseIdx });
-                window.saveProgress && window.saveProgress({ initialRentPaid: true, money: Math.floor(user.money), rentedHouseIdx: user.houseIdx });
-              }catch(_){ }
-              window.__rentBlocked = false;
-              // Enfocar cámara sobre la casa del usuario y aplicar zoom cercano temporal
-              try{
-                if(typeof user.houseIdx === 'number' && houses[user.houseIdx]){
-                  const h = houses[user.houseIdx];
-                  // Crear identificador único para la casa arrendada
-                  const baseInitial = (user.name||user.code||'U').trim().charAt(0).toUpperCase() || 'U';
-                  window.__houseInitialCounts = window.__houseInitialCounts || {};
-                  const count = (window.__houseInitialCounts[baseInitial]||0)+1; window.__houseInitialCounts[baseInitial]=count;
-                  h._markerInitial = baseInitial + (count>1?count:'');
-                  h._markerAssignedAt = performance.now();
-                    try{ window.__progress = Object.assign({}, window.__progress||{}, { rentalHouse: { x:h.x,y:h.y,w:h.w,h:h.h, initial:h._markerInitial } }); window.saveProgress && window.saveProgress({ rentalHouse: window.__progress.rentalHouse }); }catch(_){ }
-                  // Ajustar zoom y cámara
-                  const targetZoom = Math.min(4, Math.max(ZOOM, 3));
-                  ZOOM = targetZoom;
-                  const cx = h.x + h.w/2, cy = h.y + h.h/2;
-                  cam.x = Math.max(0, cx - (canvas.width/ZOOM)/2);
-                  cam.y = Math.max(0, cy - (canvas.height/ZOOM)/2);
-                  clampCam();
-                  // Bandera para animación breve si se quiere
-                  h._highlightUntil = performance.now() + 6000;
-                }
-              }catch(e){ console.warn('focus house error', e); }
-              overlay.remove(); rentDiv.remove();
-            } else {
-              toast('Saldo insuficiente. Reúne 50 créditos.');
-            }
-          }catch(_){ }
+          // Enviar petición al servidor para que procese el pago
+          if(window.sockApi && window.sock && window.sock.connected){
+            window.sockApi.payInitialRent((res)=>{
+              if(res && res.ok){
+                // El servidor confirmó el pago. El cliente ya no gestiona el dinero.
+                // La UI se actualizará con los eventos 'rent:charged' y 'gov:updated'
+                window.__rentBlocked = false; // Desbloquear el juego
+                overlay.remove(); rentDiv.remove();
+              } else {
+                toast(res?.msg || 'No se pudo procesar el pago. Revisa tu saldo.');
+              }
+            });
+          }
         };
         rentDiv.appendChild(title); rentDiv.appendChild(msg); rentDiv.appendChild(payBtn); rentDiv.appendChild(warn);
         document.body.appendChild(overlay); document.body.appendChild(rentDiv);
       }catch(_){ window.__rentBlocked=false; }
   }, 3000);
+  // Después de pagar el arriendo, enfocar la cámara en la casa del usuario
+  // Usamos sock.once para que este listener se ejecute una sola vez.
+  if (window.sock) {
+    window.sock.once('rent:charged', ()=>{
+      try{
+        if(typeof user.houseIdx === 'number' && houses[user.houseIdx]){
+          const h = houses[user.houseIdx];
+          const baseInitial = (user.name||user.code||'U').trim().charAt(0).toUpperCase() || 'U';
+          window.__houseInitialCounts = window.__houseInitialCounts || {};
+          const count = (window.__houseInitialCounts[baseInitial]||0)+1; window.__houseInitialCounts[baseInitial]=count;
+          h._markerInitial = baseInitial + (count>1?count:'');
+          try{ window.__progress = Object.assign({}, window.__progress||{}, { rentalHouse: { x:h.x,y:h.y,w:h.w,h:h.h, initial:h._markerInitial } }); window.saveProgress && window.saveProgress({ rentalHouse: window.__progress.rentalHouse }); }catch(_){ }
+          const targetZoom = Math.min(4, Math.max(ZOOM, 3)); ZOOM = targetZoom;
+          const cx = h.x + h.w/2, cy = h.y + h.h/2;
+          cam.x = Math.max(0, cx - (canvas.width/ZOOM)/2); cam.y = Math.max(0, cy - (canvas.height/ZOOM)/2);
+          clampCam(); h._highlightUntil = performance.now() + 6000;
+        }
+      }catch(e){ console.warn('focus house error', e); }
+    });
+  }
   }catch(_){ }
   // Restaurar vehículo comprado previamente (y velocidad) antes de insertar al array para que se aplique de inmediato
   try{
@@ -3642,8 +3637,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       if(r.k === 'carcel'){
         mctx.fillStyle = '#111'; mctx.fillRect(Math.max(0,r.x*sx), Math.max(0,r.y*sy), Math.max(1,r.w*sx), Math.max(1,r.h*sy));
         mctx.fillStyle = '#fff'; const bars = 3; const bx = Math.max(0,r.x*sx), by = Math.max(0,r.y*sy), bw = Math.max(1,r.w*sx), bh = Math.max(1,r.h*sy);
-        for(let i=0;i<bars;i++){ const px = bx + 4 + i*(bw-8)/(bars-1); mctx.fillRect(px, by+4, 2, bh-8); }
-        ctx.fillStyle = '#fff'; ctx.font=`700 ${Math.max(10, 14*ZOOM)}px system-ui`; ctx.textAlign='center'; ctx.fillText('CÁRCEL', p.x + w/2, p.y + 18*ZOOM);
+        for(let i=0;i<bars;i++){ const px = bx + 1 + i*(bw-2)/(bars-1); mctx.fillRect(px, by+1, 1, bh-2); }
       } else { mrect(r, r.fill || '#94a3b8'); }
     });
     const vw = canvas.width/ZOOM, vh = canvas.height/ZOOM;

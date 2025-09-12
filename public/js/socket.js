@@ -57,7 +57,8 @@
 				});
 			},
 			update(patch){ try{ sock.emit('update', patch); }catch(_){ } },
-			sendChat({ to, toName, text, gift }, cb){ try{ sock.emit('chat:send', { to, toName, text, gift }, (res)=> cb && cb(res)); }catch(_){ cb && cb({ ok:false }); } }
+			sendChat({ to, toName, text, gift }, cb){ try{ sock.emit('chat:send', { to, toName, text, gift }, (res)=> cb && cb(res)); }catch(_){ cb && cb({ ok:false }); } },
+			payInitialRent(cb){ try{ sock.emit('pay:initialRent', {}, (res)=> cb && cb(res)); }catch(_){ cb && cb({ ok:false }); } }
 		};
 		window.sockApi = api;
 
@@ -89,6 +90,13 @@
 		sock.on('playerLeft', () => {});
 		sock.on('shopPlaced', () => {});
 		sock.on('housePlaced', () => {});
+		sock.on('gov:updated', (gov) => {
+			try{
+				if(gov && typeof gov.funds === 'number') {
+					window.government = gov; if(typeof window.updateGovDesc === 'function') window.updateGovDesc();
+				}
+			}catch(e){}
+		});
 		sock.on('govPlaced', () => { if (typeof window.updateGovDesc === 'function') window.updateGovDesc(); });
 		// Cobro de arriendo confirmado por el servidor (al crear jugador o manual)
 		sock.on('rent:charged', (payload)=>{
@@ -99,6 +107,11 @@
 				if(window.playerId && window.gameState && Array.isArray(window.gameState.players)){
 					const me = window.gameState.players.find(p=>p && p.id===window.playerId);
 					if(me){ me.money = m; }
+					// También actualizar el agente local en el array principal
+					if(window.agents && Array.isArray(window.agents)){
+						const localAgent = window.agents.find(a => a && a.id === window.playerId);
+						if(localAgent) localAgent.money = m;
+					}
 				}
 				if(gf != null){
 					try{ window.government = window.government || {}; window.government.funds = gf; if(typeof window.updateGovDesc==='function') window.updateGovDesc(); }catch(e){}
