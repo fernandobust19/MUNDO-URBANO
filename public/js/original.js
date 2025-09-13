@@ -580,44 +580,40 @@ function getStreetPattern(ctx, orientation){
 }
 
 function preloadImages() {
-  console.log("Iniciando precarga de imágenes con manejo de errores mejorado...");
-  
-  for (const key in BUILDING_IMAGES) {
-    try {
+  console.log("Iniciando precarga de imágenes (promesas + evento de finalización)…");
+  const entries = Object.entries(BUILDING_IMAGES);
+  let loaded = 0, failed = 0;
+  const ps = entries.map(([key, url])=> new Promise((resolve)=>{
+    try{
       const img = new Image();
-      
-      img.onload = function() {
-        console.log(`Imagen cargada: ${key}`);
+      img.onload = ()=>{ loaded++; resolve({ key, ok:true }); };
+      img.onerror = ()=>{
+        failed++;
+        console.warn(`Error al cargar la imagen: ${key} -> ${url}. Usando fallback.`);
+        BUILDING_IMAGE_CACHE[key] = { error:true, complete:true, naturalWidth:100 };
+        resolve({ key, ok:false });
       };
-      
-      img.onerror = function() {
-        console.warn(`Error al cargar la imagen: ${key} -> ${BUILDING_IMAGES[key]}. Usando fallback.`);
-        // Crear un fallback simple que no cause errores
-        BUILDING_IMAGE_CACHE[key] = { 
-          error: true, 
-          complete: true,
-          naturalWidth: 100
-        };
-      };
-      
-      img.src = BUILDING_IMAGES[key];
-      BUILDING_IMAGE_CACHE[key] = img;
-    } catch(e) {
-      console.error(`Error general con imagen ${key}:`, e);
-    }
-  }
+      img.src = url; BUILDING_IMAGE_CACHE[key] = img;
+    }catch(e){ failed++; console.warn('preload error', key, e); resolve({ key, ok:false }); }
+  }));
+  Promise.allSettled(ps).then(()=>{
+    const total = entries.length;
+    try{
+      const ev = new CustomEvent('assets:buildings:ready', { detail: { total, loaded, failed }});
+      window.dispatchEvent(ev);
+    }catch(_){ }
+    console.log(`[assets] Precarga completada: ${loaded}/${total} ok, ${failed} fallidas`);
+    if(failed > 6){ console.warn(`[debug] ${failed}/${total} imágenes fallaron. Revisa /api/debug/assets-list y /api/debug/asset?name=archivo.png`); }
+  });
 }
 
-// Ejecutar precarga inmediatamente
+// Ejecutar precarga inmediatamente y registrar un listener informativo
+try{
+  window.addEventListener('assets:buildings:ready', (e)=>{
+    const d = e && e.detail; console.log('[assets:event] buildings ready', d);
+  }, { once:true });
+}catch(_){ }
 preloadImages();
-setTimeout(()=>{
-  // Si muchas fallan, sugiere revisar assets en servidor
-  try{
-    const total = Object.keys(BUILDING_IMAGES).length;
-    const errors = Object.values(BUILDING_IMAGE_CACHE).filter(v => v && v.error).length;
-    if(errors > 6){ console.warn(`[debug] ${errors}/${total} imágenes fallaron. Revisa /api/debug/assets-list y /api/debug/asset?name=archivo.png`); }
-  }catch(_){ }
-}, 1500);
 
 // Limpiar cualquier entrada residual de 'librería' en el cache (por versiones antiguas)
 if (BUILDING_IMAGE_CACHE['librería']) { delete BUILDING_IMAGE_CACHE['librería']; }
@@ -673,7 +669,7 @@ function relocateInitialBuildingsToSand(){
 
   /* ===== CONFIGURACIÓN ===== */
   const CFG = {
-  LINES_ON:false, PARKS:8, SCHOOLS:8, FACTORIES:12, BANKS:8, MALLS:4, HOUSE_SIZE:70, OWNED_HOUSE_SIZE_MULT:1.4, CEM_W:220, CEM_H:130, N_INIT:24,  // Más infraestructuras y casas iniciales
+  LINES_ON:false, PARKS:8, SCHOOLS:8, FACTORIES:12, BANKS:8, MALLS:4, HOUSE_SIZE:70, OWNED_HOUSE_SIZE_MULT:1.4, CEM_W:220, CEM_H:130, N_INIT:0,  // Sin bots por defecto
   HOME_REST_DURATION:120,
     // Radio base de los agentes (en unidades de mundo). Aumentado para que se vean más grandes.
   R_ADULT:7.5, R_CHILD:6.0, R_ELDER:7.0, SPEED:60, WORK_DURATION:6, EARN_PER_SHIFT:20, WORK_COOLDOWN:45,
@@ -1258,7 +1254,8 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
 
     // Llamar a la función para crear barrios y casas (sin duplicación)
     if (!preserveHouses) {
-      makeBarriosYCasas(CFG.N_INIT + 24, {x: 0, y: 0, w: WORLD.w, h: WORLD.h}, []);
+      const CONNECTED_NPCS = 20;
+      makeBarriosYCasas(CFG.N_INIT + 24 + CONNECTED_NPCS, {x: 0, y: 0, w: WORLD.w, h: WORLD.h}, []);
     }
 
     // Crear lista de evitación actualizada (después de crear casas)
@@ -3105,10 +3102,8 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         }catch(e){}
       }catch(e){}
     }); }catch(e){}
-    if(!hasNet()){
-      for(let i=0;i<CFG.N_INIT;i++) {agents.push(makeAgent('adult',{ageYears:rand(18,60)}));}
-    }
-    agents.forEach(a => { if (assignRental(a)) { const home = houses[a.houseIdx]; if (home) { a.target = centerOf(home); a.targetRole = 'home'; } } });
+    // Generar 20 "agentes conectados" con nombres, casas en arriendo e inicio de trabajo
+    spawnConnectedLikeAgents();
     const b0=cityBlocks[0]; if(b0){ cam.x = Math.max(0, b0.x - 40); cam.y = Math.max(0, b0.y - 40); clampCam(); }
     updateGovDesc();
   try{ window.updateOwnedShopsUI = updateOwnedShopsUI; updateOwnedShopsUI(); }catch(e){}
@@ -3737,6 +3732,54 @@ window.__onChatMessage = function(msg){
     const dock = document.getElementById('chatDock'); if(dock) dock.style.display='block';
     renderIncomingMsg(msg);
   }catch(_){ }
+}
+
+// --- Utilidades de NPC conectados ---
+function purgeNonPlayerAgents(){ agents = agents.filter(a => a && a.id === USER_ID); }
+
+function ensureHouseWithInitial(agent){
+  ensurePlayerHasHouse(agent);
+  if(typeof agent.houseIdx==='number' && houses[agent.houseIdx]){
+    const h = houses[agent.houseIdx];
+    const baseInitial = (agent.name||agent.code||'U').trim().charAt(0).toUpperCase() || 'U';
+    window.__houseInitialCounts = window.__houseInitialCounts || {};
+    const count = (window.__houseInitialCounts[baseInitial]||0)+1; window.__houseInitialCounts[baseInitial]=count;
+    h._markerInitial = baseInitial + (count>1?count:'');
+    h._highlightUntil = performance.now() + 4000;
+    // Cobro de arriendo inicial (50) al gobierno
+    const rentCost = 50;
+    if((agent.money||0) >= rentCost){ agent.money -= rentCost; try{ government.funds=(government.funds||0)+rentCost; if(govFundsEl) govFundsEl.textContent=`Fondo: ${Math.floor(government.funds)}`; }catch(_){ } }
+  }
+}
+
+function sendAgentToWork(agent){
+  try{
+    // Buscar una fábrica al azar; si no, un banco o tienda
+    const pick = (arr)=> (arr && arr.length)? arr[(Math.random()*arr.length)|0] : null;
+    let target = pick(factories) || pick(banks) || pick(shops);
+    if(target){ agent.goingToWork=true; agent.target=centerOf(target); agent.targetRole='go_work'; agent.nextWorkAt = performance.now()/1000; }
+  }catch(_){ }
+}
+
+function spawnConnectedLikeAgents(){
+  // Lista de 20 nombres (10 hombres -> avatar1/2, 10 mujeres -> avatar3/4)
+  const maleNames = ['Carlos','José','Luis','Miguel','Jorge','Andrés','Diego','Fernando','Ricardo','Pedro'];
+  const femaleNames = ['María','Ana','Lucía','Sofía','Carla','Elena','Valentina','Camila','Gabriela','Paula'];
+  const pick = (list)=> list[(Math.random()*list.length)|0];
+  const pickAvatar = (gender)=> gender==='M' ? (Math.random()<0.5?'/assets/avatar1.png':'/assets/avatar2.png')
+                                          : (Math.random()<0.5?'/assets/avatar3.png':'/assets/avatar4.png');
+  purgeNonPlayerAgents();
+  const want = 20;
+  for(let i=0;i<want;i++){
+    const isMale = i < 10; // primeros 10 hombres, siguientes 10 mujeres
+    const gender = isMale ? 'M' : 'F';
+    const name = isMale ? pick(maleNames) : pick(femaleNames);
+    const avatar = pickAvatar(gender);
+    const a = makeAgent('adult', { name, gender, ageYears: rand(20,55), startMoney: 400, avatar });
+    agents.push(a);
+  }
+  // Asignar casas con inicial, cobrar arriendo inicial, y enviarlos a trabajar
+  for(const a of agents){ if(a.id===USER_ID) continue; ensureHouseWithInitial(a); sendAgentToWork(a); }
 }
 
 // Función para asignar alquiler

@@ -16,7 +16,9 @@ const io = require('socket.io')(server, {
   cors: { origin: '*' }
 });
 
-const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+let PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+// Cantidad de bots del servidor (0 para desactivar)
+const SERVER_BOTS = process.env.SERVER_BOTS ? Math.max(0, parseInt(process.env.SERVER_BOTS, 10) || 0) : 0;
 // Cargar configuración centralizada
 const cfg = require('./server/config');
 // Directorio de comprobantes (configurable). En producción usa un disco persistente.
@@ -434,6 +436,21 @@ function ensureBots(n = 3) {
   }
 }
 
+// Ajusta la cantidad EXACTA de bots a n (agrega o elimina según sea necesario)
+function setBotTarget(n = 0){
+  const bots = Object.values(state.players).filter(p => p.isBot);
+  if(bots.length > n){
+    const toRemove = bots.length - n;
+    // Eliminar los más antiguos primero
+    const removeList = bots
+      .sort((a,b)=> (a.createdAt||0) - (b.createdAt||0))
+      .slice(0, toRemove);
+    for(const b of removeList){ delete state.players[b.id]; }
+  } else if(bots.length < n){
+    ensureBots(n); // agrega hasta n
+  }
+}
+
 function tickBots(bounds = { w: 2200, h: 1400 }) {
   const dt = 0.12; // ~120ms por tick
   for (const p of Object.values(state.players)) {
@@ -506,7 +523,8 @@ function tickIdlePlayers(bounds = { w: 2200, h: 1400 }) {
 
 // Tick de movimiento automático para todos los jugadores
 setInterval(() => {
-  ensureBots(5); // Aseguramos que haya 5 bots
+  // Ajustar bots según configuración (por defecto 0 = sin bots)
+  setBotTarget(SERVER_BOTS);
   // Usar límites amplios: si el mundo crece, se pueden mapear al menos 1.2x del tamaño base
   const w =  Math.max(2200, (globalThis.WORLD?.w)||2200);
   const h =  Math.max(1400, (globalThis.WORLD?.h)||1400);
@@ -674,6 +692,20 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`Server listening on http://localhost:${PORT}`);
-});
+function startServer(port, attemptsLeft = 8) {
+  PORT = port;
+  server.listen(PORT, () => {
+    console.log(`Server listening on http://localhost:${PORT}`);
+  }).on('error', (err) => {
+    if (err && err.code === 'EADDRINUSE' && attemptsLeft > 0) {
+      const next = port + 1;
+      console.warn(`Port ${port} in use. Retrying on ${next}...`);
+      setTimeout(() => startServer(next, attemptsLeft - 1), 250);
+    } else {
+      console.error('Server failed to start:', err);
+      process.exit(1);
+    }
+  });
+}
+
+startServer(PORT);
