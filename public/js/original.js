@@ -672,7 +672,7 @@ function relocateInitialBuildingsToSand(){
   LINES_ON:false, PARKS:8, SCHOOLS:8, FACTORIES:12, BANKS:8, MALLS:4, HOUSE_SIZE:70, OWNED_HOUSE_SIZE_MULT:1.4, CEM_W:220, CEM_H:130, N_INIT:0,  // Sin bots por defecto
   HOME_REST_DURATION:120,
     // Radio base de los agentes (en unidades de mundo). Aumentado para que se vean más grandes.
-  R_ADULT:7.5, R_CHILD:6.0, R_ELDER:7.0, SPEED:60, WORK_DURATION:6, EARN_PER_SHIFT:20, WORK_COOLDOWN:45,
+  R_ADULT:7.5, R_CHILD:6.0, R_ELDER:7.0, SPEED:60, WORK_DURATION:20, EARN_PER_SHIFT:20, WORK_COOLDOWN:45,
     // Tamaños mínimos en pantalla para que no desaparezcan con el zoom.
   MIN_AGENT_PX: 12,
   NAME_FONT_PX: 13,
@@ -2002,6 +2002,32 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       drawBuildingWithImage(s, s.kind, '#8B5CF6', '#c4b5fd');
     });
 
+    // Monedas grandes sobre fábricas mientras se trabaja
+    try{
+      const arr = (window.__coins = window.__coins || []);
+      const now = performance.now();
+      for(let i=arr.length-1;i>=0;i--){
+        const c = arr[i];
+        const age = now - c.created;
+        if(age > (c.life||900)){ arr.splice(i,1); continue; }
+        const p = toScreen(c.x, c.y);
+        const t = Math.min(1, age / (c.life||900));
+        const bob = Math.sin((age/1000)*Math.PI*2)*6*ZOOM;
+        const alpha = 1 - t*0.8;
+        const fontPx = Math.max(28, (c.size||42)) * ZOOM;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0.1, alpha);
+        ctx.font = `800 ${fontPx}px ui-monospace,monospace`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#f59e0b';
+        ctx.strokeStyle = '#78350f'; ctx.lineWidth = 2;
+        const y = p.y - 24*ZOOM - (c.offsetY||0) - bob;
+        ctx.fillText('💰', p.x, y);
+        ctx.strokeText('💰', p.x, y);
+        ctx.restore();
+      }
+    }catch(_){ }
+
     // Mostrar dinero acumulado de cada negocio comprado
     try{
       for(const s of renderShops){
@@ -2382,6 +2408,29 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
                } else {
           const f = factories[(Math.random()*factories.length)|0];
           if (f) { a.goingToWork = true; a.workFactoryId = factories.indexOf(f); a.target = centerOf(f); a.targetRole = 'go_work'; }
+        }
+      }
+  // Pago incremental mientras trabaja y efecto visual de moneda grande sobre la fábrica
+  if(a.workingUntil && nowS < a.workingUntil){
+        // Inicializar temporizadores de pago
+        a._workCoinNextAt = a._workCoinNextAt || Math.floor(nowS) + 1;
+        a._workEarningsAcc = a._workEarningsAcc || 0;
+        // Encontrar fábrica objetivo más cercana si tiene recordado el id
+        let fCenter = null;
+        try{
+          if(typeof a.workFactoryId === 'number' && factories[a.workFactoryId]){ fCenter = centerOf(factories[a.workFactoryId]); }
+          else if(a.targetRole === 'work' && a._lastWorkAt){ fCenter = { x: a._lastWorkAt.x, y: a._lastWorkAt.y }; }
+        }catch(_){ }
+        // Cada segundo: sumar dinero y disparar moneda
+        while(nowS >= a._workCoinNextAt){
+          a._workCoinNextAt += 1;
+          a._workEarningsAcc += (CFG.EARN_PER_SHIFT / Math.max(1, CFG.WORK_DURATION)); // 20/20 = 1 crédito/seg
+          a.pendingDeposit = (a.pendingDeposit||0) + (CFG.EARN_PER_SHIFT / Math.max(1, CFG.WORK_DURATION));
+          // Spawn moneda grande para render
+          if(fCenter){
+            window.__coins = window.__coins || [];
+            window.__coins.push({ x: fCenter.x, y: fCenter.y, created: performance.now(), life: 900, size: 42 });
+          }
         }
       }
   if(a.workingUntil && nowS>=a.workingUntil){
@@ -3102,8 +3151,10 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         }catch(e){}
       }catch(e){}
     }); }catch(e){}
-    // Generar 20 "agentes conectados" con nombres, casas en arriendo e inicio de trabajo
-    spawnConnectedLikeAgents();
+  // Generar 20 "agentes conectados" con nombres, casas en arriendo e inicio de trabajo
+  spawnConnectedLikeAgents();
+  // Forzar que el propio jugador vaya primero a trabajar a una fábrica
+  try{ sendAgentToWork(user); }catch(_){ }
     const b0=cityBlocks[0]; if(b0){ cam.x = Math.max(0, b0.x - 40); cam.y = Math.max(0, b0.y - 40); clampCam(); }
     updateGovDesc();
   try{ window.updateOwnedShopsUI = updateOwnedShopsUI; updateOwnedShopsUI(); }catch(e){}
@@ -3754,10 +3805,17 @@ function ensureHouseWithInitial(agent){
 
 function sendAgentToWork(agent){
   try{
-    // Buscar una fábrica al azar; si no, un banco o tienda
+    // Buscar una FÁBRICA primero (requisito: ir a trabajar a fábrica)
     const pick = (arr)=> (arr && arr.length)? arr[(Math.random()*arr.length)|0] : null;
-    let target = pick(factories) || pick(banks) || pick(shops);
-    if(target){ agent.goingToWork=true; agent.target=centerOf(target); agent.targetRole='go_work'; agent.nextWorkAt = performance.now()/1000; }
+    let target = pick(factories) || null;
+    if(!target){ target = pick(banks) || pick(shops); }
+    if(target){
+      agent.goingToWork = true;
+      agent.target = centerOf(target);
+      agent.targetRole = 'go_work';
+      agent.nextWorkAt = performance.now()/1000;
+      agent._firstJobForced = true; // marca para la primera vez
+    }
   }catch(_){ }
 }
 

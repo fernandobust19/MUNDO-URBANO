@@ -1,10 +1,10 @@
 {
   "users": [
     {
-      "id": "960bd490-ef69-4041-b35b-a564b6d15289",
+      "id": "2eaab4f9-a4a1-42c5-9c85-7dc44cebed6d",
       "username": "fer",
-      "passHash": "$2a$10$eRIsL7UeLvzy3LcdjW3wCOKdN.tsPgGbMOqtwjsn2KFzf7Y7dQ9CO",
-      "createdAt": 1757732877493,
+      "passHash": "$2a$10$0V5ym.W9voYI.4SJUJl4o.P2rMJqIkQEG0jv9c2sW2wqwX4amw69S",
+      "createdAt": 1757733616028,
       "lastLoginAt": null,
       "country": "Ecuador",
       "email": "fernando2000b@hotmail.com",
@@ -13,21 +13,23 @@
     }
   ],
   "progress": {
-    "960bd490-ef69-4041-b35b-a564b6d15289": {
-      "money": 350,
+    "2eaab4f9-a4a1-42c5-9c85-7dc44cebed6d": {
+      "money": 150,
       "bank": 0,
-      "vehicle": null,
-      "vehicles": [],
+      "vehicle": "moto",
+      "vehicles": [
+        "moto"
+      ],
       "shops": [],
       "houses": [],
       "name": "fer",
       "avatar": "assets/avatar1.png",
       "likes": [
-        "cine",
-        "videojuegos",
-        "ciclismo",
-        "programación",
-        "helado"
+        "naturaleza",
+        "viajes",
+        "jardinería",
+        "yoga",
+        "teatro"
       ],
       "gender": "M",
       "age": 20,
@@ -36,21 +38,6 @@
       "country": "Ecuador",
       "email": "fernando2000b@hotmail.com",
       "phone": "0983801298"
-    },
-    "ba25dd7e-1b5c-4d9b-bfa3-c9e73a7698c9": {
-      "money": 350,
-      "bank": 0,
-      "vehicle": null,
-      "vehicles": [],
-      "shops": [],
-      "houses": [],
-      "name": null,
-      "avatar": null,
-      "likes": [],
-      "gender": null,
-      "age": null,
-      "initialRentPaid": false,
-      "rentedHouseIdx": null
     }
   },
   "government": {
@@ -59,17 +46,17 @@
   },
   "activityLog": [
     {
-      "ts": 1757732877493,
+      "ts": 1757733616029,
       "type": "register",
-      "userId": "960bd490-ef69-4041-b35b-a564b6d15289",
+      "userId": "2eaab4f9-a4a1-42c5-9c85-7dc44cebed6d",
       "details": {
         "username": "fer"
       }
     },
     {
-      "ts": 1757732882614,
+      "ts": 1757733624378,
       "type": "progress_update",
-      "userId": "960bd490-ef69-4041-b35b-a564b6d15289",
+      "userId": "2eaab4f9-a4a1-42c5-9c85-7dc44cebed6d",
       "details": {
         "keys": [
           "money",
@@ -89,9 +76,9 @@
       }
     },
     {
-      "ts": 1757732885118,
+      "ts": 1757733626317,
       "type": "progress_update",
-      "userId": "960bd490-ef69-4041-b35b-a564b6d15289",
+      "userId": "2eaab4f9-a4a1-42c5-9c85-7dc44cebed6d",
       "details": {
         "keys": [
           "money",
@@ -114,9 +101,34 @@
       }
     },
     {
-      "ts": 1757732894808,
+      "ts": 1757733632581,
       "type": "progress_update",
-      "userId": "960bd490-ef69-4041-b35b-a564b6d15289",
+      "userId": "2eaab4f9-a4a1-42c5-9c85-7dc44cebed6d",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "initialRentPaid",
+          "rentedHouseIdx",
+          "country",
+          "email",
+          "phone"
+        ]
+      }
+    },
+    {
+      "ts": 1757733693119,
+      "type": "progress_update",
+      "userId": "2eaab4f9-a4a1-42c5-9c85-7dc44cebed6d",
       "details": {
         "keys": [
           "money",
