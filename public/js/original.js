@@ -183,20 +183,6 @@
       clearAvatarSelection(); btn.classList.add('selected');
   // set preview and UI avatar
   try{ if(fGenderPreview) fGenderPreview.src = src; if(uiAvatarEl) uiAvatarEl.src = src; }catch(e){}
-      // Enforce avatar ↔ género: avatar1/2 => M, avatar3/4 => F (no aplica para data URLs/subidos)
-      try{
-        if(typeof src === 'string' && src.startsWith('/assets/avatar')){
-          const low = src.toLowerCase();
-          const implied = (low.includes('avatar1') || low.includes('avatar2')) ? 'M'
-                         : (low.includes('avatar3') || low.includes('avatar4')) ? 'F'
-                         : null;
-          if(implied && fGender && ['M','F'].includes(implied)){
-            if(fGender.value !== implied){ fGender.value = implied; updateGenderPreview(); }
-            // Persistir selección de género para futuras sesiones
-            try{ window.__progress = Object.assign({}, window.__progress||{}, { gender: implied }); window.saveProgress && window.saveProgress({ gender: implied }); }catch(_){ }
-          }
-        }
-      }catch(_){ }
       // set the select value too for form persistence (safe check if avatarSelect isn't declared)
       try{ if(typeof avatarSelect !== 'undefined' && avatarSelect) avatarSelect.value = src; }catch(e){}
       // persist selection so it survives reloads and is applied to UI avatar
@@ -327,13 +313,8 @@ btnRandLikes.addEventListener('click', updateLikesUI);
   /* ===== CANVAS / MUNDO ===== */
   const canvas=$("#world"), ctx=canvas.getContext('2d', {alpha: false});
   const uiDock=$("#uiDock"), uiHideBtn=$("#uiHideBtn"), uiShowBtn=$("#uiShowBtn");
-  // Mantener UI del mundo y el formulario de personaje ocultos al cargar; solo se muestran tras login/flujo
+  // Mantener UI del mundo oculta al cargar; se mostrará tras crear personaje
   try{ if(uiDock) uiDock.style.display='none'; }catch(e){}
-  try{ const fb = document.getElementById('formBar'); if(fb) fb.style.display='none'; }catch(e){}
-  try{ const world = document.getElementById('world'); if(world) world.style.display='none'; }catch(e){}
-  try{ const miniEl = document.getElementById('mini'); if(miniEl) miniEl.style.display='none'; }catch(e){}
-  try{ const showBtnEl = document.getElementById('uiShowBtn'); if(showBtnEl) showBtnEl.style.display='none'; }catch(e){}
-  try{ const followEl = document.getElementById('followFab'); if(followEl) followEl.style.display='none'; }catch(e){}
   // Controles de zoom fueron removidos; mantener referencias nulas para compatibilidad
   const zoomFab = null, zoomIn = null, zoomOut = null, docDock=$("#docDock"), govDock=$("#govDock"), topBar=null;
   const mini=$("#mini"), miniCanvas=$("#miniCanvas"), mctx=miniCanvas.getContext('2d');
@@ -384,7 +365,7 @@ btnRandLikes.addEventListener('click', updateLikesUI);
   const btnShowMarried = $("#btnShowMarried"), marriedDock = $("#marriedDock"), marriedList = $("#marriedList");
   const builderModal=$("#builderModal"), btnBuy=$("#btnBuy"), btnBuilderClose=$("#btnBuilderClose"), builderMsg=$("#builderMsg");
   const shopModal=$("#shopModal"), shopList=$("#shopList"), shopMsg=$("#shopMsg"), btnShopClose=$("#btnShopClose");
-  let govFundsEl=$("#govFunds"), govDescEl = $("#govDesc");
+  const govFundsEl=$("#govFunds"), govDescEl = $("#govDesc");
   const govSelectEl=$("#govSelect"), btnGovPlace=$("#btnGovPlace");
   const btnGovOpen = document.getElementById('btnGovOpen');
   // Botones de mostrar/ocultar el UI (flechas azules) usando variables existentes
@@ -393,31 +374,23 @@ btnRandLikes.addEventListener('click', updateLikesUI);
 
   // Seguimiento de agente (btn flotante)
   let FOLLOW_AGENT = false;
-  const CAM_FOLLOW_SMOOTH = 0.18; // 0..1 (más alto = más rápido)
   const followFab = document.getElementById('followFab');
   if (followFab){
     followFab.addEventListener('click', ()=>{
-      try{
-        if(!STARTED){ return; }
-        if(typeof USER_ID==='undefined' || !agents){ return; }
-        const me = agents.find(a=>a && a.id===USER_ID);
-        if(!me){
-          try{ toast('Crea tu personaje para usar Seguir.'); }catch(_){ }
-          FOLLOW_AGENT = false; followFab.classList.remove('on');
-          return;
-        }
-        FOLLOW_AGENT = !FOLLOW_AGENT;
-        if(FOLLOW_AGENT){ followFab.classList.add('on'); } else { followFab.classList.remove('on'); }
-        // Al activar, centra suavemente hacia el agente (una aproximación inicial)
-        if(FOLLOW_AGENT){
-          const vw = canvas.width/ZOOM, vh = canvas.height/ZOOM;
-          const wantX = Math.max(0, Math.min(me.x - vw/2, Math.max(0, WORLD.w - vw)));
-          const wantY = Math.max(0, Math.min(me.y - vh/2, Math.max(0, WORLD.h - vh)));
-          cam.x = (cam.x*0.5) + (wantX*0.5);
-          cam.y = (cam.y*0.5) + (wantY*0.5);
-          clampCam();
-        }
-      }catch(_){ /* evitar reventar el handler */ }
+      FOLLOW_AGENT = !FOLLOW_AGENT;
+      if(FOLLOW_AGENT){ followFab.classList.add('on'); } else { followFab.classList.remove('on'); }
+      // Al activar, centra inmediatamente
+      if (FOLLOW_AGENT) {
+        try{
+          const me = agents.find(a=>a.id===USER_ID);
+          if(me){
+            const vw = canvas.width/ZOOM, vh = canvas.height/ZOOM;
+            cam.x = Math.max(0, Math.min(me.x - vw/2, Math.max(0, WORLD.w - vw)));
+            cam.y = Math.max(0, Math.min(me.y - vh/2, Math.max(0, WORLD.h - vh)));
+            clampCam();
+          }
+        }catch(_){ }
+      }
     });
   }
   // Abrir panel de Gobierno desde el botón del UI
@@ -700,10 +673,10 @@ function relocateInitialBuildingsToSand(){
 
   /* ===== CONFIGURACIÓN ===== */
   const CFG = {
-  LINES_ON:false, PARKS:8, SCHOOLS:8, FACTORIES:12, BANKS:8, MALLS:4, HOUSE_SIZE:70, OWNED_HOUSE_SIZE_MULT:1.4, CEM_W:220, CEM_H:130, N_INIT:0,  // sin NPCs por defecto; usaremos 10 personalizados
-  HOME_REST_DURATION:0,
+  LINES_ON:false, PARKS:8, SCHOOLS:8, FACTORIES:12, BANKS:8, MALLS:4, HOUSE_SIZE:70, OWNED_HOUSE_SIZE_MULT:1.4, CEM_W:220, CEM_H:130, N_INIT:24,  // Más infraestructuras y casas iniciales
+  HOME_REST_DURATION:120,
     // Radio base de los agentes (en unidades de mundo). Aumentado para que se vean más grandes.
-  R_ADULT:7.5, R_CHILD:6.0, R_ELDER:7.0, SPEED:60, WORK_DURATION:20, EARN_PER_SHIFT:20, WORK_COOLDOWN:2,
+  R_ADULT:7.5, R_CHILD:6.0, R_ELDER:7.0, SPEED:60, WORK_DURATION:6, EARN_PER_SHIFT:20, WORK_COOLDOWN:45,
     // Tamaños mínimos en pantalla para que no desaparezcan con el zoom.
   MIN_AGENT_PX: 12,
   NAME_FONT_PX: 13,
@@ -715,13 +688,7 @@ function relocateInitialBuildingsToSand(){
     WEALTH_TAX_MAX: 0.06,      // 6% tope de seguridad
     EMPLOYEE_SALARY: 25, SALARY_PAY_EVERY: 120,
     GOV_RENT_EVERY: 10*60, GOV_RENT_AMOUNT: 5, 
-  POST_DEPOSIT_EXPLORE: 0, // desactivado: ir directo a trabajar otra vez
-  WORK_EXPLORE_TIME: 60, // segundos vagando tras cada turno de trabajo
-  WORK_COIN_INTERVAL: 1, // cada segundo una moneda animada
-  WORK_COIN_LIFE: 1600, // ms visible
-  MANAGE_DURATION: 12, // segundos gestionando negocio antes de cobrar caja
-  MANAGE_BOOST_TIME: 120, // segundos de impulso de ventas tras gestionar
-  MANAGE_BOOST_MULT: 1.2, // multiplicador a ganancias de cada compra durante el boost
+  POST_DEPOSIT_EXPLORE: 30, // segundos de exploración tras depositar (visitar negocios)
   SHOP_PURCHASE_INTERVAL: 300, // 5 min entre compras máximas
     COST_ROAD: 40,
     COST_PARK: 80, COST_SCHOOL: 120, COST_LIBRARY: 150, COST_POLICE: 200, COST_HOSPITAL: 250, COST_POWER: 350,
@@ -742,56 +709,6 @@ function relocateInitialBuildingsToSand(){
     auto_deportivo: { name:'Auto Deportivo', cost:2500, speed: 360, icon:'🏎️' }
   };
 
-  // === Efectos de monedas durante el trabajo ===
-  const workCoins = []; // {x,y,spawn,life,vy}
-  function spawnWorkCoin(x,y){
-    workCoins.push({ x, y, spawn: performance.now(), life: (CFG.WORK_COIN_LIFE||1500), vy: -0.02 - Math.random()*0.04 });
-  }
-  function updateAndDrawWorkCoins(dt){
-    const now = performance.now();
-    const dtMs = (dt||0) * 1000; // dt en segundos -> ms
-    for(let i=workCoins.length-1;i>=0;i--){
-      const c = workCoins[i];
-      const t = now - c.spawn;
-      if(t > c.life){ workCoins.splice(i,1); continue; }
-      c.y += c.vy * dtMs; // movimiento vertical suave
-    }
-    for(const c of workCoins){
-      const t = now - c.spawn;
-      const alpha = 1 - (t / c.life);
-      const p = toScreen(c.x, c.y);
-      ctx.save(); ctx.globalAlpha = Math.max(0, alpha);
-      // Moneda 3x más grande
-      ctx.fillStyle = '#facc15'; ctx.beginPath(); ctx.arc(p.x, p.y, 18*ZOOM, 0, Math.PI*2); ctx.fill();
-      ctx.fillStyle = '#92400e'; ctx.font = `${28*ZOOM}px ui-monospace,monospace`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('$', p.x, p.y+1.5*ZOOM);
-      ctx.restore();
-    }
-  }
-
-  // === Efectos de monedas durante compras en tiendas ===
-  const shopCoins = []; // {x,y,spawn,life,vy}
-  function spawnShopCoin(x,y){
-    shopCoins.push({ x, y, spawn: performance.now(), life: (CFG.WORK_COIN_LIFE||1500), vy: -0.02 - Math.random()*0.04 });
-  }
-  function updateAndDrawShopCoins(dt){
-    const now = performance.now();
-    const dtMs = (dt||0) * 1000;
-    for(let i=shopCoins.length-1;i>=0;i--){
-      const c = shopCoins[i];
-      const t = now - c.spawn;
-      if(t > c.life){ shopCoins.splice(i,1); continue; }
-      c.y += c.vy * dtMs;
-    }
-    for(const c of shopCoins){
-      const t = now - c.spawn;
-      const alpha = 1 - (t / c.life);
-      const p = toScreen(c.x, c.y);
-      ctx.save(); ctx.globalAlpha = Math.max(0, alpha);
-      ctx.fillStyle = '#facc15'; ctx.beginPath(); ctx.arc(p.x, p.y, 18*ZOOM, 0, Math.PI*2); ctx.fill();
-      ctx.fillStyle = '#92400e'; ctx.font = `${28*ZOOM}px ui-monospace,monospace`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('$', p.x, p.y+1.5*ZOOM);
-      ctx.restore();
-    }
-  }
   /* ===== Tipos de Instituciones (25) ===== */
   const GOV_TYPES = [
     {k:'parque', label:'Parque', cost:CFG.COST_PARK, w:130,h:90, icon:'🌳', fill:'rgba(12,81,58,0.92)', stroke:'rgba(31,122,90,0.95)'},
@@ -865,14 +782,6 @@ function relocateInitialBuildingsToSand(){
 
   /* Áreas clave */
   const builder={x:0,y:0,w:220,h:110}, cemetery={x:0,y:0,w:CFG.CEM_W,h:CFG.CEM_H}, government={x:0,y:0,w:240,h:140,funds:0, placed:[]};
-  // Fuente efectiva de datos de gobierno (prefiere servidor cuando exista)
-  function getEffectiveGovernment(){
-    try{
-      // Preferir la copia inmediata (window.government) para reflejar eventos como rent:charged al instante
-      const g = window.government || (window.gameState && window.gameState.government) || government;
-      return g || government;
-    }catch(_){ return government; }
-  }
   const roadRects=[];
   const cityBlocks = [];
   let urbanZone = {x:0, y:0, w:0, h:0};
@@ -983,40 +892,6 @@ function relocateInitialBuildingsToSand(){
   // Use debug logging to avoid spamming the console every frame; enable by setting window.__verboseRemoval = true
   if (window.__verboseRemoval) console.debug('removeByLabels executed for', Array.from(set));
     }catch(e){ console.warn('removeByLabels error', e); }
-  }
-
-  // ===== Generador de nombres y spawn de NPCs nombrados =====
-  const MALE_NAMES = ['Carlos','Luis','Javier','Miguel','Andrés','José','Pedro','Diego','Sergio','Fernando','Juan','Víctor','Pablo','Eduardo','Hugo','Mario'];
-  const FEMALE_NAMES = ['María','Ana','Lucía','Sofía','Camila','Valeria','Paula','Elena','Sara','Isabella','Daniela','Carla','Laura','Diana','Andrea','Noelia'];
-  const LAST_NAMES = ['García','Martínez','López','González','Rodríguez','Pérez','Sánchez','Ramírez','Torres','Flores','Vargas','Castro','Romero','Navarro','Molina','Ortega'];
-  function randomFullName(g){
-    const arr = (g==='F') ? FEMALE_NAMES : MALE_NAMES;
-    const first = arr[(Math.random()*arr.length)|0];
-    const last  = LAST_NAMES[(Math.random()*LAST_NAMES.length)|0];
-    return `${first} ${last}`;
-  }
-  function spawnCustomNPCs(count=10){
-    // Eliminar NPCs previos (no jugador) para no duplicar
-    for(let i=agents.length-1;i>=0;i--){ const a=agents[i]; if(a && a.id!==USER_ID && (!a.isPlayer)) agents.splice(i,1); }
-    for(let i=0;i<count;i++){
-      const gender = Math.random()<0.5?'M':'F';
-      const npc = makeAgent('adult',{ name: randomFullName(gender), gender, isPlayer:false, startMoney: rand(200,600)|0 });
-      // Asignar casa en arriendo si hay disponibilidad
-      assignRental(npc);
-      // Objetivo inicial: acercarse a la fábrica más cercana para iniciar ciclo de trabajo
-      try{
-        if(factories && factories.length){
-          let best=null, bestD=1e12; for(const f of factories){ const c=centerOf(f); const d=Math.hypot(npc.x-c.x,npc.y-c.y); if(d<bestD){ bestD=d; best=f; } }
-          if(best){
-            npc.goingToWork=true; npc.workFactoryId=factories.indexOf(best);
-            const cBest = centerOf(best);
-            npc.target = { x: Math.max(best.x+4, Math.min(best.x+best.w-4, cBest.x)), y: Math.max(best.y+4, Math.min(best.y+best.h-4, cBest.y)) };
-            npc.targetRole='go_work'; npc.nextWorkAt=0;
-          }
-        }
-      }catch(_){ }
-      agents.push(npc);
-    }
   }
   const inside=(pt,r)=> pt.x>=r.x && pt.x<=r.x+r.w && pt.y>=r.y && pt.y<=r.y+r.h;
   const rectsOverlapWithMargin = (rectA, rectB, margin) => {
@@ -1195,7 +1070,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       if((a.money||0) >= rentCost){
         a.money -= rentCost;
         // Sumar a fondos del gobierno (si existe estructura)
-  try{ government.funds = (government.funds||0) + rentCost; if(!govFundsEl) govFundsEl=document.getElementById('govFunds'); if(govFundsEl) govFundsEl.textContent = `Fondo: ${Math.floor(government.funds)}`; }catch(_){ }
+        try{ government.funds = (government.funds||0) + rentCost; if(typeof govFundsEl!=='undefined' && govFundsEl) govFundsEl.textContent = `Fondo: ${Math.floor(government.funds)}`; }catch(_){ }
         toast(`${a.name||'Jugador'} pagó arriendo: -${rentCost}`);
       } else {
         toast(`${a.name||'Jugador'} no pudo pagar arriendo (saldo insuficiente)`);
@@ -2160,7 +2035,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         ctx.lineWidth = 1;
         if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(cx-bw/2, topY-bh, bw, bh, 4*ZOOM); ctx.fill(); ctx.stroke(); }
         else { ctx.fillRect(cx-bw/2, topY-bh, bw, bh); ctx.strokeRect(cx-bw/2, topY-bh, bw, bh); }
-        ctx.fillStyle = '#5eff94'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillStyle = '#fcd34d'; ctx.textAlign='center'; ctx.textBaseline='middle';
         ctx.fillText(label, cx, topY-bh/2+1);
         ctx.restore();
       }
@@ -2299,9 +2174,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
           const near = d < 28;
           const aOwnsHouse = a.houseIdx !== null && houses[a.houseIdx] && houses[a.houseIdx].ownerId === a.id;
           const bOwnsHouse = b.houseIdx !== null && houses[b.houseIdx] && houses[b.houseIdx].ownerId === b.id;
-          const aRents = a.houseIdx !== null && houses[a.houseIdx] && houses[a.houseIdx].rentedBy === a.id;
-          const bRents = b.houseIdx !== null && houses[b.houseIdx] && houses[b.houseIdx].rentedBy === b.id;
-          if (near && matches >= 5 && (aOwnsHouse || bOwnsHouse || aRents || bRents) && a.state === 'single' && b.state === 'single' && a.cooldownSocial <= 0 && b.cooldownSocial <= 0) {
+          if (near && matches >= 5 && (aOwnsHouse || bOwnsHouse) && a.state === 'single' && b.state === 'single' && a.cooldownSocial <= 0 && b.cooldownSocial <= 0) {
             a.state = 'paired'; b.state = 'paired';
             a.spouseId = b.id; b.spouseId = a.id;
             a.cooldownSocial = 120; b.cooldownSocial = 120;
@@ -2449,10 +2322,8 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   const rpNamePx = CFG.NAME_FONT_PX * ZOOM;
   const rpNameOffset = Math.max(6, 10 * ZOOM);
   if (rpNamePx >= 6) {
-    ctx.font = `700 ${rpNamePx}px ui-monospace,monospace`; ctx.textAlign='center';
-    // Trazado de alto contraste: borde oscuro + relleno claro
-    try{ ctx.save(); ctx.lineWidth = Math.max(2, 2.2*ZOOM); ctx.strokeStyle = 'rgba(17,24,39,0.92)'; ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.strokeText(`${p.name||p.code||'P'}`, pt.x, pt.y - (r + rpNameOffset)); ctx.restore(); }catch(_){ }
-    ctx.fillStyle='#fff'; ctx.fillText(`${p.name||p.code||'P'}`, pt.x, pt.y - (r + rpNameOffset));
+    ctx.font = `700 ${rpNamePx}px ui-monospace,monospace`; ctx.fillStyle='#fff'; ctx.textAlign='center';
+    ctx.fillText(`${p.name||p.code||'P'}`, pt.x, pt.y - (r + rpNameOffset));
   }
     }
   }
@@ -2475,27 +2346,18 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   try{ if(!window.__gamePaused && typeof hasNet==='function' && !hasNet()) processRent(dt); }catch(_){ }
   // Seguimiento continuo del agente (si está activado) antes de dibujar el mundo
     try{
-      if (FOLLOW_AGENT && typeof USER_ID !== 'undefined' && agents) {
-        const me = agents.find(a => a && a.id === USER_ID);
+      if (FOLLOW_AGENT && USER_ID) {
+        const me = agents.find(a => a.id === USER_ID);
         if (me) {
           const vw = canvas.width / ZOOM, vh = canvas.height / ZOOM;
-          const wantX = Math.max(0, Math.min(me.x - vw / 2, Math.max(0, WORLD.w - vw)));
-          const wantY = Math.max(0, Math.min(me.y - vh / 2, Math.max(0, WORLD.h - vh)));
-          // Suavizado dependiente de dt (aprox. exponencial)
-          const s = CAM_FOLLOW_SMOOTH;
-          const alpha = 1 - Math.pow(1 - s, Math.max(1, 60*dt));
-          cam.x += (wantX - cam.x) * alpha;
-          cam.y += (wantY - cam.y) * alpha;
+          cam.x = Math.max(0, Math.min(me.x - vw / 2, Math.max(0, WORLD.w - vw)));
+          cam.y = Math.max(0, Math.min(me.y - vh / 2, Math.max(0, WORLD.h - vh)));
           clampCam();
         }
       }
     }catch(_){ }
   drawWorld();
   if(!window.__gamePaused){ drawSocialLines(); }
-
-    // Dibujar efectos de monedas (después de dibujar el mundo para que queden sobre fábricas)
-  try{ updateAndDrawWorkCoins(dt); }catch(_){ }
-  try{ updateAndDrawShopCoins(dt); }catch(_){ }
 
     // ======= Jugadores remotos con smoothing nuevo =======
   try{ if(!window.__gamePaused) renderRemotePlayers(); }catch(e){}
@@ -2508,7 +2370,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         const myWorkplace = shops.find(s => s.id === a.employedAtShopId);
         if (myWorkplace) { a.target = centerOf(myWorkplace); a.targetRole = 'work_shop'; }
       }
-  if (!a.forcedShopId && !a.workingUntil && !a.exploreUntil && !a.restUntil && !a.employedAtShopId && (!a.targetRole || a.targetRole==='idle') && nowS >= (a.nextWorkAt || 0)) {
+  if (!a.forcedShopId && !a.workingUntil && !a.goingToBank && !a.employedAtShopId && (!a.targetRole || a.targetRole==='idle') && nowS >= (a.nextWorkAt || 0) && !(a.restUntil && nowS < a.restUntil) && !(a.exploreUntil && nowS < a.exploreUntil)) {
   const myOwnedShops = shops.filter(s => s.ownerId === a.id);
         if (myOwnedShops.length > 0 && Math.random() < CFG.OWNER_MANAGE_VS_WORK_RATIO) {
           const shopToManage = myOwnedShops[(Math.random() * myOwnedShops.length) |  0];
@@ -2522,26 +2384,29 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
           a._shopTargetId = shopToManage.id;
                } else {
           const f = factories[(Math.random()*factories.length)|0];
-          if (f) {
-            a.goingToWork = true; a.workFactoryId = factories.indexOf(f);
-            const cBest = centerOf(f);
-            a.target = { x: Math.max(f.x+4, Math.min(f.x+f.w-4, cBest.x)), y: Math.max(f.y+4, Math.min(f.y+f.h-4, cBest.y)) };
-            a.targetRole = 'go_work';
-          }
+          if (f) { a.goingToWork = true; a.workFactoryId = factories.indexOf(f); a.target = centerOf(f); a.targetRole = 'go_work'; }
         }
       }
   if(a.workingUntil && nowS>=a.workingUntil){
-        a.workingUntil=null; a.target=null; a.targetRole='idle';
-        a.exploreUntil = nowS + (CFG.WORK_EXPLORE_TIME||60);
-        a.restUntil = null; a.nextWorkAt = a.exploreUntil + 5; // luego de explorar irá a casa
+        a.workingUntil=null; a.pendingDeposit += CFG.EARN_PER_SHIFT; a.goingToBank=true;
+        const b=banks[(Math.random()*banks.length)|0]; if(b){ a.target=centerOf(b); a.targetRole='bank'; }
       }
-    // Exploración -> hogar
-    if(a.exploreUntil && nowS>=a.exploreUntil){
-        a.exploreUntil=null;
-        if(a.houseIdx!=null && houses[a.houseIdx]){ a.target=centerOf(houses[a.houseIdx]); a.targetRole='home'; a.restUntil = nowS + 8; }
-    }
-    // Descanso en casa completo -> habilitar nuevo turno de trabajo tras cooldown
-    if(a.restUntil && nowS>=a.restUntil){ a.restUntil=null; a.nextWorkAt = nowS + (CFG.WORK_COOLDOWN||2); }
+    if(a.goingToBank && a.target){
+        const c=a.target; if(Math.hypot(a.x-c.x,a.y-c.y)<14){
+      a.money += a.pendingDeposit; a.pendingDeposit=0; a.goingToBank=false;
+      // Inicia fase de exploración posterior al depósito
+      a.exploreUntil = nowS + (CFG.POST_DEPOSIT_EXPLORE||30);
+      a.targetRole='explore'; a.target=null; // se generará destino exploración más abajo
+      a.nextWorkAt = null; // se definirá tras descanso en casa
+        }
+      }
+      // Transición de exploración -> ir a casa para descanso
+      if(a.exploreUntil && nowS >= a.exploreUntil){
+        a.exploreUntil = null;
+        if(a.houseIdx!=null){ const h=houses[a.houseIdx]; if(h){ a.target=centerOf(h); a.targetRole='home'; a.restUntil = nowS + (CFG.HOME_REST_DURATION||60); } }
+      }
+      // Tras descanso en casa, habilitar próximo trabajo
+      if(a.restUntil && nowS >= a.restUntil){ a.restUntil = null; a.nextWorkAt = nowS; }
 
   if(!a.forcedShopId && !a.workingUntil && !a.goingToBank && !a.employedAtShopId && (!a.targetRole || a.targetRole==='idle' || a.targetRole==='home' || a.targetRole==='explore')) {
         if (!a.forcedShopId && Math.random() < CFG.VISIT_RATE) {
@@ -2568,73 +2433,44 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       }
       if(a.targetRole==='shop' && a.target){
         const c=a.target;
-        if(Math.hypot(a.x-c.x,a.y-c.y) < 16){
+        if(Math.hypot(a.x-c.x,a.y-c.y)<16){
           const s = shops.find(q=>q.id===a._shopTargetId);
-          if (s) {
-            if (!a.shoppingUntil) { // Ha llegado, iniciar tiempo de compra
-              a.shoppingUntil = nowS + (CFG.SHOP_DWELL || 5);
-              a.vx = 0; a.vy = 0; // Detenerse
-              a._lastShopCoinSpawn = performance.now();
-            }
-            if (nowS < a.shoppingUntil) { // Sigue comprando, generar monedas
-              const nowPerf = performance.now();
-              if (!a._lastShopCoinSpawn) a._lastShopCoinSpawn = nowPerf;
-              if (nowPerf - a._lastShopCoinSpawn >= 1000) {
-                a._lastShopCoinSpawn += 1000;
-                spawnShopCoin(s.x + s.w/2, s.y + s.h/2);
+          if(s){
+            // Comprar sólo si pasó intervalo de compra y tiene dinero
+            const okInterval = (nowS - (a.lastPurchaseAt||0)) >= (CFG.SHOP_PURCHASE_INTERVAL||300);
+            if(okInterval){
+              const price = clamp(s.price, CFG.PRICE_MIN, CFG.PRICE_MAX);
+              if(a.money>=price){
+                a.money-=price;
+                const bonus = Math.round((s.buyCost || 0) * CFG.SHOP_PROFIT_FACTOR);
+                const saleProfit = price + bonus; s.cashbox = (s.cashbox || 0) + saleProfit; s._lastCashboxChange = performance.now();
+                a.lastPurchaseAt = nowS;
               }
-            } else { // Tiempo de compra finalizado, procesar pago
-              const okInterval = (nowS - (a.lastPurchaseAt||0)) >= (CFG.SHOP_PURCHASE_INTERVAL||300);
-              if(okInterval){
-                const price = clamp(s.price, CFG.PRICE_MIN, CFG.PRICE_MAX);
-                if(a.money>=price){
-                  a.money-=price;
-                  const bonus = Math.round((s.buyCost || 0) * CFG.SHOP_PROFIT_FACTOR);
-                  let saleProfit = price + bonus; 
-                  if(s._managedBoostUntil && nowS < s._managedBoostUntil){ saleProfit = Math.round(saleProfit * (CFG.MANAGE_BOOST_MULT||1.2)); }
-                  s.cashbox = (s.cashbox || 0) + saleProfit; s._lastCashboxChange = performance.now();
-                  a.lastPurchaseAt = nowS;
-                }
-              }
-              a.target=null; a.targetRole='idle'; a._shopTargetId=null; a.shoppingUntil = null;
             }
-          } else { // Tienda no encontrada, resetear agente
-            a.target=null; a.targetRole='idle'; a._shopTargetId=null; a.shoppingUntil = null;
           }
+          a.target=null; a.targetRole='idle'; a._shopTargetId=null;
         }
       }
       if(a.targetRole==='manage_shop' && a.target){
         const c=a.target;
         if(Math.hypot(a.x-c.x,a.y-c.y)<16){
           const s = shops.find(q => q.id === a._shopTargetId);
-          // Inicia fase de gestión cronometrada si no estaba
-          if(!a.managingUntil){
-            a.managingUntil = nowS + (CFG.MANAGE_DURATION||10);
-            a.vx=0; a.vy=0; // quedarse quieto
-            a._manageShopRef = s ? s.id : null;
-            if(s){ s._beingManagedUntil = a.managingUntil; }
-          }
-          // Si ya terminó el tiempo de gestión, pagar y aplicar boost
-          if(a.managingUntil && nowS >= a.managingUntil){
-            const s2 = shops.find(q=>q.id===a._manageShopRef);
-            if(s2 && s2.ownerId === a.id){
-              const amount = Math.floor(s2.cashbox||0);
-              if(amount>0){
-                a.money = (a.money||0) + amount; s2.cashbox=0; s2._lastCashboxChange = performance.now();
-                s2._managedBoostUntil = nowS + (CFG.MANAGE_BOOST_TIME||120);
-                toast(`${a.code} cobró caja (+${amount}) y aplicó impulso.`);
-                try{ window.saveProgress && window.saveProgress({ money: Math.floor(a.money), shops: shops.filter(sh=>sh.ownerId===a.id) }); }catch(_){ }
-              } else {
-                s2._managedBoostUntil = nowS + (CFG.MANAGE_BOOST_TIME||120);
-                toast(`Impulso aplicado (caja vacía).`);
-              }
+          if(s && s.ownerId === a.id){
+            const amount = Math.floor(s.cashbox || 0);
+            if(amount > 0){
+              a.money = (a.money || 0) + amount;
+              s.cashbox = 0; s._lastCashboxChange = performance.now();
+              toast(`${a.code} gestionó ${s.kind || 'negocio'} +${amount} créditos.`);
+              try{ window.saveProgress && window.saveProgress({ money: Math.floor(a.money), shops: shops.filter(sh=>sh.ownerId===a.id) }); }catch(_){ }
+            } else {
+              toast(`Caja vacía en ${s.kind || 'negocio'}.`);
             }
-            a.managingUntil=null; a._manageShopRef=null; a._shopTargetId=null; a.target=null; a.targetRole='idle';
-            a.nextWorkAt = nowS + CFG.WORK_COOLDOWN;
+          } else {
+            // fallback al método anterior por si acaso
+            const paid = payoutChunkToOwner(s, CFG.SHOP_PAYOUT_CHUNK);
+            if(!paid){ toast(`${a.code} gestionó ${s?.kind ?? 'su negocio'}, pero la caja está vacía.`); }
           }
-        } else {
-          // si se aleja antes de terminar, cancelar
-          if(a.managingUntil && nowS < a.managingUntil && Math.hypot(a.x-c.x,a.y-c.y)>40){ a.managingUntil=null; a._manageShopRef=null; }
+          a.nextWorkAt = nowS + CFG.WORK_COOLDOWN; a.target=null; a.targetRole='idle'; a._shopTargetId=null;
         }
       }
       
@@ -2646,25 +2482,9 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         onRoad = getCurrentRoad(a);
       }
       if (a.goingToWork && a.target && a.targetRole === 'go_work') {
-        const fac = factories[a.workFactoryId|0];
-        // Si la fábrica asignada ya no existe, reasignar a la más cercana
-        if (!fac) {
-          let best=null, bestD=1e12; for(const f of factories){ const c=centerOf(f); const d=Math.hypot(a.x-c.x,a.y-c.y); if(d<bestD){ bestD=d; best=f; } }
-          if (best) { a.workFactoryId = factories.indexOf(best); a.target = centerOf(best); }
-        } else {
-          const c = a.target;
-          const atDist = Math.hypot(a.x - c.x, a.y - c.y);
-          // Solo iniciar trabajo si llegó y está dentro de la fábrica actual
-          if (atDist < 12) {
-            const insideFac = inside({x:a.x,y:a.y}, fac);
-            if (insideFac) {
-              a.goingToWork = false; a.workingUntil = nowS + CFG.WORK_DURATION; a.vx = 0; a.vy = 0; a.target = null; a.targetRole = 'work';
-              a._lastWorkCoinSpawn = performance.now(); // para animaciones
-            } else {
-              // El target no cae dentro de la fábrica (pudo moverse). Reajustar target al centro real
-              a.target = centerOf(fac);
-            }
-          }
+        const c = a.target;
+        if (Math.hypot(a.x - c.x, a.y - c.y) < 16) {
+          a.goingToWork = false; a.workingUntil = nowS + CFG.WORK_DURATION; a.vx = 0; a.vy = 0; a.target = null; a.targetRole = 'work';
         }
       }
       if(a.target){
@@ -2676,7 +2496,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         if (dd < CFG.EXPLORE_REACH_RADIUS) {
           // marcar sector visitado si era exploración
           if(a.targetRole === 'explore'){ markVisitedAt(a.x, a.y); a.target = null; a.targetRole = 'idle'; }
-          else if (['work', 'work_shop', 'home', 'bank', 'shop', 'manage_shop'].includes(a.targetRole)) { a.target = null; a.targetRole = 'idle'; }
+          else if (['work', 'work_shop', 'home', 'bank', 'shop', 'manage_shop', 'go_work'].includes(a.targetRole)) { a.target = null; a.targetRole = 'idle'; }
         }
       } else {
         const isWorkingInFactory = a.workingUntil && nowS < a.workingUntil;
@@ -2691,40 +2511,9 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
           if (spd > cap) { a.vx = (a.vx/spd)*cap; a.vy = (a.vy/spd)*cap; }
         }
       }
-
-      // Watchdog: si no está trabajando ni yendo al banco ni tiene target y pasó cooldown, enviar a trabajar de nuevo
-  // Reinicio si desincroniza
-  if(a.workingUntil && nowS - a.workingUntil > 5){ a.workingUntil=null; a.exploreUntil=null; a.restUntil=null; a.nextWorkAt=nowS; }
-
-      // Generar moneda y sumar dinero en tiempo real cada segundo durante trabajo en fábrica
-      if(a.targetRole==='work' && a.workingUntil && nowS < a.workingUntil){
-        const fac = factories[a.workFactoryId|0];
-        const nowPerf = performance.now();
-        // Debe seguir dentro de la fábrica para continuar trabajando; si no, retomar camino
-        if(!fac || !inside({x:a.x,y:a.y}, fac)){
-          // Cancelar turno y volver a intentar ir a trabajar
-          a.workingUntil = null; a.targetRole = 'idle';
-          // Reasignar fábrica objetivo (la misma si existe, o la más cercana)
-          let targetF = fac;
-          if(!targetF){ let best=null,bestD=1e12; for(const f of factories){ const c=centerOf(f); const d=Math.hypot(a.x-c.x,a.y-c.y); if(d<bestD){ bestD=d; best=f; } } targetF = best; }
-          if(targetF){ a.goingToWork = true; a.workFactoryId = factories.indexOf(targetF); a.target = centerOf(targetF); a.targetRole = 'go_work'; }
-        } else {
-          if(!a._lastWorkCoinSpawn){ a._lastWorkCoinSpawn = nowPerf; }
-          const intervalMs = (CFG.WORK_COIN_INTERVAL||1)*1000;
-          while(nowPerf - a._lastWorkCoinSpawn >= intervalMs){
-            a._lastWorkCoinSpawn += intervalMs;
-            const c = centerOf(fac);
-            spawnWorkCoin(c.x + rand(-10,10), c.y + rand(-8,8));
-            // Pago distribuido: EARN_PER_SHIFT proporcional al progreso de 20s
-            const perCoin = (CFG.EARN_PER_SHIFT || 20) / (CFG.WORK_DURATION || 20);
-            a.money += perCoin;
-            try{ if(a.id===USER_ID){ const mEl=document.getElementById('money'); if(mEl) mEl.textContent = Math.floor(a.money); } }catch(_){ }
-          }
-        }
-      }
       a.x += a.vx * dt; a.y += a.vy * dt;
-      if(a.x<4||a.x>WORLD.w-4){ a.vx*=-0.5; a.x=clamp(a.x,5,WORLD.w-5); }
-      if(a.y<4||a.y>WORLD.h-4){ a.vy*=-0.5; a.y=clamp(a.y,5,WORLD.h-5); }
+      if(a.x<4||a.x>WORLD.w-4){ a.vx*=-1; a.x=clamp(a.x,4,WORLD.w-4); }
+      if(a.y<4||a.y>WORLD.h-4){ a.vy*=-1; a.y=clamp(a.y,4,WORLD.h-4); }
 
       const age = (yearsSince(a.bornEpoch)|0);
       if (a.state === 'paired' && a.cooldownSocial <= 0 && age > 22 && age < 45 && Math.random() < 0.00015) {
@@ -2769,22 +2558,19 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   const namePx = CFG.NAME_FONT_PX * ZOOM;
   const nameOffset = Math.max(6, 10 * ZOOM);
   if (namePx >= 6) {
-    ctx.font = `700 ${namePx}px ui-monospace,monospace`; ctx.textAlign='center';
-    const labelTxt = `${ag.name||ag.code}·${ageYrs}`;
-    try{ ctx.save(); ctx.lineWidth = Math.max(2, 2.2*ZOOM); ctx.strokeStyle='rgba(17,24,39,0.92)'; ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.strokeText(labelTxt, pt.x, pt.y - (r + nameOffset)); ctx.restore(); }catch(_){ }
-    ctx.fillStyle='#fff'; ctx.fillText(labelTxt, pt.x, pt.y - (r + nameOffset));
+    ctx.font = `700 ${namePx}px ui-monospace,monospace`; ctx.fillStyle='#fff'; ctx.textAlign='center';
+    ctx.fillText(`${ag.name||ag.code}·${ageYrs}`, pt.x, pt.y - (r + nameOffset));
   }
       }
     }catch(_){ }
     }
     const total$=Math.round(agents.reduce((s,x)=>s+(x.money||0),0));
-    const gEff = getEffectiveGovernment();
-    const instCount = Array.isArray(gEff?.placed) ? gEff.placed.length : government.placed.length;
+    const instCount = government.placed.length;
     try{
       const visibleShops = (window.gameState && Array.isArray(window.gameState.shops)) ? window.gameState.shops.length : shops.length;
-      stats.textContent = `Pob: ${agents.length} | $ total: ${total$} | 🏛️ Fondo: ${Math.floor((gEff&&gEff.funds)||government.funds)} | 🏪 ${visibleShops} | Instituciones: ${instCount}/25`;
+      stats.textContent = `Pob: ${agents.length} | $ total: ${total$} | 🏛️ Fondo: ${Math.floor(government.funds)} | 🏪 ${visibleShops} | Instituciones: ${instCount}/25`;
     }catch(e){
-      stats.textContent = `Pob: ${agents.length} | $ total: ${total$} | 🏛️ Fondo: ${Math.floor((gEff&&gEff.funds)||government.funds)} | 🏪 ${shops.length} | Instituciones: ${instCount}/25`;
+      stats.textContent = `Pob: ${agents.length} | $ total: ${total$} | 🏛️ Fondo: ${Math.floor(government.funds)} | 🏪 ${shops.length} | Instituciones: ${instCount}/25`;
     }
     // Actualizar panel del banco en tiempo real con el jugador local
     try{
@@ -2921,15 +2707,14 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     }).join('');
 
     // Resumen superior
-    const _g = getEffectiveGovernment();
     const summary = `
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
         <div><strong>Jugador:</strong> ${meName} <span style="color:#6b7280">(${meCode})</span></div>
         <div style="text-align:right"><strong>Total créditos:</strong> ${total$}</div>
         <div><strong>Mis negocios comprados:</strong> ${myShopsCount}</div>
-        <div style="text-align:right"><strong>Fondo Gobierno:</strong> ${Math.floor((_g&&_g.funds)||government.funds||0)}</div>
+        <div style="text-align:right"><strong>Fondo Gobierno:</strong> ${Math.floor(government.funds)}</div>
         <div><strong>Negocios en el mundo:</strong> ${(window.gameState?.shops||shops||[]).length}</div>
-        <div style="text-align:right"><strong>Instituciones:</strong> ${Array.isArray(_g?.placed)?_g.placed.length:(government.placed||[]).length}</div>
+        <div style="text-align:right"><strong>Instituciones:</strong> ${(government.placed||[]).length}</div>
       </div>`;
 
     return `
@@ -2948,9 +2733,8 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
 
   function fullGovDocument(){
     // Documento del Gobierno: saldo, edificaciones (instituciones) e impuestos
-    const _g = getEffectiveGovernment();
-    const funds = Math.floor((_g&&_g.funds) || government.funds || 0);
-    const inst = Array.isArray(_g?.placed) ? _g.placed : (Array.isArray(government.placed) ? government.placed : []);
+    const funds = Math.floor(government.funds || 0);
+    const inst = Array.isArray(government.placed) ? government.placed : [];
     const n = inst.length;
     const effRate = Math.min(CFG.WEALTH_TAX_MAX, CFG.WEALTH_TAX_BASE + n*CFG.INSTITUTION_TAX_PER);
     const taxInfo = {
@@ -3121,18 +2905,15 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     // Controles de zoom eliminados
     try{
       const collapsed = document.getElementById('uiDock')?.classList.contains('collapsed-left');
-      // Mostrar/ocultar elementos del mundo según estado
+      // Minimap siempre visible (debajo del UI por z-index)
       document.getElementById('mini').style.display = on ? 'block' : 'none';
-      document.getElementById('uiShowBtn').style.display = on ? 'grid' : 'none';
-      document.getElementById('followFab').style.display = on ? 'grid' : 'none';
-    }catch(_){ }
-    show($("#uiShowBtn"),false);
+  // Iconos gestionados por CSS; no cambiar texto
+    }catch(_){ mini.style.display = on ? 'block':'none'; }
+  show($("#uiShowBtn"),false);
     docDock.style.display = 'none'; govDock.style.display = 'none';
   }
 
   function startWorldWithUser({name,gender,age,likes,usd}){
-  // Protección: no permitir entrar al mundo si no hay sesión
-  try{ if(!(window.isAuthenticated && window.isAuthenticated())){ window.requireLogin && window.requireLogin('auth-required'); return; } }catch(_){ }
   // Al crear persona, ocultar el formulario y mostrar la UI del mundo
   try{ $("#formBar").style.display='none'; }catch(e){}
     setVisibleWorldUI(true); 
@@ -3142,7 +2923,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     regenInfrastructure(false);
   // Reubicar edificaciones iniciales a parches de arena si fuera necesario
   try{ relocateInitialBuildingsToSand(); }catch(e){ console.warn('relocateInitialBuildingsToSand error', e); }
-  // Mantener las panaderías tal como vienen (no eliminar al iniciar) y poblar el selector de gobierno
+  // Mantener las panaderías tal como vienen (no eliminar al iniciar)
     populateGovSelect(); // ← AÑADIR ESTA LÍNEA
     
   const addCredits = Math.max(0, parseInt(usd||'0',10))*100;
@@ -3163,42 +2944,6 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     chosenAvatar = (typeof pick === 'string' && pick.length) ? pick : '/assets/avatar1.png';
   }catch(e){ chosenAvatar = '/assets/avatar1.png'; }
   const user=makeAgent('adult',{name, gender, ageYears:age, likes, startMoney: startMoney, avatar: chosenAvatar});
-  // Restaurar posición y temporizadores si existen en progreso
-  try{
-    if(saved.world && typeof saved.world==='object'){
-      const w = saved.world;
-      if(Number.isFinite(w.x) && Number.isFinite(w.y)){ user.x = w.x; user.y = w.y; }
-      if(typeof w.goingToWork==='boolean') user.goingToWork = w.goingToWork;
-  if(Number.isFinite(w.workFactoryId) && factories[w.workFactoryId|0]){ user.workFactoryId = w.workFactoryId|0; }
-  else { user.workFactoryId = null; }
-      if(typeof w.targetRole==='string') user.targetRole = w.targetRole;
-      if(w.target && Number.isFinite(w.target.x) && Number.isFinite(w.target.y)) user.target = { x:w.target.x, y:w.target.y };
-      const nowS0 = performance.now()/1000;
-      // Guardado periódico de estado del jugador (posición + temporizadores restantes)
-      try{
-        window.__lastWorldSaveAt = window.__lastWorldSaveAt || 0;
-        if(nowS - window.__lastWorldSaveAt > 2){
-          window.__lastWorldSaveAt = nowS;
-          const me = agents && (typeof USER_ID!=='undefined' ? agents.find(a=>a.id===USER_ID) : null);
-          if(me){
-            const world = { x: Math.floor(me.x||0), y: Math.floor(me.y||0), goingToWork: !!me.goingToWork, workFactoryId: (typeof me.workFactoryId==='number'? me.workFactoryId : null), targetRole: me.targetRole || null };
-            if(me.target && typeof me.target.x==='number' && typeof me.target.y==='number') world.target = { x: Math.floor(me.target.x), y: Math.floor(me.target.y) };
-            // Convertir tiempos absolutos a restantes
-            const left = (t)=> (typeof t==='number' && t>nowS) ? Math.floor(t - nowS) : 0;
-            world.workingLeft = left(me.workingUntil);
-            world.exploreLeft = left(me.exploreUntil);
-            world.restLeft = left(me.restUntil);
-            world.cooldownLeft = left(me.nextWorkAt);
-            window.saveProgress && window.saveProgress({ world });
-          }
-        }
-      }catch(_){ }
-      if(Number.isFinite(w.workingLeft) && w.workingLeft>0){ user.workingUntil = nowS0 + w.workingLeft; }
-      if(Number.isFinite(w.exploreLeft) && w.exploreLeft>0){ user.exploreUntil = nowS0 + w.exploreLeft; }
-      if(Number.isFinite(w.restLeft) && w.restLeft>0){ user.restUntil = nowS0 + w.restLeft; }
-      if(Number.isFinite(w.cooldownLeft) && w.cooldownLeft>0){ user.nextWorkAt = nowS0 + w.cooldownLeft; }
-    }
-  }catch(_){ }
   // Restaurar casa rentada previa si existe en progreso
   try{
     if(typeof saved.rentedHouseIdx === 'number' && houses[saved.rentedHouseIdx]){
@@ -3208,41 +2953,11 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       }
     }
   }catch(_){ }
-  // Restaurar marcador e inicial de casa rentada persistente
-  try{
-    if(saved.rentalHouse && typeof saved.rentalHouse==='object'){
-      const rh = saved.rentalHouse;
-      if(typeof user.houseIdx==='number' && houses[user.houseIdx]){
-        const h=houses[user.houseIdx];
-        if(rh.initial){ h._markerInitial = rh.initial; }
-      }
-    }
-  }catch(_){ }
   // Asignar casa en arriendo inicial si no posee (nueva sesión sin registro previo)
   try{ ensurePlayerHasHouse(user); }catch(e){}
   if(user.houseIdx == null){ toast('Debes arrendar una casa para vivir.'); }
-  // Colocar al jugador en el centro de su casa solo si no había posición persistida
-  try{ if((!saved.world || !Number.isFinite(saved.world.x) || !Number.isFinite(saved.world.y)) && typeof user.houseIdx==='number' && houses[user.houseIdx]){ const h=houses[user.houseIdx]; user.x = h.x + h.w/2; user.y = h.y + h.h/2; } }catch(_){ }
-  // Restaurar fondos de gobierno al UI si venían en progreso
-  try{ if(saved && typeof saved.governmentFunds==='number'){ if(window.government) window.government.funds = saved.governmentFunds; const el=document.getElementById('govFunds'); if(el) el.textContent = `Fondo: ${Math.floor(saved.governmentFunds)}`; } }catch(_){ }
-  // Solo forzar ir a trabajar si no había estado previo
-  try{
-    const hadState = !!(saved.world && (Number.isFinite(saved.world.x)||saved.world.goingToWork||saved.world.workingLeft||saved.world.exploreLeft||saved.world.restLeft||saved.world.cooldownLeft));
-    if(!hadState && factories && factories.length){
-      let bestF=null, bestD=1e12; const ux=user.x, uy=user.y;
-      for(const f of factories){ const c=centerOf(f); const d=Math.hypot(ux-c.x, uy-c.y); if(d<bestD){ bestD=d; bestF=f; } }
-      if(bestF){
-        user.goingToWork = true;
-        user.workFactoryId = factories.indexOf(bestF);
-        // Asegurar que el target esté DENTRO del rectángulo de la fábrica
-        const cBest = centerOf(bestF);
-        const clamped = { x: Math.max(bestF.x+4, Math.min(bestF.x+bestF.w-4, cBest.x)), y: Math.max(bestF.y+4, Math.min(bestF.y+bestF.h-4, cBest.y)) };
-        user.target = clamped;
-        user.targetRole = 'go_work';
-        user.nextWorkAt = 0;
-      }
-    }
-  }catch(_){ }
+  // Colocar al jugador en el centro de su casa al inicio
+  try{ if(typeof user.houseIdx==='number' && houses[user.houseIdx]){ const h=houses[user.houseIdx]; user.x = h.x + h.w/2; user.y = h.y + h.h/2; } }catch(_){ }
   // Programar ventana de arriendo tras 3 segundos y bloquear juego hasta pagar
   try{
   const alreadyPaid = !!(window.__progress && window.__progress.initialRentPaid);
@@ -3258,7 +2973,6 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
             window.__houseInitialCounts = window.__houseInitialCounts || {};
             const count = (window.__houseInitialCounts[baseInitial]||0)+1; window.__houseInitialCounts[baseInitial]=count;
             h._markerInitial = baseInitial + (count>1?count:'');
-            try{ window.__progress = Object.assign({}, window.__progress||{}, { rentalHouse: { x:h.x,y:h.y,w:h.w,h:h.h, initial:h._markerInitial } }); window.saveProgress && window.saveProgress({ rentalHouse: window.__progress.rentalHouse }); }catch(_){ }
           }
         }
       }catch(_){ }
@@ -3280,44 +2994,48 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         const payBtn = document.createElement('button'); payBtn.textContent='Pagar arriendo (50)'; payBtn.style.background='#41d77c'; payBtn.style.color='#06210f'; payBtn.style.fontWeight='700'; payBtn.style.padding='10px 14px'; payBtn.style.border='none'; payBtn.style.cursor='pointer'; payBtn.style.borderRadius='6px'; payBtn.style.fontFamily='ui-monospace,monospace'; payBtn.style.fontSize='14px'; payBtn.style.width='100%';
         const warn = document.createElement('div'); warn.textContent='El mundo está pausado hasta que pagues.'; warn.style.fontSize='11px'; warn.style.opacity='0.75'; warn.style.marginTop='10px'; warn.style.textAlign='center';
         payBtn.onclick = ()=>{
-          // Enviar petición al servidor para que procese el pago
-          if(window.sockApi && window.sock && window.sock.connected){
-            window.sockApi.payInitialRent((res)=>{
-              if(res && res.ok){
-                // El servidor confirmó el pago. El cliente ya no gestiona el dinero.
-                // La UI se actualizará con los eventos 'rent:charged' y 'gov:updated'
-                window.__rentBlocked = false; // Desbloquear el juego
-                overlay.remove(); rentDiv.remove();
-              } else {
-                toast(res?.msg || 'No se pudo procesar el pago. Revisa tu saldo.');
-              }
-            });
-          }
+          try{
+            const rentCost = 50;
+            if(user.money >= rentCost){
+              user.money -= rentCost; toast('Arriendo inicial pagado: -50');
+              try{ government.funds = (government.funds||0)+rentCost; if(govFundsEl) govFundsEl.textContent = `Fondo: ${Math.floor(government.funds)}`; }catch(_){ }
+              // Guardar bandera de pago inicial en progreso persistente
+              try{
+                window.__progress = Object.assign({}, window.__progress||{}, { initialRentPaid: true, money: Math.floor(user.money), rentedHouseIdx: user.houseIdx });
+                window.saveProgress && window.saveProgress({ initialRentPaid: true, money: Math.floor(user.money), rentedHouseIdx: user.houseIdx });
+              }catch(_){ }
+              window.__rentBlocked = false;
+              // Enfocar cámara sobre la casa del usuario y aplicar zoom cercano temporal
+              try{
+                if(typeof user.houseIdx === 'number' && houses[user.houseIdx]){
+                  const h = houses[user.houseIdx];
+                  // Crear identificador único para la casa arrendada
+                  const baseInitial = (user.name||user.code||'U').trim().charAt(0).toUpperCase() || 'U';
+                  window.__houseInitialCounts = window.__houseInitialCounts || {};
+                  const count = (window.__houseInitialCounts[baseInitial]||0)+1; window.__houseInitialCounts[baseInitial]=count;
+                  h._markerInitial = baseInitial + (count>1?count:'');
+                  h._markerAssignedAt = performance.now();
+                  // Ajustar zoom y cámara
+                  const targetZoom = Math.min(4, Math.max(ZOOM, 3));
+                  ZOOM = targetZoom;
+                  const cx = h.x + h.w/2, cy = h.y + h.h/2;
+                  cam.x = Math.max(0, cx - (canvas.width/ZOOM)/2);
+                  cam.y = Math.max(0, cy - (canvas.height/ZOOM)/2);
+                  clampCam();
+                  // Bandera para animación breve si se quiere
+                  h._highlightUntil = performance.now() + 6000;
+                }
+              }catch(e){ console.warn('focus house error', e); }
+              overlay.remove(); rentDiv.remove();
+            } else {
+              toast('Saldo insuficiente. Reúne 50 créditos.');
+            }
+          }catch(_){ }
         };
         rentDiv.appendChild(title); rentDiv.appendChild(msg); rentDiv.appendChild(payBtn); rentDiv.appendChild(warn);
         document.body.appendChild(overlay); document.body.appendChild(rentDiv);
       }catch(_){ window.__rentBlocked=false; }
   }, 3000);
-  // Después de pagar el arriendo, enfocar la cámara en la casa del usuario
-  // Usamos sock.once para que este listener se ejecute una sola vez.
-  if (window.sock) {
-    window.sock.once('rent:charged', ()=>{
-      try{
-        if(typeof user.houseIdx === 'number' && houses[user.houseIdx]){
-          const h = houses[user.houseIdx];
-          const baseInitial = (user.name||user.code||'U').trim().charAt(0).toUpperCase() || 'U';
-          window.__houseInitialCounts = window.__houseInitialCounts || {};
-          const count = (window.__houseInitialCounts[baseInitial]||0)+1; window.__houseInitialCounts[baseInitial]=count;
-          h._markerInitial = baseInitial + (count>1?count:'');
-          try{ window.__progress = Object.assign({}, window.__progress||{}, { rentalHouse: { x:h.x,y:h.y,w:h.w,h:h.h, initial:h._markerInitial } }); window.saveProgress && window.saveProgress({ rentalHouse: window.__progress.rentalHouse }); }catch(_){ }
-          const targetZoom = Math.min(4, Math.max(ZOOM, 3)); ZOOM = targetZoom;
-          const cx = h.x + h.w/2, cy = h.y + h.h/2;
-          cam.x = Math.max(0, cx - (canvas.width/ZOOM)/2); cam.y = Math.max(0, cy - (canvas.height/ZOOM)/2);
-          clampCam(); h._highlightUntil = performance.now() + 6000;
-        }
-      }catch(e){ console.warn('focus house error', e); }
-    });
-  }
   }catch(_){ }
   // Restaurar vehículo comprado previamente (y velocidad) antes de insertar al array para que se aplique de inmediato
   try{
@@ -3335,7 +3053,6 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     USER_ID = user.id;
     // También sincronizar el id local usado por el render de remotos
     window.playerId = user.id;
-  try{ if(typeof user.money==='number'){ window.__progress = Object.assign({}, window.__progress||{}, { money: Math.floor(user.money) }); } }catch(_){ }
   }catch(e){}
   // Reflejar también banco (si se usa en UI) como propiedad del agente para cálculos locales
   if(typeof saved.bank === 'number') try{ user.bank = Math.max(0, Math.floor(saved.bank)); }catch(e){}
@@ -3388,53 +3105,16 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         }catch(e){}
       }catch(e){}
     }); }catch(e){}
-  // Spawn 10 NPCs con nombres y comportamiento completo
-  spawnCustomNPCs(10);
-  // Asegurar alquiler para todos los agentes recién creados que no tengan casa
-  agents.forEach(a => { if (a.id!==USER_ID && assignRental(a)) { const home = houses[a.houseIdx]; if (home) { /* sin moverlos a casa de inmediato */ } } });
+    if(!hasNet()){
+      for(let i=0;i<CFG.N_INIT;i++) {agents.push(makeAgent('adult',{ageYears:rand(18,60)}));}
+    }
+    agents.forEach(a => { if (assignRental(a)) { const home = houses[a.houseIdx]; if (home) { a.target = centerOf(home); a.targetRole = 'home'; } } });
     const b0=cityBlocks[0]; if(b0){ cam.x = Math.max(0, b0.x - 40); cam.y = Math.max(0, b0.y - 40); clampCam(); }
     updateGovDesc();
   try{ window.updateOwnedShopsUI = updateOwnedShopsUI; updateOwnedShopsUI(); }catch(e){}
   try{ window.updateCarMenuHighlight && window.updateCarMenuHighlight(); }catch(e){}
   // Refrescar panel del banco con el nuevo jugador
   try{ window.updateBankPanel && window.updateBankPanel(); }catch(e){}
-  // Cargar iniciales compartidas (casas rentadas de otros usuarios)
-  try{
-    (async function(){
-      try{
-        const res = await fetch('/api/rentals');
-        if(!res.ok) return;
-        const data = await res.json();
-        if(!(data && data.ok && Array.isArray(data.rentals))) return;
-        const rentals = data.rentals;
-        // Evitar duplicar marcador propio
-        const myId = USER_ID;
-        for(const r of rentals){
-          try{
-            if(!r) continue;
-            if(r.userId && r.userId === myId) continue; // ya lo tengo local
-            const idx = typeof r.rentedHouseIdx === 'number' ? r.rentedHouseIdx : null;
-            let targetHouse = null;
-            if(idx!=null && houses[idx]) targetHouse = houses[idx];
-            // Fallback por proximidad geométrica si no coincide índice
-            if(!targetHouse && r.rentalHouse){
-              const rx = r.rentalHouse.x||0, ry = r.rentalHouse.y||0;
-              let best=null, bestD=1e12;
-              for(const h of houses){
-                if(!h) continue;
-                const d = Math.hypot((h.x||0)-rx, (h.y||0)-ry);
-                if(d < bestD){ bestD = d; best = h; }
-              }
-              if(bestD < 25) targetHouse = best; // tolerancia
-            }
-            if(targetHouse && !targetHouse._markerInitial && r.initial){
-              targetHouse._markerInitial = String(r.initial).slice(0,3);
-            }
-          }catch(_){ }
-        }
-      }catch(_){ }
-    })();
-  }catch(_){ }
     try{
   const uiAvatar = document.getElementById('uiAvatar');
   if(uiAvatar && user.avatar) uiAvatar.src = user.avatar;
@@ -3476,21 +3156,6 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   try{ if((!gender || !['M','F'].includes(gender)) && window.__user && window.__user.gender){ gender = String(window.__user.gender); } }catch(_){ }
   // Último recurso: si el modal sigue en el DOM y tiene un valor válido, úsalo
   try{ if((!gender || !['M','F'].includes(gender))){ const el = document.getElementById('authGender'); if(el && ['M','F'].includes(el.value)) gender = el.value; } }catch(_){ }
-  // Forzar consistencia si el avatar seleccionado implica género
-  try{
-    const av = (window.__selectedAvatarCurrent || localStorage.getItem('selectedAvatar') || '')+'';
-    if(av.startsWith('/assets/avatar')){
-      const low = av.toLowerCase();
-      const implied = (low.includes('avatar1') || low.includes('avatar2')) ? 'M'
-                     : (low.includes('avatar3') || low.includes('avatar4')) ? 'F'
-                     : null;
-      if(implied && implied !== gender){
-        gender = implied; if(fGender) fGender.value = implied; updateGenderPreview();
-        try{ window.__progress = Object.assign({}, window.__progress||{}, { gender: implied }); window.saveProgress && window.saveProgress({ gender: implied }); }catch(_){ }
-        try{ toast('Se ajustó el género según el avatar elegido.'); }catch(_){ }
-      }
-    }
-  }catch(_){ }
   const name=fName.value.trim();
   const age=Math.max(20, Math.min(89, parseInt(fAge.value||'20',10)));
   const likes=getChecked().map(x=>x.value);
@@ -3634,13 +3299,13 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         if(s.hasEmployee){
           const employee = agents.find(a => a.id === s.employeeId);
           if(employee){ employee.employedAtShopId = null; employee.target = null; employee.targetRole = 'idle'; }
-          s.hasEmployee = false; s.employeeId = null; delete s.lastCommissionPayout;
+          s.hasEmployee = false; s.employeeId = null; s.wage = 0;
           toast("Empleado despedido.");
         } else {
           const candidate = agents.find(a => a.id !== USER_ID && !a.employedAtShopId && !shops.some(shop => shop.ownerId === a.id));
           if(candidate){
             s.hasEmployee = true; s.employeeId = candidate.id;
-            s.lastCommissionPayout = s.cashbox || 0; // Iniciar seguimiento para comisiones
+            s.wage = Math.ceil(CFG.EARN_PER_SHIFT * 1.25);
             candidate.employedAtShopId = s.id;
             candidate.target = centerOf(s); candidate.targetRole = 'work_shop';
             candidate.workingUntil = null; candidate.goingToBank = false;
@@ -3677,7 +3342,8 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       if(r.k === 'carcel'){
         mctx.fillStyle = '#111'; mctx.fillRect(Math.max(0,r.x*sx), Math.max(0,r.y*sy), Math.max(1,r.w*sx), Math.max(1,r.h*sy));
         mctx.fillStyle = '#fff'; const bars = 3; const bx = Math.max(0,r.x*sx), by = Math.max(0,r.y*sy), bw = Math.max(1,r.w*sx), bh = Math.max(1,r.h*sy);
-        for(let i=0;i<bars;i++){ const px = bx + 1 + i*(bw-2)/(bars-1); mctx.fillRect(px, by+1, 1, bh-2); }
+        for(let i=0;i<bars;i++){ const px = bx + 4 + i*(bw-8)/(bars-1); mctx.fillRect(px, by+4, 2, bh-8); }
+        ctx.fillStyle = '#fff'; ctx.font=`700 ${Math.max(10, 14*ZOOM)}px system-ui`; ctx.textAlign='center'; ctx.fillText('CÁRCEL', p.x + w/2, p.y + 18*ZOOM);
       } else { mrect(r, r.fill || '#94a3b8'); }
     });
     const vw = canvas.width/ZOOM, vh = canvas.height/ZOOM;
@@ -3746,11 +3412,10 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     return GOV_TYPES.find(x=>x.k===k) || GOV_TYPES[0];
   }
   function updateGovDesc(){
-    const g = getEffectiveGovernment();
-    const n = Array.isArray(g?.placed) ? g.placed.length : 0;
+    const n = government.placed.length;
     const rate = Math.min(CFG.WEALTH_TAX_MAX, CFG.WEALTH_TAX_BASE + n*CFG.INSTITUTION_TAX_PER);
-    try{ govDescEl.textContent = `Instituciones: ${n}/25 · Impuesto actual: ${(rate*100).toFixed(1)}% (Base 1.0% + 0.1% × ${n}).`; }catch(_){ }
-    try{ govFundsEl.textContent = `Fondo: ${Math.floor(g?.funds || 0)}`; }catch(_){ }
+    govDescEl.textContent = `Instituciones: ${n}/25 · Impuesto actual: ${(rate*100).toFixed(1)}% (Base 1.0% + 0.1% × ${n}).`;
+    govFundsEl.textContent = `Fondo: ${Math.floor(government.funds)}`;
   }
   btnGovPlace.onclick = ()=>{
     if(!STARTED){ toast('Inicia el mundo primero.'); return; }
@@ -3773,29 +3438,16 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     updateGovDesc();
   }, CFG.GOV_TAX_EVERY*1000);
 
-  // Pago de salarios a empleados (comisión del 30% sobre ganancias)
-  setInterval(()=>{
-    if(!STARTED || hasNet()) return;
+  // (Intervalo de cobro de alquiler eliminado: ahora se procesa dentro del loop con processRent acumulando 1 hora real)
+
+  setInterval(()=>{if(!STARTED) return; if(hasNet()) return;
     for(const shop of shops){
       if(shop.hasEmployee && shop.employeeId && shop.ownerId){
         const owner = agents.find(a => a.id === shop.ownerId);
         const employee = agents.find(a => a.id === shop.employeeId);
         if(!owner || !employee) continue;
-
-        const earnings = (shop.cashbox || 0) - (shop.lastCommissionPayout || 0);
-        if (earnings >= 100) {
-          const commission = Math.floor(earnings * 0.30);
-          if (owner.money >= commission) {
-            owner.money -= commission;
-            employee.money += commission;
-            shop.lastCommissionPayout = (shop.lastCommissionPayout || 0) + earnings;
-            toast(`Dueño de ${shop.kind} pagó comisión: -${commission}.`);
-          } else {
-            toast(`Dueño de ${shop.kind} no pudo pagar la comisión. ¡El empleado ${employee.code} ha renunciado!`);
-            shop.hasEmployee = false; shop.employeeId = null; delete shop.lastCommissionPayout;
-            employee.employedAtShopId = null; employee.target = null; employee.targetRole = 'idle';
-          }
-        }
+        if(shop.cashbox >= shop.wage){ shop.cashbox -= shop.wage; employee.money += shop.wage; toast(`Nómina pagada en ${shop.kind}. Caja ahora: ${Math.floor(shop.cashbox)}.`); }
+        else { toast(`Caja insuficiente en ${shop.kind}. ¡El empleado ${employee.code} ha renunciado!`); shop.hasEmployee = false; shop.employeeId = null; shop.wage = 0; employee.employedAtShopId = null; employee.target = null; employee.targetRole = 'idle'; }
       }
     }
   }, CFG.SALARY_PAY_EVERY * 1000);
@@ -3922,20 +3574,12 @@ function makeAgent(state, options = {}) {
   const presetAvatars = ['/assets/avatar1.png','/assets/avatar2.png','/assets/avatar3.png','/assets/avatar4.png'];
   let finalAvatar = options.avatar || null;
   if(!finalAvatar){
-    // Si es un NPC (no se marcó explicitamente isPlayer), elegir acorde al género
-    if(!options.isPlayer){
-      if((options.gender||gender)==='F'){
-        const pool = ['/assets/avatar3.png','/assets/avatar4.png'];
-        finalAvatar = pool[Math.floor(Math.random()*pool.length)];
-      } else {
-        const pool = ['/assets/avatar1.png','/assets/avatar2.png'];
-        finalAvatar = pool[Math.floor(Math.random()*pool.length)];
-      }
-    }
+    // Si es un NPC (no se marcó explicitamente isPlayer), tomar uno al azar
+    if(!options.isPlayer){ finalAvatar = presetAvatars[Math.floor(Math.random()*presetAvatars.length)]; }
   }
   return {
     id,
-  code,
+    code,
   name: options.name || code,
     state,
     gender,
@@ -3963,9 +3607,6 @@ function makeAgent(state, options = {}) {
 let STARTED = false;
 let USER_ID = null;
 let agents = [];
-// Exponer referencias globales para persistencia/manual save
-try{ window.agents = agents; }catch(_){ }
-try{ Object.defineProperty(window,'USER_ID',{ get(){ return USER_ID; }, set(v){ USER_ID=v; } }); }catch(_){ }
 let frameCount = 0;
 let SHOW_LINES = true;
 let socialConnections = [];

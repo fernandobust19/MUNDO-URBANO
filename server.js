@@ -106,16 +106,6 @@ app.post('/api/login', (req, res) => {
 
 app.post('/api/logout', (req, res) => { try{ const uid = getSessionUserId(req); if(uid){ try{ brain.saveMoneySnapshot(uid, 'logout'); }catch(e){} } clearSession(res); return res.json({ ok:true }); }catch(e){ return res.status(500).json({ ok:false }); } });
 
-// Guardar snapshot sin cerrar la sesión (para "Guardar y salir" sin pedir login luego)
-app.post('/api/snapshot', (req, res) => {
-  try{
-    const uid = getSessionUserId(req);
-    if(!uid) return res.status(401).json({ ok:false });
-    try{ brain.saveMoneySnapshot(uid, 'save-exit'); }catch(_){ }
-    return res.json({ ok:true });
-  }catch(e){ return res.status(500).json({ ok:false }); }
-});
-
 app.get('/api/me', (req, res) => {
   const uid = getSessionUserId(req);
   if(!uid) return res.status(401).json({ ok:false });
@@ -129,36 +119,6 @@ app.get('/api/gov', (req, res) => {
   try{ return res.json({ ok:true, government: brain.getGovernment() }); }catch(e){ return res.status(500).json({ ok:false }); }
 });
 
-// Casas rentadas con inicial (para que nuevos clientes las pinten igual)
-app.get('/api/rentals', (req,res)=>{
-  try{
-    const out = [];
-    try{
-      const users = brain.getGovernment() && Object.keys(brain.getGovernment());
-    }catch(_){ }
-    // Extraer de progreso
-    try{
-      const all = []; // recolectar desde brain.db.progress
-      // Acceso interno directo (no expuesto antes):
-      const internal = require('./brain');
-      // internal no expone directamente el objeto, así que hacer require cache: ya está cargado
-    }catch(_){ }
-    const dbPath = path.join(__dirname,'brain.db.json');
-    try{
-      if(fs.existsSync(dbPath)){
-        const raw = JSON.parse(fs.readFileSync(dbPath,'utf8'));
-        if(raw && raw.progress){
-          for(const uid of Object.keys(raw.progress)){
-            const pr = raw.progress[uid];
-            if(pr && pr.rentalHouse){ out.push({ userId: uid, rentalHouse: pr.rentalHouse, rentedHouseIdx: pr.rentedHouseIdx||null, initial: pr.rentalHouse.initial||null }); }
-          }
-        }
-      }
-    }catch(_){ }
-    return res.json({ ok:true, rentals: out });
-  }catch(e){ return res.status(500).json({ ok:false }); }
-});
-
 // Añadir fondos al gobierno (demo; en producción debería requerir admin)
 app.post('/api/gov/funds/add', (req, res) => {
   try{
@@ -167,18 +127,6 @@ app.post('/api/gov/funds/add', (req, res) => {
     const out = brain.addGovernmentFunds(amount);
     if(!(out && out.ok)) return res.status(400).json({ ok:false });
     return res.json({ ok:true, funds: out.funds });
-  }catch(e){ return res.status(500).json({ ok:false }); }
-});
-
-// Cobrar arriendo al usuario autenticado (50 por defecto) y registrar todo
-app.post('/api/rent/charge', (req, res) => {
-  try{
-    const uid = getSessionUserId(req);
-    if(!uid) return res.status(401).json({ ok:false });
-    const amount = Number(req.body?.amount||50) || 50;
-    const out = brain.chargeRent(uid, amount, 'rent:manual');
-    if(!(out && out.ok)) return res.status(400).json({ ok:false, msg: out && out.msg || 'fail' });
-    return res.json({ ok:true, money: out.money, bank: out.bank||0, governmentFunds: out.funds||0 });
   }catch(e){ return res.status(500).json({ ok:false }); }
 });
 
@@ -445,15 +393,78 @@ setInterval(() => {
   }
 }, 6000);
 
-// Bots del servidor: deshabilitados a pedido. Purga cualquier bot existente y no crea nuevos.
-function ensureBots() {
-  for (const [id, p] of Object.entries(state.players)) {
-    if (p && p.isBot) delete state.players[id];
+// Bots sencillos que deambulan (para siempre ver agentes)
+// Nombres españoles simples
+const MALE_NAMES = ['Carlos','Luis','Javier','Miguel','Andrés','José','Pedro','Diego','Sergio','Fernando','Juan','Víctor','Pablo','Eduardo','Hugo','Mario'];
+const FEMALE_NAMES = ['María','Ana','Lucía','Sofía','Camila','Valeria','Paula','Elena','Sara','Isabella','Daniela','Carla','Laura','Diana','Andrea','Noelia'];
+const LAST_NAMES = ['García','Martínez','López','González','Rodríguez','Pérez','Sánchez','Ramírez','Torres','Flores','Vargas','Castro','Romero','Navarro','Molina','Ortega'];
+function randomPersonName(gender){
+  const first = (gender==='F' ? FEMALE_NAMES : MALE_NAMES)[Math.floor(Math.random()*(gender==='F'?FEMALE_NAMES.length:MALE_NAMES.length))];
+  const last = LAST_NAMES[Math.floor(Math.random()*LAST_NAMES.length)];
+  return `${first} ${last}`;
+}
+
+function ensureBots(n = 3) {
+  const existing = Object.values(state.players).filter(p => p.isBot);
+  for (let i = existing.length; i < n; i++) {
+    const id = 'B' + (i + 1);
+    const gender = Math.random() > 0.5 ? 'M' : 'F';
+    const speed = 120 + Math.random()*120; // 120-240
+    // Avatares base alternados
+    const preset = ['/assets/avatar1.png','/assets/avatar2.png','/assets/avatar3.png','/assets/avatar4.png'];
+    const avatar = preset[Math.floor(Math.random()*preset.length)];
+    state.players[id] = {
+      id,
+      socketId: null,
+      code: randomPersonName(gender),
+      x: Math.random() * 800 + 50,
+      y: Math.random() * 500 + 50,
+      money: 400,
+      gender,
+      avatar,
+      isBot: true,
+      vx: 0,
+      vy: 0,
+      speed,
+      targetX: Math.random()*1800+100,
+      targetY: Math.random()*1000+100,
+      createdAt: now(),
+      updatedAt: now()
+    };
   }
 }
 
-// No-op: ticker de bots desactivado (se mantiene la función para compatibilidad)
-function tickBots() { /* no server bots */ }
+function tickBots(bounds = { w: 2200, h: 1400 }) {
+  const dt = 0.12; // ~120ms por tick
+  for (const p of Object.values(state.players)) {
+    if (!p.isBot) continue;
+    // nuevo objetivo si llegó o por probabilidad
+    const dx = (p.targetX ?? p.x) - (p.x || 0);
+    const dy = (p.targetY ?? p.y) - (p.y || 0);
+    const dist = Math.hypot(dx, dy);
+    if (!isFinite(dist) || dist < 20 || Math.random() < 0.02) {
+      p.targetX = Math.random() * bounds.w;
+      p.targetY = Math.random() * bounds.h;
+    }
+    // velocidad deseada hacia el objetivo
+    const ddx = (p.targetX - p.x);
+    const ddy = (p.targetY - p.y);
+    const d = Math.hypot(ddx, ddy) || 1;
+    const nx = ddx / d, ny = ddy / d;
+    const desiredVx = nx * (p.speed || 160);
+    const desiredVy = ny * (p.speed || 160);
+    // suavizado (lerp) + pequeño jitter para evitar movimiento robótico
+    p.vx = (p.vx || 0) * 0.85 + desiredVx * 0.15 + (Math.random()*2-1)*4;
+    p.vy = (p.vy || 0) * 0.85 + desiredVy * 0.15 + (Math.random()*2-1)*4;
+    // actualizar posición
+    p.x = Math.max(0, Math.min((p.x || 0) + p.vx * dt, bounds.w));
+    p.y = Math.max(0, Math.min((p.y || 0) + p.vy * dt, bounds.h));
+    // rebote en bordes ajustando objetivo
+    if (p.x <= 0 || p.x >= bounds.w) { p.vx *= -0.6; p.targetX = Math.random() * bounds.w; }
+    if (p.y <= 0 || p.y >= bounds.h) { p.vy *= -0.6; p.targetY = Math.random() * bounds.h; }
+    p.updatedAt = now();
+  }
+}
 
 // Movimiento para jugadores humanos inactivos, para que el mundo se sienta vivo.
 function tickIdlePlayers(bounds = { w: 2200, h: 1400 }) {
@@ -495,10 +506,11 @@ function tickIdlePlayers(bounds = { w: 2200, h: 1400 }) {
 
 // Tick de movimiento automático para todos los jugadores
 setInterval(() => {
-  // Purga de bots del servidor y sólo mover jugadores humanos inactivos
-  ensureBots();
-  const w = 30000; // Un mundo grande y fijo para el movimiento de inactivos
-  const h = 20000;
+  ensureBots(5); // Aseguramos que haya 5 bots
+  // Usar límites amplios: si el mundo crece, se pueden mapear al menos 1.2x del tamaño base
+  const w =  Math.max(2200, (globalThis.WORLD?.w)||2200);
+  const h =  Math.max(1400, (globalThis.WORLD?.h)||1400);
+  tickBots({ w, h });
   tickIdlePlayers({ w, h });
 }, 120);
 
@@ -533,7 +545,6 @@ io.on('connection', (socket) => {
     };
     state.players[id] = player;
     socket.playerId = id;
-    
     if (ack) ack({ ok: true, id });
     io.emit('playerJoined', player);
   });
@@ -625,39 +636,6 @@ io.on('connection', (socket) => {
   state.government = brain.getGovernment();
     io.emit('govPlaced', payload);
     if (ack) ack({ ok:true });
-  });
-
-  socket.on('pay:initialRent', (payload, ack) => {
-    if(!socket.userId || !socket.playerId) {
-      if(ack) ack({ ok: false, msg: 'No autenticado.' });
-      return;
-    }
-    try {
-      const rent = brain.chargeRent(socket.userId, 50, 'rent:init');
-      if(rent && rent.ok) {
-        const player = state.players[socket.playerId];
-        if(player) player.money = Math.floor(rent.money || player.money || 0);
-        io.to(socket.id).emit('rent:charged', { amount: 50, money: player.money });
-        state.government = brain.getGovernment();
-        io.emit('gov:updated', state.government);
-        if(ack) ack({ ok: true });
-      } else {
-        if(ack) ack({ ok: false, msg: rent?.msg || 'Error al procesar pago.' });
-      }
-    } catch(e) { if(ack) ack({ ok: false, msg: 'Error interno.' }); }
-  });
-
-  socket.on('withdraw:request', (payload, ack) => {
-    if (!socket.userId || !socket.playerId) {
-      if (ack) ack({ ok: false, msg: 'No autenticado.' });
-      return;
-    }
-    const { credits, dollars } = payload || {};
-    console.log(`[WITHDRAW] User ${socket.userId} (Player ${socket.playerId}) requested withdrawal:`);
-    console.log(`  - Credits: ${credits}`);
-    console.log(`  - Dollars: ${dollars}`);
-    // Aquí iría la lógica para registrar la solicitud en una base de datos o sistema de tickets.
-    if (ack) ack({ ok: true, msg: 'Solicitud registrada.' });
   });
 
   // Chat básico entre jugadores conectados

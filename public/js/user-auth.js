@@ -97,21 +97,6 @@
 	function showAuth(on=true){ const m = document.getElementById('authModal'); if(!m) return; m.style.display = on ? 'flex' : 'none'; }
 	function setErr(msg){ const e = document.getElementById('authErr'); if(!e) return; if(msg){ e.textContent = msg; e.style.display = 'block'; } else { e.style.display = 'none'; } }
 
-	// Exponer helpers globales para requerir autenticación desde otras capas
-	try{
-		window.isAuthenticated = function(){ try{ return !!(window.__user && (window.__user.id || window.__user.username)); }catch(_){ return false; } };
-		window.requireLogin = function(reason){
-			try{ ensureAuthModal(); showAuth(true); setErr('Inicia sesión para continuar'); }catch(_){ }
-			// Ocultar todo lo del mundo por seguridad
-			try{ const fb = document.getElementById('formBar'); if(fb) fb.style.display='none'; }catch(_){ }
-			try{ const ui = document.getElementById('uiDock'); if(ui) ui.style.display='none'; }catch(_){ }
-			try{ const world = document.getElementById('world'); if(world) world.style.display='none'; }catch(_){ }
-			try{ const mini = document.getElementById('mini'); if(mini) mini.style.display='none'; }catch(_){ }
-			try{ const showBtn = document.getElementById('uiShowBtn'); if(showBtn) showBtn.style.display='none'; }catch(_){ }
-			try{ const follow = document.getElementById('followFab'); if(follow) follow.style.display='none'; }catch(_){ }
-		};
-	}catch(_){ }
-
 	async function call(method, url, body){
 		const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined, credentials: 'include' });
 		const json = await res.json().catch(()=>({ ok:false }));
@@ -175,12 +160,8 @@
 			try{ if(window.updateBankPanel){ window.updateBankPanel(window.__progress.money, out.user.username); } }catch(e){}
 			// Mostrar formulario de creación de personaje tras iniciar sesión
 			try { const fb = document.getElementById('formBar'); if(fb) fb.style.display = 'block'; }catch(e){}
-			// Mantener ocultos el mundo y la UI hasta que el usuario cree su personaje
+			// Asegurar que la UI del mundo permanezca oculta hasta crear la persona
 			try { const ui = document.getElementById('uiDock'); if(ui) ui.style.display = 'none'; }catch(e){}
-			try { const world = document.getElementById('world'); if(world) world.style.display = 'none'; }catch(e){}
-			try { const mini = document.getElementById('mini'); if(mini) mini.style.display = 'none'; }catch(e){}
-			try { const showBtn = document.getElementById('uiShowBtn'); if(showBtn) showBtn.style.display = 'none'; }catch(e){}
-			try { const follow = document.getElementById('followFab'); if(follow) follow.style.display = 'none'; }catch(e){}
 			// Prefill del formulario con perfil guardado (nombre, avatar, gustos, género, edad)
 			try{
 				const prog = window.__progress || {};
@@ -273,79 +254,14 @@
 		// Enviar con Enter: por defecto, intentar login
 		const form = document.getElementById('authForm');
 		if(form){ form.addEventListener('submit', (e)=>{ e.preventDefault(); handleLogin(); }); }
-		// Botón SALIR: guardar primero y luego cerrar sesión para volver a la pantalla de usuario y contraseña
+		// Botón SALIR (el servidor hace snapshot de dinero en /api/logout)
 		const btnLogout = document.getElementById('btnLogout');
-		if(btnLogout){ btnLogout.addEventListener('click', async ()=>{
-			try{
-				// Construir snapshot completo del progreso actual antes de cerrar sesión
-				let payload = {};
-				try{
-					const prog = window.__progress || {};
-					// Intentar detectar agente local para tomar dinero actual en vivo
-					let liveMoney = null;
-					try{ if(window.agents && window.USER_ID){ const me = window.agents.find(a=>a.id===window.USER_ID); if(me && typeof me.money==='number') liveMoney = Math.floor(me.money); } else if(window.playerId && window.agents){ const me2=window.agents.find(a=>a.id===window.playerId); if(me2 && typeof me2.money==='number') liveMoney=Math.floor(me2.money); } }catch(_){ }
-					if(liveMoney!=null) payload.money = liveMoney; else if(typeof prog.money==='number') payload.money = Math.floor(prog.money);
-					if(typeof prog.bank==='number') payload.bank = Math.floor(prog.bank);
-					if(prog.vehicle) payload.vehicle = prog.vehicle;
-					if(Array.isArray(prog.vehicles)) payload.vehicles = prog.vehicles.slice();
-					// Casas y negocios propios desde el mundo (para reflejar compras recientes)
-					try{ if(window.houses){ const mineH = window.houses.filter(h=>h && h.ownerId===window.USER_ID); if(mineH.length) payload.houses = mineH.map(h=>({ id:h.id||null, x:h.x,y:h.y,w:h.w,h:h.h, ownerId:h.ownerId })); }
-					}catch(_){ }
-					try{ if(window.shops){ const mineS = window.shops.filter(s=>s && s.ownerId===window.USER_ID); if(mineS.length) payload.shops = mineS.map(s=>({ id:s.id||null, kind:s.kind, x:s.x,y:s.y,w:s.w,h:s.h, ownerId:s.ownerId, buyCost:s.buyCost||0, price:s.price||0 })); }
-					}catch(_){ }
-					// Fondos de gobierno (solo lectura local, guardar si existen)
-					try{ if(window.government && typeof window.government.funds==='number'){ payload.governmentFunds = Math.floor(window.government.funds); } }catch(_){ }
-					// Bandera de arriendo inicial pagado y casa rentada
-					try{ if(prog.initialRentPaid) payload.initialRentPaid = true; }catch(_){ }
-					try{ if(typeof prog.rentedHouseIdx === 'number') payload.rentedHouseIdx = prog.rentedHouseIdx; }catch(_){ }
-					// Datos básicos del perfil
-					['name','avatar','likes','gender','age','country','email','phone'].forEach(k=>{ if(prog && (k in prog)) payload[k]=prog[k]; });
-					// Agregar estado del mundo (posición/temporizadores) inmediato
-					try{
-						if(window.agents && (window.USER_ID || window.playerId)){
-							const me = window.agents.find(a=> a.id===window.USER_ID || a.id===window.playerId);
-							if(me){
-								const nowS = performance.now()/1000;
-								const world = { x: Math.floor(me.x||0), y: Math.floor(me.y||0), goingToWork: !!me.goingToWork, workFactoryId: (typeof me.workFactoryId==='number'? me.workFactoryId : null), targetRole: me.targetRole || null };
-								if(me.target && typeof me.target.x==='number' && typeof me.target.y==='number') world.target = { x: Math.floor(me.target.x), y: Math.floor(me.target.y) };
-								const left = (t)=> (typeof t==='number' && t>nowS) ? Math.floor(t - nowS) : 0;
-								world.workingLeft = left(me.workingUntil);
-								world.exploreLeft = left(me.exploreUntil);
-								world.restLeft = left(me.restUntil);
-								world.cooldownLeft = left(me.nextWorkAt);
-								payload.world = world;
-							}
-						}
-					}catch(_){ }
-				}catch(_){ }
-				// Guardar snapshot en progreso
-				try{ await call('POST','/api/progress', payload); }catch(_){ }
-				// Cerrar sesión para ir a la pantalla de login (el servidor guarda snapshot en ledger)
-				try{ await call('POST','/api/logout'); }catch(_){ }
-			}finally{
-				location.reload();
-			}
-		}); }
-		// Comprobar si hay sesión activa y avanzar directo; si no, mostrar modal y prellenar usuario recordado
+		if(btnLogout){ btnLogout.addEventListener('click', async ()=>{ try{ await call('POST','/api/logout'); location.reload(); }catch(e){ location.reload(); } }); }
+		// Forzar mostrar la ventana de autenticación primero
 		const me = await checkMe().catch(()=>null);
-		if(me && me.ok){
-			applyLogin(me);
-			showAuth(false);
-		}else{
-			// Ocultar todo lo del mundo hasta iniciar sesión
-			try{ const fb = document.getElementById('formBar'); if(fb) fb.style.display = 'none'; }catch(_){ }
-			try{ const ui = document.getElementById('uiDock'); if(ui) ui.style.display = 'none'; }catch(_){ }
-			try{ const world = document.getElementById('world'); if(world) world.style.display = 'none'; }catch(_){ }
-			try{ const mini = document.getElementById('mini'); if(mini) mini.style.display = 'none'; }catch(_){ }
-			try{ const showBtn = document.getElementById('uiShowBtn'); if(showBtn) showBtn.style.display = 'none'; }catch(_){ }
-			try{ const follow = document.getElementById('followFab'); if(follow) follow.style.display = 'none'; }catch(_){ }
-			showAuth(true);
-			try{
-				const uEl = document.getElementById('authUser');
-				// Foco inmediato al usuario
-				setTimeout(()=>{ try{ uEl && uEl.focus(); }catch(_){ } }, 0);
-			}catch(_){ }
-		}
+		showAuth(true);
+		// Si hay sesión existente, prellenar el usuario para facilitar continuar
+		try{ if(me && me.ok && me.user?.username){ const u=document.getElementById('authUser'); if(u) u.value = me.user.username; } }catch(e){}
 	}
 
 	// Exponer helper para que original.js aplique progreso inicial a la entidad del jugador
@@ -378,3 +294,4 @@
 	// Iniciar
 	if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
+

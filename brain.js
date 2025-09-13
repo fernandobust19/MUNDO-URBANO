@@ -210,8 +210,8 @@ function updateProgress(userId, patch) {
 	if (!userId) return { ok: false };
 	const p = ensureProgress(userId);
 	if (patch == null || typeof patch !== 'object') return { ok: false };
-		// Solo campos permitidos
-		const allowed = ['money', 'bank', 'vehicle', 'vehicles', 'shops', 'houses', 'name', 'avatar', 'likes', 'gender', 'age', 'country', 'email', 'phone', 'initialRentPaid', 'rentedHouseIdx', 'governmentFunds', 'rentalHouse', 'world'];
+	// Solo campos permitidos
+	const allowed = ['money', 'bank', 'vehicle', 'vehicles', 'shops', 'houses', 'name', 'avatar', 'likes', 'gender', 'age', 'country', 'email', 'phone', 'initialRentPaid', 'rentedHouseIdx'];
 	for (const k of allowed) {
 		if (k in patch) {
 			if (k === 'shops' || k === 'houses' || k === 'vehicles' || k === 'likes') {
@@ -221,39 +221,6 @@ function updateProgress(userId, patch) {
 			}
 		}
 	}
-		// Si viene governmentFunds actualizar objeto gobierno global
-	try{
-		if('governmentFunds' in patch && typeof patch.governmentFunds === 'number'){
-			const g = getGovernment();
-			g.funds = Math.max(0, Math.floor(patch.governmentFunds));
-		}
-		// Persistir snapshot de casa rentada (geometría + marcador)
-		if('rentalHouse' in patch && patch.rentalHouse && typeof patch.rentalHouse==='object'){
-			const rh = patch.rentalHouse;
-			// normalizar
-			const norm = { x: Math.floor(rh.x||0), y: Math.floor(rh.y||0), w: Math.floor(rh.w||0)||60, h: Math.floor(rh.h||0)||60 };
-			if(rh.initial && typeof rh.initial==='string') norm.initial = rh.initial.slice(0,3);
-			p.rentalHouse = norm;
-		}
-			// Guardar estado del mundo (posición y temporizadores relativos)
-			if('world' in patch && patch.world && typeof patch.world==='object'){
-				const w = patch.world;
-				const out = {};
-				if(Number.isFinite(w.x)) out.x = Math.floor(w.x);
-				if(Number.isFinite(w.y)) out.y = Math.floor(w.y);
-				if(typeof w.goingToWork === 'boolean') out.goingToWork = w.goingToWork;
-				if(Number.isFinite(w.workFactoryId)) out.workFactoryId = Math.floor(w.workFactoryId);
-				if(typeof w.targetRole === 'string') out.targetRole = String(w.targetRole).slice(0,16);
-				if(w.target && Number.isFinite(w.target.x) && Number.isFinite(w.target.y)) out.target = { x: Math.floor(w.target.x), y: Math.floor(w.target.y) };
-				// Duraciones restantes en segundos
-				const clampPos = (v)=> Number.isFinite(v) ? Math.max(0, Math.min(3600, v)) : 0; // limitar a 1h por seguridad
-				if(w.workingLeft != null) out.workingLeft = clampPos(Math.floor(w.workingLeft));
-				if(w.exploreLeft != null) out.exploreLeft = clampPos(Math.floor(w.exploreLeft));
-				if(w.restLeft != null) out.restLeft = clampPos(Math.floor(w.restLeft));
-				if(w.cooldownLeft != null) out.cooldownLeft = clampPos(Math.floor(w.cooldownLeft));
-				p.world = out;
-			}
-	}catch(_){ }
 	log('progress_update', userId, { keys: Object.keys(patch || {}) });
 	schedulePersist();
 	return { ok: true };
@@ -302,31 +269,6 @@ function addOwnedVehicle(userId, vehicle){
 			log('vehicle_add', userId, { vehicle });
 		}
 	}catch(e){}
-}
-
-// Cobrar arriendo al usuario, registrar en ledger y sumar al fondo del gobierno
-function chargeRent(userId, amount = 50, reasonKey = 'rent'){
-	try{
-		if(!userId) return { ok:false, msg:'no-user' };
-		const p = ensureProgress(userId);
-		const amt = Math.max(0, Math.floor(amount||0));
-		if(amt <= 0) return { ok:false, msg:'bad-amount' };
-		// Considerar que está rentando si existe un índice de casa rentada o un snapshot de rentalHouse
-		const renting = (typeof p.rentedHouseIdx === 'number' && p.rentedHouseIdx >= 0) || (!!p.rentalHouse);
-		// Si no hay marca de arriendo, igual permitir el cobro (política del servidor) — el requerimiento dice "por cada jugador en el mundo"
-		// if(!renting) return { ok:false, msg:'not-renting' };
-		if((p.money||0) < amt) return { ok:false, msg:'insufficient' };
-		const prev = Math.floor(p.money||0);
-		p.money = Math.max(0, prev - amt);
-		schedulePersist();
-		const user = getUserById(userId);
-		const reason = String(reasonKey||'rent');
-		// Registrar movimiento en ledger (delta negativo)
-		recordMoneyChange(userId, user?.username||null, -amt, p.money||0, p.bank||0, reason);
-		// Sumar fondos al gobierno
-		const gov = addGovernmentFunds(amt);
-		return { ok:true, money: p.money, bank: p.bank||0, funds: (gov && gov.funds != null) ? gov.funds : getGovernment().funds };
-	}catch(e){ console.warn('chargeRent error', e); return { ok:false, msg: 'Error interno del servidor.' }; }
 }
 
 // ===== Ledger helpers =====
@@ -437,3 +379,4 @@ module.exports = {
 	addGovernmentFunds,
 	placeGovernment
 };
+
