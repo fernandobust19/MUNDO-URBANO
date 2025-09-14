@@ -16,9 +16,7 @@ const io = require('socket.io')(server, {
   cors: { origin: '*' }
 });
 
-let PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
-// Cantidad de bots del servidor (0 para desactivar)
-const SERVER_BOTS = process.env.SERVER_BOTS ? Math.max(0, parseInt(process.env.SERVER_BOTS, 10) || 0) : 0;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 // Cargar configuración centralizada
 const cfg = require('./server/config');
 // Directorio de comprobantes (configurable). En producción usa un disco persistente.
@@ -132,6 +130,17 @@ app.post('/api/gov/funds/add', (req, res) => {
   }catch(e){ return res.status(500).json({ ok:false }); }
 });
 
+// API para que el cliente persista estructuras del mundo (fábricas, bancos)
+app.post('/api/world/structures', (req, res) => {
+  try {
+    const { factories, banks } = req.body || {};
+    const out = brain.setWorldStructures({ factories, banks });
+    if (!out.ok) return res.status(400).json(out);
+    return res.json({ ok: true });
+  } catch (e) {
+    return res.status(500).json({ ok: false });
+  }
+});
 
 app.post('/api/change-password', (req, res) => {
   const uid = getSessionUserId(req);
@@ -387,99 +396,142 @@ setInterval(() => {
   io.emit('state', payload);
 }, 150);
 
-// Trabajo automático: cada 6s todos ganan +15
-setInterval(() => {
-  for (const p of Object.values(state.players)) {
-    p.money = (p.money || 0) + 15;
-    p.updatedAt = now();
-  }
-}, 6000);
-
 // Bots sencillos que deambulan (para siempre ver agentes)
 // Nombres españoles simples
 const MALE_NAMES = ['Carlos','Luis','Javier','Miguel','Andrés','José','Pedro','Diego','Sergio','Fernando','Juan','Víctor','Pablo','Eduardo','Hugo','Mario'];
 const FEMALE_NAMES = ['María','Ana','Lucía','Sofía','Camila','Valeria','Paula','Elena','Sara','Isabella','Daniela','Carla','Laura','Diana','Andrea','Noelia'];
 const LAST_NAMES = ['García','Martínez','López','González','Rodríguez','Pérez','Sánchez','Ramírez','Torres','Flores','Vargas','Castro','Romero','Navarro','Molina','Ortega'];
 function randomPersonName(gender){
+  // Asegurar que los arrays no estén vacíos
+  if ((gender === 'F' && FEMALE_NAMES.length === 0) || (gender !== 'F' && MALE_NAMES.length === 0) || LAST_NAMES.length === 0) {
+    return 'Agente Anónimo';
+  }
   const first = (gender==='F' ? FEMALE_NAMES : MALE_NAMES)[Math.floor(Math.random()*(gender==='F'?FEMALE_NAMES.length:MALE_NAMES.length))];
   const last = LAST_NAMES[Math.floor(Math.random()*LAST_NAMES.length)];
   return `${first} ${last}`;
 }
 
-function ensureBots(n = 3) {
+// --- Lógica de Exploración del Mapa (portada desde el cliente) ---
+const EXPLORE_SECTORS_X = 12;
+const EXPLORE_SECTORS_Y = 9;
+let EXPLORE_GRID = Array.from({length: EXPLORE_SECTORS_Y}, ()=> Array.from({length: EXPLORE_SECTORS_X}, ()=> false));
+
+function markVisitedAt(x, y, worldW, worldH){
+  const ix = Math.min(EXPLORE_SECTORS_X-1, Math.max(0, Math.floor(x / (worldW / EXPLORE_SECTORS_X))));
+  const iy = Math.min(EXPLORE_SECTORS_Y-1, Math.max(0, Math.floor(y / (worldH / EXPLORE_SECTORS_Y))));
+  EXPLORE_GRID[iy][ix] = true;
+}
+
+function nextUnvisitedTarget(worldW, worldH){
+  const unvisited = [];
+  for(let iy=0; iy<EXPLORE_SECTORS_Y; iy++){
+    for(let ix=0; ix<EXPLORE_SECTORS_X; ix++){
+      if(!EXPLORE_GRID[iy][ix]){
+        unvisited.push({ix, iy});
+      }
+    }
+  }
+
+  if(unvisited.length === 0){
+    // Si ya se visitó todo, se resetea la grilla para que vuelvan a explorar
+    EXPLORE_GRID = Array.from({length: EXPLORE_SECTORS_Y}, ()=> Array.from({length: EXPLORE_SECTORS_X}, ()=> false));
+    // Y se elige un punto central para reiniciar el ciclo
+    return { x: worldW / 2, y: worldH / 2 };
+  }
+
+  // Elegir un sector no visitado al azar
+  const targetCell = unvisited[Math.floor(Math.random() * unvisited.length)];
+  const targetX = (targetCell.ix + 0.5) * (worldW / EXPLORE_SECTORS_X);
+  const targetY = (targetCell.iy + 0.5) * (worldH / EXPLORE_SECTORS_Y);
+
+  return { x: targetX, y: targetY };
+}
+
+function resetExplorationGrid() {
+    EXPLORE_GRID = Array.from({length: EXPLORE_SECTORS_Y}, ()=> Array.from({length: EXPLORE_SECTORS_X}, ()=> false));
+    console.log("[Exploration] Grilla de exploración reseteada.");
+}
+
+const houseInitialCounts = {};
+
+function ensureBots(n = 30) { // Aumentado a 30 agentes
   const existing = Object.values(state.players).filter(p => p.isBot);
+  if (existing.length >= n) return;
+
+  // Buscar casas disponibles para asignar
+  const allHouses = brain.getProgressHouses() || [];
+  const availableHouses = allHouses.filter(h => h && !h.rentedBy && !h.ownerId);
+  let houseAssignIndex = 0;
+
+  const worldW = 2200;
+  const worldH = 1400;
+
+  const presetAvatars = ['/assets/avatar1.png','/assets/avatar2.png','/assets/avatar3.png','/assets/avatar4.png'];
+
   for (let i = existing.length; i < n; i++) {
     const id = 'B' + (i + 1);
-    const gender = Math.random() > 0.5 ? 'M' : 'F';
-    const speed = 120 + Math.random()*120; // 120-240
-    // Avatares base alternados
-    const preset = ['/assets/avatar1.png','/assets/avatar2.png','/assets/avatar3.png','/assets/avatar4.png'];
-    const avatar = preset[Math.floor(Math.random()*preset.length)];
-    state.players[id] = {
+    const avatar = presetAvatars[Math.floor(Math.random()*presetAvatars.length)];
+    let gender, name;
+
+    // Asignar género y nombre según el avatar
+    if (avatar === '/assets/avatar1.png' || avatar === '/assets/avatar2.png') {
+      gender = 'M';
+      name = randomPersonName('M');
+    } else { // avatar3.png y avatar4.png
+      gender = 'F';
+      name = randomPersonName('F');
+    }
+
+    const agent = {
       id,
       socketId: null,
-      code: randomPersonName(gender),
-      x: Math.random() * 800 + 50,
-      y: Math.random() * 500 + 50,
+      code: name,
+      x: Math.random() * worldW,
+      y: Math.random() * worldH,
       money: 400,
       gender,
       avatar,
-      isBot: true,
+      isBot: true, // isBot ahora significa "controlado por servidor"
       vx: 0,
       vy: 0,
-      speed,
+      speed: 100 + Math.random()*100, // Velocidad ligeramente reducida para movimiento más natural
       targetX: Math.random()*1800+100,
       targetY: Math.random()*1000+100,
+      // Estado para lógica de trabajo y compras
+      targetRole: 'idle',
+      workingUntil: 0,
+      pendingDeposit: 0,
+      state: 'single',
+      spouseId: null,
+      ownsHouse: false,
+      nextWorkAt: 0,
+      lastPurchaseAt: 0,
       createdAt: now(),
       updatedAt: now()
     };
-  }
-}
+    state.players[id] = agent;
 
-// Ajusta la cantidad EXACTA de bots a n (agrega o elimina según sea necesario)
-function setBotTarget(n = 0){
-  const bots = Object.values(state.players).filter(p => p.isBot);
-  if(bots.length > n){
-    const toRemove = bots.length - n;
-    // Eliminar los más antiguos primero
-    const removeList = bots
-      .sort((a,b)=> (a.createdAt||0) - (b.createdAt||0))
-      .slice(0, toRemove);
-    for(const b of removeList){ delete state.players[b.id]; }
-  } else if(bots.length < n){
-    ensureBots(n); // agrega hasta n
-  }
-}
+    // Asignar casa en arriendo si hay disponibles
+    if (houseAssignIndex < availableHouses.length) {
+      const house = availableHouses[houseAssignIndex];
+      
+      // Generar inicial para la casa
+      const baseInitial = (agent.code || 'A').trim().charAt(0).toUpperCase() || 'A';
+      const count = (houseInitialCounts[baseInitial] || 0) + 1;
+      houseInitialCounts[baseInitial] = count;
+      const marker = baseInitial + (count > 1 ? String(count) : '');
 
-function tickBots(bounds = { w: 2200, h: 1400 }) {
-  const dt = 0.12; // ~120ms por tick
-  for (const p of Object.values(state.players)) {
-    if (!p.isBot) continue;
-    // nuevo objetivo si llegó o por probabilidad
-    const dx = (p.targetX ?? p.x) - (p.x || 0);
-    const dy = (p.targetY ?? p.y) - (p.y || 0);
-    const dist = Math.hypot(dx, dy);
-    if (!isFinite(dist) || dist < 20 || Math.random() < 0.02) {
-      p.targetX = Math.random() * bounds.w;
-      p.targetY = Math.random() * bounds.h;
+      const patch = { rentedBy: agent.id, _markerInitial: marker };
+
+      // Actualizar en la base de datos persistente
+      brain.updateGlobalHouse(house.id, patch);
+
+      // Actualizar en el estado en memoria del servidor
+      const stateHouse = state.houses.find(h => h.id === house.id);
+      if (stateHouse) Object.assign(stateHouse, patch);
+
+      houseAssignIndex++;
     }
-    // velocidad deseada hacia el objetivo
-    const ddx = (p.targetX - p.x);
-    const ddy = (p.targetY - p.y);
-    const d = Math.hypot(ddx, ddy) || 1;
-    const nx = ddx / d, ny = ddy / d;
-    const desiredVx = nx * (p.speed || 160);
-    const desiredVy = ny * (p.speed || 160);
-    // suavizado (lerp) + pequeño jitter para evitar movimiento robótico
-    p.vx = (p.vx || 0) * 0.85 + desiredVx * 0.15 + (Math.random()*2-1)*4;
-    p.vy = (p.vy || 0) * 0.85 + desiredVy * 0.15 + (Math.random()*2-1)*4;
-    // actualizar posición
-    p.x = Math.max(0, Math.min((p.x || 0) + p.vx * dt, bounds.w));
-    p.y = Math.max(0, Math.min((p.y || 0) + p.vy * dt, bounds.h));
-    // rebote en bordes ajustando objetivo
-    if (p.x <= 0 || p.x >= bounds.w) { p.vx *= -0.6; p.targetX = Math.random() * bounds.w; }
-    if (p.y <= 0 || p.y >= bounds.h) { p.vy *= -0.6; p.targetY = Math.random() * bounds.h; }
-    p.updatedAt = now();
   }
 }
 
@@ -490,15 +542,23 @@ function tickIdlePlayers(bounds = { w: 2200, h: 1400 }) {
   const currentTime = now();
 
   for (const p of Object.values(state.players)) {
-    // Omitir bots (manejados por tickBots) y jugadores que han enviado actualizaciones recientemente.
-    if (p.isBot || (currentTime - (p.lastUpdateFromClient || 0) < idleTimeout)) {
+    // Omitir jugadores humanos activos. Los agentes del servidor siempre se mueven.
+    if (!p.isBot && (currentTime - (p.lastUpdateFromClient || 0) < idleTimeout)) {
       continue;
     }
 
-    // Lógica de movimiento aleatorio para jugadores inactivos
-    if (typeof p.targetX !== 'number' || typeof p.targetY !== 'number' || Math.random() < 0.02) {
-      p.targetX = Math.random() * bounds.w;
-      p.targetY = Math.random() * bounds.h;
+    // Lógica de movimiento: si es un agente del servidor y está 'idle', usa la exploración.
+    if (p.isBot && p.targetRole === 'idle') {
+        if (typeof p.targetX !== 'number' || typeof p.targetY !== 'number' || Math.hypot(p.x - p.targetX, p.y - p.targetY) < 50 || Math.random() < 0.01) {
+            const newTarget = nextUnvisitedTarget(bounds.w, bounds.h);
+            p.targetX = newTarget.x;
+            p.targetY = newTarget.y;
+            markVisitedAt(p.x, p.y, bounds.w, bounds.h);
+        }
+    } else if (typeof p.targetX !== 'number' || typeof p.targetY !== 'number' || Math.random() < 0.02) {
+        // Movimiento aleatorio para jugadores humanos inactivos
+        p.targetX = Math.random() * bounds.w;
+        p.targetY = Math.random() * bounds.h;
     }
 
     const dx = p.targetX - p.x;
@@ -510,7 +570,7 @@ function tickIdlePlayers(bounds = { w: 2200, h: 1400 }) {
       p.targetY = Math.random() * bounds.h;
     }
 
-    const speed = p.speed || 120;
+    const speed = p.speed || 100;
     const nx = dx / (dist || 1);
     const ny = dy / (dist || 1);
     p.vx = (p.vx || 0) * 0.85 + nx * speed * 0.15;
@@ -521,16 +581,187 @@ function tickIdlePlayers(bounds = { w: 2200, h: 1400 }) {
   }
 }
 
+// Lógica de comportamiento para agentes del servidor (trabajar, comprar)
+function tickServerAgents() {
+  const serverAgents = Object.values(state.players).filter(p => p.isBot);
+  const nowS = Date.now() / 1000;
+  const { factories, banks, shops: allShops } = brain.getGameStructures();
+
+  for (const agent of serverAgents) {
+    // 1. Lógica de trabajo
+    if (agent.targetRole === 'idle' && nowS >= (agent.nextWorkAt || 0)) {
+      if (factories && factories.length > 0) {        
+        // Lógica mejorada: buscar la fábrica más cercana para dispersar a los agentes.
+        let closestFactory = null;
+        let minDistance = Infinity;
+
+        for (const f of factories) {
+          const factoryCenter = { x: f.x + f.w / 2, y: f.y + f.h / 2 };
+          const distance = Math.hypot(agent.x - factoryCenter.x, agent.y - factoryCenter.y);
+          if (distance < minDistance) {
+            minDistance = distance;
+            closestFactory = f;
+          }
+        }
+
+        if (closestFactory) {
+            agent.targetX = closestFactory.x + closestFactory.w / 2;
+            agent.targetY = closestFactory.y + closestFactory.h / 2;
+            agent.targetRole = 'go_work';
+        }
+      }
+    }
+
+    if (agent.targetRole === 'go_work' && Math.hypot(agent.x - agent.targetX, agent.y - agent.targetY) < 20) {
+      agent.targetRole = 'work';
+      agent.workingUntil = nowS + 6; // 6 segundos de trabajo
+    }
+
+    if (agent.targetRole === 'work' && nowS >= (agent.workingUntil || 0)) {
+      agent.pendingDeposit = (agent.pendingDeposit || 0) + 20;
+      agent.workingUntil = 0;
+      if (banks && banks.length > 0) {        
+        // Lógica mejorada: buscar el banco más cercano.
+        let closestBank = null;
+        let minDistance = Infinity;
+        for (const b of banks) {
+            const bankCenter = { x: b.x + b.w / 2, y: b.y + b.h / 2 };
+            const distance = Math.hypot(agent.x - bankCenter.x, agent.y - bankCenter.y);
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestBank = b;
+            }
+        }
+        agent.targetX = closestBank.x + closestBank.w / 2;
+        agent.targetY = closestBank.y + closestBank.h / 2;
+        agent.targetRole = 'go_bank';
+      }
+    }
+
+    if (agent.targetRole === 'go_bank' && Math.hypot(agent.x - agent.targetX, agent.y - agent.targetY) < 20) {
+      agent.money = (agent.money || 0) + (agent.pendingDeposit || 0);
+      agent.pendingDeposit = 0;
+      agent.targetRole = 'idle';
+      agent.nextWorkAt = nowS + 45; // 45 segundos de descanso
+    }
+
+    // 2. Lógica de compras
+    if (agent.targetRole === 'idle' && Math.random() < 0.01) {
+       const ownedShops = (allShops || []).filter(s => s.ownerId);
+       if (ownedShops.length > 0) {
+         const shop = ownedShops[Math.floor(Math.random() * ownedShops.length)];
+         agent.targetX = shop.x + shop.w / 2;
+         agent.targetY = shop.y + shop.h / 2;
+         agent.targetRole = 'go_shop';
+         agent._shopTargetId = shop.id;
+       }
+    }
+
+    if (agent.targetRole === 'go_shop' && Math.hypot(agent.x - agent.targetX, agent.y - agent.targetY) < 20) {
+      const shop = (allShops || []).find(s => s.id === agent._shopTargetId);
+      if (shop && (nowS - (agent.lastPurchaseAt || 0) > 300)) {
+        const price = shop.price || 2;
+        if ((agent.money || 0) >= price) {
+          agent.money -= price;
+          shop.cashbox = (shop.cashbox || 0) + price;
+          agent.lastPurchaseAt = nowS;
+          // Persistir el cambio en la tienda
+          brain.updateShop(shop.id, { cashbox: shop.cashbox });
+        }
+      }
+      agent.targetRole = 'idle';
+      agent._shopTargetId = null;
+    }
+
+    // 3. Lógica de compra de casa
+    const HOUSE_BUY_COST = 3000;
+    const isPaired = agent.state === 'paired';
+
+    if (isPaired && !agent.ownsHouse && (agent.money || 0) >= HOUSE_BUY_COST) {
+      // Find an unowned, unrented house to buy
+      const allHouses = brain.getProgressHouses() || [];
+      const availableForPurchase = allHouses.filter(h => h && !h.ownerId && !h.rentedBy);
+      
+      if (availableForPurchase.length > 0) {
+          const houseToBuy = availableForPurchase[0];
+          
+          agent.money -= HOUSE_BUY_COST;
+          agent.ownsHouse = true;
+          
+          const patch = { ownerId: agent.id, rentedBy: null, _markerInitial: null };
+          brain.updateGlobalHouse(houseToBuy.id, patch);
+          brain.addHouse(agent.id, { ...houseToBuy, ...patch });
+
+          const stateHouse = state.houses.find(h => h.id === houseToBuy.id);
+          if (stateHouse) Object.assign(stateHouse, patch);
+
+          console.log(`[AgentLogic] Agent ${agent.code} (${agent.id}) bought house ${houseToBuy.id}`);
+      }
+    }
+  }
+}
+
 // Tick de movimiento automático para todos los jugadores
 setInterval(() => {
-  // Ajustar bots según configuración (por defecto 0 = sin bots)
-  setBotTarget(SERVER_BOTS);
-  // Usar límites amplios: si el mundo crece, se pueden mapear al menos 1.2x del tamaño base
-  const w =  Math.max(2200, (globalThis.WORLD?.w)||2200);
-  const h =  Math.max(1400, (globalThis.WORLD?.h)||1400);
-  tickBots({ w, h });
+  ensureBots(0); // No se crean agentes controlados por el servidor
+  const w = 2200, h = 1400; // Usar tamaño fijo por ahora
+  tickServerAgents();
   tickIdlePlayers({ w, h });
 }, 120);
+
+// Resetear la grilla de exploración periódicamente para que los agentes sigan recorriendo
+setInterval(resetExplorationGrid, 15 * 60 * 1000); // Cada 15 minutos
+
+// --- Cobro de arriendo periódico (lógica centralizada en servidor) ---
+const RENT_INTERVAL = 10 * 60 * 1000; // cada 10 minutos
+const RENT_AMOUNT = 50;
+
+setInterval(() => {
+  // Usar las casas del estado persistente, que es la fuente de verdad
+  const allHouses = brain.getProgressHouses() || [];
+  if (allHouses.length === 0) return;
+
+  // Filtrar solo las casas que están siendo arrendadas (tienen `rentedBy` pero no `ownerId`)
+  const rentedHouses = allHouses.filter(h => h && h.rentedBy && !h.ownerId);
+  if (rentedHouses.length === 0) return;
+
+  let totalRentCollected = 0;
+
+  for (const house of rentedHouses) {
+    const renterId = house.rentedBy; // Este es el ID del agente/jugador
+    const player = state.players[renterId];
+
+    if (player && (player.money || 0) >= RENT_AMOUNT) {
+      player.money -= RENT_AMOUNT;
+      totalRentCollected += RENT_AMOUNT;
+      
+      // Notificar al jugador específico con un "toast"
+      if (player.socketId) {
+        io.to(player.socketId).emit('toast', `Se cobró el arriendo: -${RENT_AMOUNT}`);
+      }
+    } else if (player) {
+      // Notificar si no tiene saldo suficiente
+      if (player.socketId) {
+        io.to(player.socketId).emit('toast', `Saldo insuficiente para pagar el arriendo.`);
+      }
+    }
+  }
+
+  if (totalRentCollected > 0) {
+    brain.addGovernmentFunds(totalRentCollected);
+    state.government = brain.getGovernment(); // Actualizar el estado local del servidor
+    console.log(`[Rent] Se cobró un total de ${totalRentCollected} de arriendo.`);
+  }
+}, RENT_INTERVAL);
+
+// Limpiar bots residuales al inicio del servidor
+try {
+  for (const id in state.players) {
+    if (state.players[id].isBot) {
+      delete state.players[id];
+    }
+  }
+} catch(e) { console.warn('Error cleaning up initial bots', e); }
 
 io.on('connection', (socket) => {
   console.log('socket connected', socket.id);
@@ -565,6 +796,19 @@ io.on('connection', (socket) => {
     socket.playerId = id;
     if (ack) ack({ ok: true, id });
     io.emit('playerJoined', player);
+  });
+
+  socket.on('marriage', (data) => {
+    if (!data || !data.aId || !data.bId) return;
+    const agentA = state.players[data.aId];
+    const agentB = state.players[data.bId];
+    if (agentA && agentB) {
+        agentA.state = 'paired';
+        agentA.spouseId = data.bId;
+        agentB.state = 'paired';
+        agentB.spouseId = data.aId;
+        console.log(`[Marriage] Registered marriage between ${data.aId} and ${data.bId}`);
+    }
   });
 
   socket.on('update', (data) => {
@@ -610,6 +854,10 @@ io.on('connection', (socket) => {
     const house = Object.assign({}, payload, { id, createdAt: now() });
   state.houses.push(house);
   if(socket.userId){ try{ brain.addHouse(socket.userId, house); }catch(e){} }
+    // También agregar al array de casas de `brain` para el cobro de arriendo
+    try {
+      brain.addGlobalHouse(house);
+    } catch(e) { console.warn('Error adding global house for rent check', e); }
     io.emit('housePlaced', house);
     if (ack) ack({ ok: true, house });
   });
@@ -638,6 +886,7 @@ io.on('connection', (socket) => {
         const id = 'H' + (state.houses.length + 1);
         const house = Object.assign({}, h, { id, ownerId: ownerId || h.ownerId || null, createdAt: now() });
         state.houses.push(house);
+        try { brain.addGlobalHouse(house); } catch(e) {}
         io.emit('housePlaced', house);
       }
       if(ack) ack({ ok:true, shops: state.shops, houses: state.houses });
@@ -645,10 +894,12 @@ io.on('connection', (socket) => {
   });
 
   socket.on('placeGov', (payload, ack) => {
+  /*
   if ((state.government.funds || 0) < (payload.cost || 0)) {
       if (ack) ack({ ok:false, msg: 'Fondos insuficientes' });
       return;
     }
+  */
   try{ brain.addGovernmentFunds(-Math.abs(payload.cost||0)); }catch(_){ }
   try{ brain.placeGovernment(payload); }catch(_){ }
   state.government = brain.getGovernment();
@@ -692,20 +943,6 @@ io.on('connection', (socket) => {
   });
 });
 
-function startServer(port, attemptsLeft = 8) {
-  PORT = port;
-  server.listen(PORT, () => {
-    console.log(`Server listening on http://localhost:${PORT}`);
-  }).on('error', (err) => {
-    if (err && err.code === 'EADDRINUSE' && attemptsLeft > 0) {
-      const next = port + 1;
-      console.warn(`Port ${port} in use. Retrying on ${next}...`);
-      setTimeout(() => startServer(next, attemptsLeft - 1), 250);
-    } else {
-      console.error('Server failed to start:', err);
-      process.exit(1);
-    }
-  });
-}
-
-startServer(PORT);
+server.listen(PORT, () => {
+  console.log(`Server listening on http://localhost:${PORT}`);
+});

@@ -13,7 +13,11 @@ let db = {
 	// userId -> { money, bank, vehicle, vehicles:[], shops:[], houses:[], name, avatar, likes:[], gender, age, initialRentPaid?, rentedHouseIdx? }
 	progress: {},
 	government: { funds: 0, placed: [] },
-	activityLog: [] // { ts, type, userId, details }
+	activityLog: [], // { ts, type, userId, details }
+	// Estructuras del mundo para que los agentes del servidor las usen
+	factories: [],
+	banks: [],
+	houses: [] // Lista global de todas las casas para el sistema de arriendo
 };
 
 // Ledger en un solo archivo: { users: { userId: { username, lastMoney, lastBank, updatedAt } }, movements: [ { ts, userId, username, delta, money, bank, reason } ] }
@@ -39,6 +43,9 @@ function load() {
 			if (parsed && typeof parsed === 'object') db = Object.assign(db, parsed);
 			// backfill gobierno
 			if(!db.government){ db.government = { funds: 0, placed: [] }; }
+			if(!Array.isArray(db.factories)) db.factories = [];
+			if(!Array.isArray(db.banks)) db.banks = [];
+			if(!Array.isArray(db.houses)) db.houses = [];
 		} else {
 			persist();
 		}
@@ -240,6 +247,66 @@ function addHouse(userId, houseObj) {
 	schedulePersist();
 }
 
+function updateGlobalHouse(houseId, patch) {
+	if (!Array.isArray(db.houses)) db.houses = [];
+	const house = db.houses.find(h => h.id === houseId);
+	if (house) {
+		Object.assign(house, patch);
+		schedulePersist();
+		return { ok: true };
+	}
+	return { ok: false };
+}
+
+function updateShop(shopId, patch) {
+    // Actualiza una tienda en la lista de progreso de su dueño
+    for (const userId in db.progress) {
+        const p = db.progress[userId];
+        if (p && Array.isArray(p.shops)) {
+            const shop = p.shops.find(s => s.id === shopId);
+            if (shop) {
+                Object.assign(shop, patch);
+                schedulePersist();
+                return { ok: true };
+            }
+        }
+    }
+    return { ok: false, msg: 'Shop not found' };
+}
+
+function setWorldStructures({ factories, banks }) {
+    if (Array.isArray(factories)) {
+        db.factories = factories;
+    }
+    if (Array.isArray(banks)) {
+        db.banks = banks;
+    }
+    schedulePersist();
+    return { ok: true };
+}
+
+function getGameStructures() {
+    // Devuelve las estructuras necesarias para la IA de los agentes del servidor
+    const allShops = Object.values(db.progress).flatMap(p => p.shops || []);
+    return { factories: db.factories, banks: db.banks, shops: allShops };
+}
+
+function addGlobalHouse(houseObj) {
+	if(!Array.isArray(db.houses)) db.houses = [];
+	// Evitar duplicados por si se restaura o coloca varias veces
+	const exists = db.houses.some(h => h.id === houseObj.id || (Math.abs(h.x - houseObj.x) < 2 && Math.abs(h.y - houseObj.y) < 2));
+	if (!exists) {
+		db.houses.push(houseObj);
+		schedulePersist();
+	}
+}
+
+function getProgressHouses() {
+	// Devuelve la lista global de casas para que el servidor la use
+	if(!Array.isArray(db.houses)) db.houses = [];
+	return db.houses;
+}
+
 function setMoney(userId, money, bank = undefined) {
 	const p = ensureProgress(userId);
 	const prevMoney = p.money || 0;
@@ -359,6 +426,12 @@ module.exports = {
 	updateProgress,
 	addShop,
 	addHouse,
+	updateGlobalHouse,
+	updateShop,
+	getGameStructures,
+	setWorldStructures,
+	addGlobalHouse,
+	getProgressHouses,
 	setMoney,
 	setVehicle,
 	addOwnedVehicle,
@@ -379,4 +452,3 @@ module.exports = {
 	addGovernmentFunds,
 	placeGovernment
 };
-

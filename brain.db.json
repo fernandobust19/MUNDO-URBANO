@@ -1,62 +1,112 @@
 {
   "users": [
     {
-      "id": "2eaab4f9-a4a1-42c5-9c85-7dc44cebed6d",
+      "id": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
       "username": "fer",
-      "passHash": "$2a$10$0V5ym.W9voYI.4SJUJl4o.P2rMJqIkQEG0jv9c2sW2wqwX4amw69S",
-      "createdAt": 1757733616028,
+      "passHash": "$2a$10$kZ4G9z82nOPMkgL2EEYQgehhI2E2xenczZwr4bbK180msN78JsleW",
+      "createdAt": 1757812231529,
       "lastLoginAt": null,
-      "country": "Ecuador",
+      "country": "México",
       "email": "fernando2000b@hotmail.com",
       "phone": "0983801298",
       "gender": "M"
     }
   ],
   "progress": {
-    "2eaab4f9-a4a1-42c5-9c85-7dc44cebed6d": {
-      "money": 150,
+    "17dd87f7-cde6-4a46-a832-2bbf1612b018": {
+      "money": 350,
       "bank": 0,
-      "vehicle": "moto",
-      "vehicles": [
-        "moto"
-      ],
+      "vehicle": null,
+      "vehicles": [],
       "shops": [],
       "houses": [],
       "name": "fer",
       "avatar": "assets/avatar1.png",
       "likes": [
-        "naturaleza",
-        "viajes",
         "jardinería",
-        "yoga",
-        "teatro"
+        "fotografía",
+        "meditación",
+        "fútbol",
+        "juguetes"
       ],
       "gender": "M",
       "age": 20,
       "initialRentPaid": true,
       "rentedHouseIdx": 0,
-      "country": "Ecuador",
+      "country": "México",
       "email": "fernando2000b@hotmail.com",
       "phone": "0983801298"
+    },
+    "74878ceb-7860-4854-9684-2d6903dab0ec": {
+      "money": 350,
+      "bank": 0,
+      "vehicle": null,
+      "vehicles": [],
+      "shops": [],
+      "houses": [],
+      "name": null,
+      "avatar": null,
+      "likes": [],
+      "gender": null,
+      "age": null,
+      "initialRentPaid": false,
+      "rentedHouseIdx": null
     }
   },
   "government": {
     "funds": 0,
-    "placed": []
+    "placed": [
+      {
+        "x": 1454.6507142857145,
+        "y": 517.8571428571429,
+        "w": 130,
+        "h": 90,
+        "label": "Parque",
+        "icon": "🌳",
+        "fill": "rgba(12,81,58,0.92)",
+        "stroke": "rgba(31,122,90,0.95)",
+        "k": "parque",
+        "cost": 80
+      },
+      {
+        "x": 2910.3650000000002,
+        "y": 562.8571428571429,
+        "w": 150,
+        "h": 80,
+        "label": "Policía",
+        "icon": "🚓",
+        "fill": "#3b82f6",
+        "stroke": "#dbeafe",
+        "k": "policia",
+        "cost": 200
+      },
+      {
+        "x": 2985.7142857142867,
+        "y": 1920.7142857142862,
+        "w": 160,
+        "h": 90,
+        "label": "Teatro",
+        "icon": "🎭",
+        "fill": "#1f2937",
+        "stroke": "#9ca3baf",
+        "k": "teatro",
+        "cost": 190
+      }
+    ]
   },
   "activityLog": [
     {
-      "ts": 1757733616029,
+      "ts": 1757812231529,
       "type": "register",
-      "userId": "2eaab4f9-a4a1-42c5-9c85-7dc44cebed6d",
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
       "details": {
         "username": "fer"
       }
     },
     {
-      "ts": 1757733624378,
+      "ts": 1757812238067,
       "type": "progress_update",
-      "userId": "2eaab4f9-a4a1-42c5-9c85-7dc44cebed6d",
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
       "details": {
         "keys": [
           "money",
@@ -76,9 +126,9 @@
       }
     },
     {
-      "ts": 1757733626317,
+      "ts": 1757812240202,
       "type": "progress_update",
-      "userId": "2eaab4f9-a4a1-42c5-9c85-7dc44cebed6d",
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
       "details": {
         "keys": [
           "money",
@@ -101,9 +151,9 @@
       }
     },
     {
-      "ts": 1757733632581,
+      "ts": 1757812248727,
       "type": "progress_update",
-      "userId": "2eaab4f9-a4a1-42c5-9c85-7dc44cebed6d",
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
       "details": {
         "keys": [
           "money",
@@ -126,29 +176,181 @@
       }
     },
     {
-      "ts": 1757733693119,
-      "type": "progress_update",
-      "userId": "2eaab4f9-a4a1-42c5-9c85-7dc44cebed6d",
+      "ts": 1757812276920,
+      "type": "gov_funds",
+      "userId": null,
       "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "initialRentPaid",
-          "rentedHouseIdx",
-          "country",
-          "email",
-          "phone"
-        ]
+        "delta": -80,
+        "funds": 0
+      }
+    },
+    {
+      "ts": 1757812276921,
+      "type": "gov_place",
+      "userId": null,
+      "details": {
+        "k": "parque"
+      }
+    },
+    {
+      "ts": 1757812294379,
+      "type": "gov_funds",
+      "userId": null,
+      "details": {
+        "delta": -200,
+        "funds": 0
+      }
+    },
+    {
+      "ts": 1757812294379,
+      "type": "gov_place",
+      "userId": null,
+      "details": {
+        "k": "policia"
+      }
+    },
+    {
+      "ts": 1757812307951,
+      "type": "gov_funds",
+      "userId": null,
+      "details": {
+        "delta": -190,
+        "funds": 0
+      }
+    },
+    {
+      "ts": 1757812307951,
+      "type": "gov_place",
+      "userId": null,
+      "details": {
+        "k": "teatro"
       }
     }
-  ]
+  ],
+  "factories": [
+    {
+      "x": 682,
+      "y": 373,
+      "w": 156,
+      "h": 91
+    },
+    {
+      "x": 4297,
+      "y": 1406,
+      "w": 169,
+      "h": 96
+    },
+    {
+      "x": 1883,
+      "y": 451,
+      "w": 152,
+      "h": 111
+    },
+    {
+      "x": 7084,
+      "y": 1112,
+      "w": 173,
+      "h": 102
+    },
+    {
+      "x": 2240,
+      "y": 351,
+      "w": 146,
+      "h": 118
+    },
+    {
+      "x": 5377,
+      "y": 369,
+      "w": 152,
+      "h": 94
+    },
+    {
+      "x": 1750,
+      "y": 1055,
+      "w": 176,
+      "h": 103
+    },
+    {
+      "x": 1878,
+      "y": 1308,
+      "w": 157,
+      "h": 106
+    },
+    {
+      "x": 6998,
+      "y": 293,
+      "w": 160,
+      "h": 114
+    },
+    {
+      "x": 6041,
+      "y": 1205,
+      "w": 154,
+      "h": 90
+    },
+    {
+      "x": 3131,
+      "y": 1300,
+      "w": 146,
+      "h": 107
+    },
+    {
+      "x": 3434,
+      "y": 1367,
+      "w": 163,
+      "h": 118
+    }
+  ],
+  "banks": [
+    {
+      "x": 11727,
+      "y": 1273,
+      "w": 132,
+      "h": 75
+    },
+    {
+      "x": 11774,
+      "y": 475,
+      "w": 133,
+      "h": 88
+    },
+    {
+      "x": 10444,
+      "y": 973,
+      "w": 115,
+      "h": 71
+    },
+    {
+      "x": 9081,
+      "y": 1099,
+      "w": 126,
+      "h": 81
+    },
+    {
+      "x": 8346,
+      "y": 1030,
+      "w": 114,
+      "h": 81
+    },
+    {
+      "x": 8091,
+      "y": 955,
+      "w": 121,
+      "h": 80
+    },
+    {
+      "x": 10603,
+      "y": 444,
+      "w": 114,
+      "h": 82
+    },
+    {
+      "x": 14463,
+      "y": 1246,
+      "w": 118,
+      "h": 71,
+      "isFuchsia": true
+    }
+  ],
+  "houses": []
 }

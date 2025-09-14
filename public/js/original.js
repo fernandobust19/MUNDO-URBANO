@@ -424,6 +424,53 @@ btnRandLikes.addEventListener('click', updateLikesUI);
   let ZOOM=1.0, ZMIN=0.35, ZMAX=2.0, ZSTEP=0.15;
   const WORLD={w:0,h:0}; const cam={x:0,y:0};
 
+  // Cobertura de exploración GLOBAL (para que los agentes recorran TODO el mapa)
+  // Nota: estas funciones estaban definidas accidentalmente dentro de otra
+  // función y no eran visibles desde el bucle principal. Al declararlas aquí
+  // garantizamos que todos los agentes puedan usarlas para explorar.
+  let EXPLORE_GRID = null; // matriz booleana [sy][sx]
+  function ensureExploreGrid(){
+    const sx = CFG.EXPLORE_SECTORS_X, sy = CFG.EXPLORE_SECTORS_Y;
+    if(!EXPLORE_GRID || EXPLORE_GRID.length!==sy || EXPLORE_GRID[0]?.length!==sx){
+      EXPLORE_GRID = Array.from({length: sy}, ()=> Array.from({length: sx}, ()=> false));
+    }
+    return EXPLORE_GRID;
+  }
+  function markVisitedAt(x, y){
+    const grid = ensureExploreGrid();
+    const sx = CFG.EXPLORE_SECTORS_X, sy = CFG.EXPLORE_SECTORS_Y;
+    const ix = Math.min(sx-1, Math.max(0, Math.floor(x / (WORLD.w / sx))));
+    const iy = Math.min(sy-1, Math.max(0, Math.floor(y / (WORLD.h / sy))));
+    grid[iy][ix] = true;
+  }
+  function nextUnvisitedTarget(){
+    const grid = ensureExploreGrid();
+    const sx = CFG.EXPLORE_SECTORS_X, sy = CFG.EXPLORE_SECTORS_Y;
+    // construir lista de celdas no visitadas
+    const cells = [];
+    for(let iy=0; iy<sy; iy++){
+      for(let ix=0; ix<sx; ix++){
+        if(!grid[iy][ix]){
+          const cx = (ix + 0.5) * (WORLD.w / sx);
+          const cy = (iy + 0.5) * (WORLD.h / sy);
+          cells.push({ix, iy, x: cx, y: cy});
+        }
+      }
+    }
+    if(cells.length===0){
+      // reset para que sigan patrullando de por vida
+      for(let iy=0; iy<sy; iy++) for(let ix=0; ix<sx; ix++) grid[iy][ix] = false;
+      return { x: WORLD.w/2, y: WORLD.h/2 };
+    }
+    // mezclar y escoger una de las más lejanas de un punto aleatorio para distribuir
+    for(let i=cells.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [cells[i],cells[j]]=[cells[j],cells[i]]; }
+    const k = Math.min(8, cells.length);
+    const sample = cells.slice(0,k);
+    const px = Math.random()*WORLD.w, py = Math.random()*WORLD.h;
+    sample.sort((a,b)=> (Math.hypot(b.x-px,b.y-py) - Math.hypot(a.x-px,a.y-py)) );
+    return { x: sample[0].x, y: sample[0].y };
+  }
+
   // En móviles: colapsar dock inicial y ocultar mini-mapa para más espacio
   function applyResponsiveUI(){
     try{
@@ -580,40 +627,44 @@ function getStreetPattern(ctx, orientation){
 }
 
 function preloadImages() {
-  console.log("Iniciando precarga de imágenes (promesas + evento de finalización)…");
-  const entries = Object.entries(BUILDING_IMAGES);
-  let loaded = 0, failed = 0;
-  const ps = entries.map(([key, url])=> new Promise((resolve)=>{
-    try{
+  console.log("Iniciando precarga de imágenes con manejo de errores mejorado...");
+  
+  for (const key in BUILDING_IMAGES) {
+    try {
       const img = new Image();
-      img.onload = ()=>{ loaded++; resolve({ key, ok:true }); };
-      img.onerror = ()=>{
-        failed++;
-        console.warn(`Error al cargar la imagen: ${key} -> ${url}. Usando fallback.`);
-        BUILDING_IMAGE_CACHE[key] = { error:true, complete:true, naturalWidth:100 };
-        resolve({ key, ok:false });
+      
+      img.onload = function() {
+        console.log(`Imagen cargada: ${key}`);
       };
-      img.src = url; BUILDING_IMAGE_CACHE[key] = img;
-    }catch(e){ failed++; console.warn('preload error', key, e); resolve({ key, ok:false }); }
-  }));
-  Promise.allSettled(ps).then(()=>{
-    const total = entries.length;
-    try{
-      const ev = new CustomEvent('assets:buildings:ready', { detail: { total, loaded, failed }});
-      window.dispatchEvent(ev);
-    }catch(_){ }
-    console.log(`[assets] Precarga completada: ${loaded}/${total} ok, ${failed} fallidas`);
-    if(failed > 6){ console.warn(`[debug] ${failed}/${total} imágenes fallaron. Revisa /api/debug/assets-list y /api/debug/asset?name=archivo.png`); }
-  });
+      
+      img.onerror = function() {
+        console.warn(`Error al cargar la imagen: ${key} -> ${BUILDING_IMAGES[key]}. Usando fallback.`);
+        // Crear un fallback simple que no cause errores
+        BUILDING_IMAGE_CACHE[key] = { 
+          error: true, 
+          complete: true,
+          naturalWidth: 100
+        };
+      };
+      
+      img.src = BUILDING_IMAGES[key];
+      BUILDING_IMAGE_CACHE[key] = img;
+    } catch(e) {
+      console.error(`Error general con imagen ${key}:`, e);
+    }
+  }
 }
 
-// Ejecutar precarga inmediatamente y registrar un listener informativo
-try{
-  window.addEventListener('assets:buildings:ready', (e)=>{
-    const d = e && e.detail; console.log('[assets:event] buildings ready', d);
-  }, { once:true });
-}catch(_){ }
+// Ejecutar precarga inmediatamente
 preloadImages();
+setTimeout(()=>{
+  // Si muchas fallan, sugiere revisar assets en servidor
+  try{
+    const total = Object.keys(BUILDING_IMAGES).length;
+    const errors = Object.values(BUILDING_IMAGE_CACHE).filter(v => v && v.error).length;
+    if(errors > 6){ console.warn(`[debug] ${errors}/${total} imágenes fallaron. Revisa /api/debug/assets-list y /api/debug/asset?name=archivo.png`); }
+  }catch(_){ }
+}, 1500);
 
 // Limpiar cualquier entrada residual de 'librería' en el cache (por versiones antiguas)
 if (BUILDING_IMAGE_CACHE['librería']) { delete BUILDING_IMAGE_CACHE['librería']; }
@@ -669,10 +720,10 @@ function relocateInitialBuildingsToSand(){
 
   /* ===== CONFIGURACIÓN ===== */
   const CFG = {
-  LINES_ON:false, PARKS:8, SCHOOLS:8, FACTORIES:12, BANKS:8, MALLS:4, HOUSE_SIZE:70, OWNED_HOUSE_SIZE_MULT:1.4, CEM_W:220, CEM_H:130, N_INIT:0,  // Sin bots por defecto
+  LINES_ON:false, PARKS:8, SCHOOLS:8, FACTORIES:12, BANKS:8, MALLS:4, HOUSE_SIZE:70, OWNED_HOUSE_SIZE_MULT:1.4, CEM_W:220, CEM_H:130, N_INIT:24,  // Más infraestructuras y casas iniciales
   HOME_REST_DURATION:120,
     // Radio base de los agentes (en unidades de mundo). Aumentado para que se vean más grandes.
-  R_ADULT:7.5, R_CHILD:6.0, R_ELDER:7.0, SPEED:60, WORK_DURATION:20, EARN_PER_SHIFT:20, WORK_COOLDOWN:45,
+  R_ADULT:7.5, R_CHILD:6.0, R_ELDER:7.0, SPEED:60, WORK_DURATION:6, EARN_PER_SHIFT:20, WORK_COOLDOWN:45,
     // Tamaños mínimos en pantalla para que no desaparezcan con el zoom.
   MIN_AGENT_PX: 12,
   NAME_FONT_PX: 13,
@@ -696,6 +747,9 @@ function relocateInitialBuildingsToSand(){
   EXPLORE_SECTORS_X: 12,
   EXPLORE_SECTORS_Y: 9,
   EXPLORE_REACH_RADIUS: 18,
+  // Probabilidad por frame (60 FPS) de que un agente idle entre a explorar
+  // Valor alto para explorar agresivamente todo el mundo
+  EXPLORE_IDLE_PROB: 0.05,
   };
 
   const VEHICLES = {
@@ -706,32 +760,19 @@ function relocateInitialBuildingsToSand(){
   };
 
   /* ===== Tipos de Instituciones (25) ===== */
+  // Actualizado: Solo instituciones con imagen en BUILDING_IMAGES
   const GOV_TYPES = [
     {k:'parque', label:'Parque', cost:CFG.COST_PARK, w:130,h:90, icon:'🌳', fill:'rgba(12,81,58,0.92)', stroke:'rgba(31,122,90,0.95)'},
     {k:'escuela', label:'Escuela', cost:CFG.COST_SCHOOL, w:140,h:95, icon:'📚', fill:'rgba(51,65,85,0.92)', stroke:'rgba(148,163,184,0.95)'},
+    {k:'biblioteca', label:'Biblioteca', cost:CFG.COST_LIBRARY, w:140,h:90, icon:'📖', fill:'#a16207', stroke:'#fde047'},
     {k:'policia', label:'Policía', cost:CFG.COST_POLICE, w:150,h:80, icon:'🚓', fill:'#3b82f6', stroke:'#dbeafe'},
     {k:'hospital', label:'Hospital', cost:CFG.COST_HOSPITAL, w:180,h:100, icon:'🏥', fill:'#f1f5f9', stroke:'#ef4444'},
     {k:'central_electrica', label:'Central Eléctrica', cost:CFG.COST_POWER, w:200,h:120, icon:'⚡', fill:'#475569', stroke:'#facc15'},
     {k:'bomberos', label:'Cuerpo de Bomberos', cost:220, w:160,h:85, icon:'🚒', fill:'#7c2d12', stroke:'#fecaca'},
-    {k:'registro_civil', label:'Registro Civil', cost:180, w:150,h:85, icon:'🪪', fill:'#0f172a', stroke:'#94a3b8'},
     {k:'universidad', label:'Universidad Pública', cost:300, w:200,h:120, icon:'🎓', fill:'#1e293b', stroke:'#93c5fd'},
     {k:'tribunal', label:'Tribunal / Corte', cost:260, w:170,h:95, icon:'⚖️', fill:'#111827', stroke:'#9ca3baf'},
-    {k:'museo', label:'Museo', cost:200, w:160,h:90, icon:'🏛️', fill:'#3f3f46', stroke:'#cbd5e1'},
-  {k:'biblioteca', label:'Biblioteca', cost:CFG.COST_LIBRARY, w:140,h:90, icon:'📖', fill:'#a16207', stroke:'#fde047'},
     {k:'teatro', label:'Teatro', cost:190, w:160,h:90, icon:'🎭', fill:'#1f2937', stroke:'#9ca3baf'},
-  {k:'estadio', label:'Estadio', cost:420, w:320,h:220, icon:'🏟️', fill:'#0b3a1e', stroke:'#10b981'},
-    {k:'terminal', label:'Terminal Terrestre', cost:260, w:200,h:110, icon:'🚌', fill:'#0c4a6e', stroke:'#7dd3fc'},
-    {k:'correos', label:'Correos del Estado', cost:170, w:150,h:85, icon:'📮', fill:'#0b1f3a', stroke:'#60a5fa'},
-    {k:'banco_central', label:'Banco Central', cost:300, w:180,h:100, icon:'🏦', fill:'#2d3748', stroke:'#fde68a'},
-    {k:'aduana', label:'Aduana', cost:240, w:170,h:95, icon:'🚢', fill:'#1e3a8a', stroke:'#93c5fd'},
-    {k:'carcel', label:'Centro de Rehabilitación', cost:280, w:200,h:110, icon:'🗝️', fill:'#111827', stroke:'#64748b'},
-    {k:'planta_agua', label:'Planta de Agua', cost:260, w:190,h:110, icon:'🚰', fill:'#0e7490', stroke:'#67e8f9'},
-    {k:'reciclaje', label:'Planta de Reciclaje', cost:220, w:180,h:100, icon:'♻️', fill:'#14532d', stroke:'#86efac'},
-    {k:'centro_cultural', label:'Centro Cultural', cost:190, w:160,h:90, icon:'🎨', fill:'#3b0764', stroke:'#d8b4fe'},
-    {k:'mercado_central', label:'Mercado Central', cost:210, w:180,h:100, icon:'🥚', fill:'#78350f', stroke:'#fde68a'},
-    {k:'instituto_tecnologico', label:'Instituto Tecnológico', cost:230, w:180,h:100, icon:'🧪', fill:'#0f172a', stroke:'#60a5fa'},
-    {k:'centro_investigacion', label:'Centro de Investigación', cost:260, w:190,h:105, icon:'🔬', fill:'#164e63', stroke:'#a5f3fc'},
-    {k:'observatorio', label:'Observatorio', cost:240, w:170,h:95, icon:'🔭', fill:'#1e293b', stroke:'#c7d2fe'}
+    {k:'estadio', label:'Estadio', cost:420, w:320,h:220, icon:'🏟️', fill:'#0b3a1e', stroke:'#10b981'}
   ];
 
   /* ===== Estructuras almacenadas ===== */
@@ -885,8 +926,6 @@ function relocateInitialBuildingsToSand(){
         try{ if(Array.isArray(window.gameState.shops)) window.gameState.shops = window.gameState.shops.filter(s => !set.has(needle(s && (s.label || s.k || s.kind || s.type)))); }catch(e){}
         try{ if(window.gameState.government && Array.isArray(window.gameState.government.placed)) window.gameState.government.placed = window.gameState.government.placed.filter(g => !set.has(needle(g && (g.label || g.k || g.kind || g.type)))); }catch(e){}
       }
-  // Use debug logging to avoid spamming the console every frame; enable by setting window.__verboseRemoval = true
-  if (window.__verboseRemoval) console.debug('removeByLabels executed for', Array.from(set));
     }catch(e){ console.warn('removeByLabels error', e); }
   }
   const inside=(pt,r)=> pt.x>=r.x && pt.x<=r.x+r.w && pt.y>=r.y && pt.y<=r.y+r.h;
@@ -894,50 +933,6 @@ function relocateInitialBuildingsToSand(){
     const paddedB = { x: rectB.x - margin, y: rectB.y - margin, w: rectB.w + margin*2, h: rectB.h + margin*2 };
     return rectsOverlap(rectA, paddedB);
   };
-
-  // ===== Cobertura de exploración (scope global) =====
-  // Las versiones anteriores quedaron dentro de removeByLabels(), lo que hacía
-  // que no existieran en el ámbito global. Las definimos aquí para que el bucle
-  // principal pueda usarlas sin ReferenceError.
-  let __EXPLORE_GRID = null; // matriz booleana [sy][sx]
-  function ensureExploreGrid(){
-    const sx = CFG.EXPLORE_SECTORS_X, sy = CFG.EXPLORE_SECTORS_Y;
-    if(!__EXPLORE_GRID || __EXPLORE_GRID.length!==sy || __EXPLORE_GRID[0]?.length!==sx){
-      __EXPLORE_GRID = Array.from({length: sy}, ()=> Array.from({length: sx}, ()=> false));
-    }
-    return __EXPLORE_GRID;
-  }
-  function markVisitedAt(x, y){
-    const grid = ensureExploreGrid();
-    const sx = CFG.EXPLORE_SECTORS_X, sy = CFG.EXPLORE_SECTORS_Y;
-    const ix = Math.min(sx-1, Math.max(0, Math.floor(x / (WORLD.w / sx))));
-    const iy = Math.min(sy-1, Math.max(0, Math.floor(y / (WORLD.h / sy))));
-    grid[iy][ix] = true;
-  }
-  function nextUnvisitedTarget(){
-    const grid = ensureExploreGrid();
-    const sx = CFG.EXPLORE_SECTORS_X, sy = CFG.EXPLORE_SECTORS_Y;
-    const cells = [];
-    for(let iy=0; iy<sy; iy++){
-      for(let ix=0; ix<sx; ix++){
-        if(!grid[iy][ix]){
-          const cx = (ix + 0.5) * (WORLD.w / sx);
-          const cy = (iy + 0.5) * (WORLD.h / sy);
-          cells.push({ix, iy, x: cx, y: cy});
-        }
-      }
-    }
-    if(cells.length===0){
-      for(let iy=0; iy<sy; iy++) for(let ix=0; ix<sx; ix++) grid[iy][ix] = false;
-      return { x: WORLD.w/2, y: WORLD.h/2 };
-    }
-    const k = Math.min(8, cells.length);
-    for(let i=cells.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [cells[i],cells[j]]=[cells[j],cells[i]]; }
-    const sample = cells.slice(0, k);
-    const px = Math.random()*WORLD.w, py = Math.random()*WORLD.h;
-    sample.sort((a,b)=> (Math.hypot(b.x-px,b.y-py) - Math.hypot(a.x-px,a.y-py)) );
-    return { x: sample[0].x, y: sample[0].y };
-  }
 
   function isOnRoad(agent) {
     const pt = { x: agent.x, y: agent.y };
@@ -1048,30 +1043,10 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   }
 
   // Cobro periódico de arriendo cada hora real
-  let lastRentCheck = Date.now();
   function processRent(dtSeconds){
-    // Ejecutar cada ~60s acumulando hasta 3600s
-    if(!window.__rentAccum) window.__rentAccum = 0;
-    window.__rentAccum += dtSeconds;
-    if(window.__rentAccum < 3600) return;
-    window.__rentAccum = 0;
-    for(const a of agents){
-      if(!a || !a.id) continue;
-      if(typeof a.houseIdx !== 'number' || !houses[a.houseIdx]) continue;
-      const h = houses[a.houseIdx];
-      // Debe estar rentando (no dueño)
-      if(h.ownerId && h.ownerId === a.id) continue;
-      if(h.rentedBy !== a.id) continue;
-      const rentCost = 50;
-      if((a.money||0) >= rentCost){
-        a.money -= rentCost;
-        // Sumar a fondos del gobierno (si existe estructura)
-        try{ government.funds = (government.funds||0) + rentCost; if(typeof govFundsEl!=='undefined' && govFundsEl) govFundsEl.textContent = `Fondo: ${Math.floor(government.funds)}`; }catch(_){ }
-        toast(`${a.name||'Jugador'} pagó arriendo: -${rentCost}`);
-      } else {
-        toast(`${a.name||'Jugador'} no pudo pagar arriendo (saldo insuficiente)`);
-      }
-    }
+    // Esta función ahora está vacía. La lógica de cobro de arriendo
+    // ha sido movida al servidor (server.js) para que sea centralizada
+    // y se aplique a todos los jugadores de forma consistente.
   }
 
   function buildAvenidas(urbanArea, avoidRect = null){
@@ -1254,8 +1229,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
 
     // Llamar a la función para crear barrios y casas (sin duplicación)
     if (!preserveHouses) {
-      const CONNECTED_NPCS = 20;
-      makeBarriosYCasas(CFG.N_INIT + 24 + CONNECTED_NPCS, {x: 0, y: 0, w: WORLD.w, h: WORLD.h}, []);
+      makeBarriosYCasas(CFG.N_INIT + 24, {x: 0, y: 0, w: WORLD.w, h: WORLD.h}, []);
     }
 
     // Crear lista de evitación actualizada (después de crear casas)
@@ -1461,6 +1435,20 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
 
     // Agregar todos los edificios gubernamentales a la lista de evitación
     avoidList.push(...placedGovBuildings);
+
+    // --- Persistir estructuras clave para la IA del servidor ---
+    // Enviar fábricas y bancos al servidor para que los bots los conozcan.
+    try {
+      if (hasNet()) {
+        fetch('/api/world/structures', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ factories, banks })
+        }).catch(e => console.warn('Error persisting world structures:', e));
+      }
+    } catch(e) { console.warn('Failed to send structures to server', e); }
+
 
     // --- Garantizar que no haya solapamientos entre casas, parques y edificaciones ---
     function tryShiftRect(rect, others, margin) {
@@ -2002,32 +1990,6 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       drawBuildingWithImage(s, s.kind, '#8B5CF6', '#c4b5fd');
     });
 
-    // Monedas grandes sobre fábricas mientras se trabaja
-    try{
-      const arr = (window.__coins = window.__coins || []);
-      const now = performance.now();
-      for(let i=arr.length-1;i>=0;i--){
-        const c = arr[i];
-        const age = now - c.created;
-        if(age > (c.life||900)){ arr.splice(i,1); continue; }
-        const p = toScreen(c.x, c.y);
-        const t = Math.min(1, age / (c.life||900));
-        const bob = Math.sin((age/1000)*Math.PI*2)*6*ZOOM;
-        const alpha = 1 - t*0.8;
-        const fontPx = Math.max(28, (c.size||42)) * ZOOM;
-        ctx.save();
-        ctx.globalAlpha = Math.max(0.1, alpha);
-        ctx.font = `800 ${fontPx}px ui-monospace,monospace`;
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillStyle = '#f59e0b';
-        ctx.strokeStyle = '#78350f'; ctx.lineWidth = 2;
-        const y = p.y - 24*ZOOM - (c.offsetY||0) - bob;
-        ctx.fillText('💰', p.x, y);
-        ctx.strokeText('💰', p.x, y);
-        ctx.restore();
-      }
-    }catch(_){ }
-
     // Mostrar dinero acumulado de cada negocio comprado
     try{
       for(const s of renderShops){
@@ -2071,7 +2033,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       // Asumir que los objetos dentro de government.placed del servidor son instituciones
       // y forzar su tratamiento como 'gobierno' cuando falte la clave.
       const heuristicsGov = (inst.k === 'gobierno') || (inst.key === 'gobierno') || (inst.type === 'gobierno') || (inst.label && typeof inst.label === 'string' && inst.label.toLowerCase().includes('gobierno'));
-      const isGov = heuristicsGov || usingServerGov || (inst.kind && (inst.kind === 'gobierno' || inst.kind === 'government'));
+      const isGov = heuristicsGov || (inst.kind && (inst.kind === 'gobierno' || inst.kind === 'government'));
       if(isGov){
         const iw = inst.w || (government.w || 240);
         const ih = inst.h || (government.h || 140);
@@ -2197,12 +2159,18 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
           const near = d < 28;
           const aOwnsHouse = a.houseIdx !== null && houses[a.houseIdx] && houses[a.houseIdx].ownerId === a.id;
           const bOwnsHouse = b.houseIdx !== null && houses[b.houseIdx] && houses[b.houseIdx].ownerId === b.id;
-          if (near && matches >= 5 && (aOwnsHouse || bOwnsHouse) && a.state === 'single' && b.state === 'single' && a.cooldownSocial <= 0 && b.cooldownSocial <= 0) {
+          // Permitir matrimonio si tienen casa (propia O rentada)
+          const aHasHome = a.houseIdx !== null && houses[a.houseIdx] && (aOwnsHouse || houses[a.houseIdx].rentedBy === a.id);
+          const bHasHome = b.houseIdx !== null && houses[b.houseIdx] && (bOwnsHouse || houses[b.houseIdx].rentedBy === b.id);
+          
+          if (near && matches >= 4 && (aHasHome || bHasHome) && a.state === 'single' && b.state === 'single' && a.cooldownSocial <= 0 && b.cooldownSocial <= 0) {
             a.state = 'paired'; b.state = 'paired';
             a.spouseId = b.id; b.spouseId = a.id;
             a.cooldownSocial = 120; b.cooldownSocial = 120;
             a.justMarried = performance.now(); b.justMarried = performance.now();
             toast(`${a.code} y ${b.code} se han casado! 💕`);
+            // Notificar al servidor para persistir el estado
+            if (hasNet()) { try { window.sock?.emit('marriage', { aId: a.id, bId: b.id }); } catch(e){} }
 
             let targetHome = null;
             if (aOwnsHouse) {
@@ -2390,11 +2358,11 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   if(!window.__gamePaused) for(const a of agents){
       a.cooldownSocial = Math.max(0, a.cooldownSocial - dt);
       if (a.employedAtShopId) {
-        const myWorkplace = shops.find(s => s.id === a.employedAtShopId);
+        const myWorkplace = getVisibleShops().find(s => s.id === a.employedAtShopId);
         if (myWorkplace) { a.target = centerOf(myWorkplace); a.targetRole = 'work_shop'; }
       }
-  if (!a.forcedShopId && !a.workingUntil && !a.goingToBank && !a.employedAtShopId && (!a.targetRole || a.targetRole==='idle') && nowS >= (a.nextWorkAt || 0) && !(a.restUntil && nowS < a.restUntil) && !(a.exploreUntil && nowS < a.exploreUntil)) {
-  const myOwnedShops = shops.filter(s => s.ownerId === a.id);
+  if (!a.forcedShopId && !a.workingUntil && !a.goingToBank && !a.employedAtShopId && (!a.targetRole || a.targetRole==='idle') && nowS >= (a.nextWorkAt || 0) && !(a.restUntil && nowS < a.restUntil)) {
+  const myOwnedShops = getVisibleShops().filter(s => s.ownerId === a.id);
         if (myOwnedShops.length > 0 && Math.random() < CFG.OWNER_MANAGE_VS_WORK_RATIO) {
           const shopToManage = myOwnedShops[(Math.random() * myOwnedShops.length) |  0];
           a.target = centerOf(shopToManage);
@@ -2410,29 +2378,6 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
           if (f) { a.goingToWork = true; a.workFactoryId = factories.indexOf(f); a.target = centerOf(f); a.targetRole = 'go_work'; }
         }
       }
-  // Pago incremental mientras trabaja y efecto visual de moneda grande sobre la fábrica
-  if(a.workingUntil && nowS < a.workingUntil){
-        // Inicializar temporizadores de pago
-        a._workCoinNextAt = a._workCoinNextAt || Math.floor(nowS) + 1;
-        a._workEarningsAcc = a._workEarningsAcc || 0;
-        // Encontrar fábrica objetivo más cercana si tiene recordado el id
-        let fCenter = null;
-        try{
-          if(typeof a.workFactoryId === 'number' && factories[a.workFactoryId]){ fCenter = centerOf(factories[a.workFactoryId]); }
-          else if(a.targetRole === 'work' && a._lastWorkAt){ fCenter = { x: a._lastWorkAt.x, y: a._lastWorkAt.y }; }
-        }catch(_){ }
-        // Cada segundo: sumar dinero y disparar moneda
-        while(nowS >= a._workCoinNextAt){
-          a._workCoinNextAt += 1;
-          a._workEarningsAcc += (CFG.EARN_PER_SHIFT / Math.max(1, CFG.WORK_DURATION)); // 20/20 = 1 crédito/seg
-          a.pendingDeposit = (a.pendingDeposit||0) + (CFG.EARN_PER_SHIFT / Math.max(1, CFG.WORK_DURATION));
-          // Spawn moneda grande para render
-          if(fCenter){
-            window.__coins = window.__coins || [];
-            window.__coins.push({ x: fCenter.x, y: fCenter.y, created: performance.now(), life: 900, size: 42 });
-          }
-        }
-      }
   if(a.workingUntil && nowS>=a.workingUntil){
         a.workingUntil=null; a.pendingDeposit += CFG.EARN_PER_SHIFT; a.goingToBank=true;
         const b=banks[(Math.random()*banks.length)|0]; if(b){ a.target=centerOf(b); a.targetRole='bank'; }
@@ -2440,21 +2385,11 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     if(a.goingToBank && a.target){
         const c=a.target; if(Math.hypot(a.x-c.x,a.y-c.y)<14){
       a.money += a.pendingDeposit; a.pendingDeposit=0; a.goingToBank=false;
-      // Inicia fase de exploración posterior al depósito
-      a.exploreUntil = nowS + (CFG.POST_DEPOSIT_EXPLORE||30);
-      a.targetRole='explore'; a.target=null; // se generará destino exploración más abajo
-      a.nextWorkAt = null; // se definirá tras descanso en casa
+      a.target=null; a.targetRole='idle'; a.nextWorkAt = nowS + CFG.WORK_COOLDOWN;
         }
       }
-      // Transición de exploración -> ir a casa para descanso
-      if(a.exploreUntil && nowS >= a.exploreUntil){
-        a.exploreUntil = null;
-        if(a.houseIdx!=null){ const h=houses[a.houseIdx]; if(h){ a.target=centerOf(h); a.targetRole='home'; a.restUntil = nowS + (CFG.HOME_REST_DURATION||60); } }
-      }
-      // Tras descanso en casa, habilitar próximo trabajo
-      if(a.restUntil && nowS >= a.restUntil){ a.restUntil = null; a.nextWorkAt = nowS; }
 
-  if(!a.forcedShopId && !a.workingUntil && !a.goingToBank && !a.employedAtShopId && (!a.targetRole || a.targetRole==='idle' || a.targetRole==='home' || a.targetRole==='explore')) {
+  if(!a.forcedShopId && !a.workingUntil && !a.goingToBank && !a.employedAtShopId && (!a.targetRole || a.targetRole==='idle' || a.targetRole==='home')) {
         if (!a.forcedShopId && Math.random() < CFG.VISIT_RATE) {
           // Sólo considerar negocios que ya tienen dueño (comprados). Las panaderías y otros tipos
           // que no estén comprados no deberían atraer visitas porque no existen físicamente.
@@ -2470,17 +2405,12 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
             }
             if(best){ a.target={x:best.x+best.w/2,y:best.y+best.h/2}; a.targetRole='shop'; a._shopTargetId = best.id; }
           }
-          // Si sigue idle, asignar exploración del mapa
-          if((!a.targetRole || a.targetRole==='idle' || a.targetRole==='home') && !a.target){
-            const t = nextUnvisitedTarget();
-            a.target = t; a.targetRole = 'explore';
-          }
         }
       }
       if(a.targetRole==='shop' && a.target){
         const c=a.target;
         if(Math.hypot(a.x-c.x,a.y-c.y)<16){
-          const s = shops.find(q=>q.id===a._shopTargetId);
+          const s = getVisibleShops().find(q=>q.id===a._shopTargetId);
           if(s){
             // Comprar sólo si pasó intervalo de compra y tiene dinero
             const okInterval = (nowS - (a.lastPurchaseAt||0)) >= (CFG.SHOP_PURCHASE_INTERVAL||300);
@@ -2500,7 +2430,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       if(a.targetRole==='manage_shop' && a.target){
         const c=a.target;
         if(Math.hypot(a.x-c.x,a.y-c.y)<16){
-          const s = shops.find(q => q.id === a._shopTargetId);
+          const s = getVisibleShops().find(q => q.id === a._shopTargetId);
           if(s && s.ownerId === a.id){
             const amount = Math.floor(s.cashbox || 0);
             if(amount > 0){
@@ -2539,11 +2469,15 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         const dd = Math.hypot(dx, dy) || 1;
         const nx = dx / dd, ny = dy / dd;
         a.vx = nx * currentSpeed; a.vy = ny * currentSpeed;
-        if (dd < CFG.EXPLORE_REACH_RADIUS) {
-          // marcar sector visitado si era exploración
-          if(a.targetRole === 'explore'){ markVisitedAt(a.x, a.y); a.target = null; a.targetRole = 'idle'; }
-          else if (['work', 'work_shop', 'home', 'bank', 'shop', 'manage_shop', 'go_work'].includes(a.targetRole)) { a.target = null; a.targetRole = 'idle'; }
+        if (dd < 14) {
+          // Si estaba explorando y llegó, marcar celda como visitada
+          if (a.targetRole === 'explore') { try{ markVisitedAt(a.x, a.y); }catch(_){ } }
+          a.target = null; a._exploreTarget = null; a.targetRole = 'idle';
         }
+      } else if (a.targetRole === 'explore') {
+        // Mantener un objetivo de exploración persistente hasta alcanzarlo
+        if (!a._exploreTarget) { a._exploreTarget = nextUnvisitedTarget(); }
+        a.target = a._exploreTarget;
       } else {
         const isWorkingInFactory = a.workingUntil && nowS < a.workingUntil;
         const isWorkingInShop = a.employedAtShopId;
@@ -2560,6 +2494,13 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       a.x += a.vx * dt; a.y += a.vy * dt;
       if(a.x<4||a.x>WORLD.w-4){ a.vx*=-1; a.x=clamp(a.x,4,WORLD.w-4); }
       if(a.y<4||a.y>WORLD.h-4){ a.vy*=-1; a.y=clamp(a.y,4,WORLD.h-4); }
+
+      // Probabilidad configurable de entrar a modo explorar cuando está idle
+      if (!a.target && a.targetRole === 'idle' && Math.random() < (CFG.EXPLORE_IDLE_PROB||0.02)) {
+        a.targetRole = 'explore';
+        a._exploreTarget = nextUnvisitedTarget();
+        a.target = a._exploreTarget;
+      }
 
       const age = (yearsSince(a.bornEpoch)|0);
       if (a.state === 'paired' && a.cooldownSocial <= 0 && age > 22 && age < 45 && Math.random() < 0.00015) {
@@ -2672,7 +2613,8 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   }
   function fullDocument(){
     // Construye HTML del reporte con tablas y métricas amigables
-    const total$ = Math.round(agents.reduce((s,x)=>s+(x.money||0),0));
+    const financeSource = (window.gameState && Array.isArray(window.gameState.players) && window.gameState.players.length > 0) ? window.gameState.players : agents;
+    const total$ = Math.round(financeSource.reduce((s,x)=>s+(x.money||0),0));
     const me = agents.find(a => a.id === USER_ID) || null;
     const meName = me ? (me.name || me.fullName || me.code || me.id) : '—';
     const meCode = me ? (me.code || me.id) : '—';
@@ -2687,7 +2629,8 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     } else {
       users = agents;
     }
-    const filtered = users.filter(u => !u.isBot && (!u.state || u.state !== 'child'));
+    // Mostrar a todos los usuarios (humanos y agentes del servidor), excepto niños
+    const filtered = users.filter(u => (!u.state || u.state !== 'child'));
 
     // Negocios propios del jugador
     const myId = me ? me.id : null;
@@ -2719,7 +2662,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   // Nota: el documento del agente NO incluye instituciones del gobierno
 
     // Tabla: finanzas por agente
-    const finRows = agents
+    const finRows = financeSource
       .filter(a => a && a.state !== 'child')
       .map(a => {
         const nm = a.name || a.fullName || a.code || a.id;
@@ -3151,10 +3094,6 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         }catch(e){}
       }catch(e){}
     }); }catch(e){}
-  // Generar 20 "agentes conectados" con nombres, casas en arriendo e inicio de trabajo
-  spawnConnectedLikeAgents();
-  // Forzar que el propio jugador vaya primero a trabajar a una fábrica
-  try{ sendAgentToWork(user); }catch(_){ }
     const b0=cityBlocks[0]; if(b0){ cam.x = Math.max(0, b0.x - 40); cam.y = Math.max(0, b0.y - 40); clampCam(); }
     updateGovDesc();
   try{ window.updateOwnedShopsUI = updateOwnedShopsUI; updateOwnedShopsUI(); }catch(e){}
@@ -3322,7 +3261,9 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       rectX.y = clamp(rectX.y, 10, WORLD.h - rectX.h - 10);
   // Restricción de arena eliminada
       if(allBuildings.some(r=>rectsOverlapWithMargin(r,rectX, 8))){ toast('No se puede colocar aquí (muy cerca).'); return; }
+      /*
       if(government.funds < placingGov.cost){ toast('Fondos insuficientes.'); placingGov=null; return; }
+      */
       if(hasNet()){
         const payload = { ...rectX, cost: placingGov.cost };
         window.sock?.emit('placeGov', payload, (res)=>{
@@ -3343,12 +3284,12 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     for(const s of getVisibleShops()){
       if(inside(pt,s) && s.ownerId === USER_ID){
         if(s.hasEmployee){
-          const employee = agents.find(a => a.id === s.employeeId);
+          const employee = agents.find(a => a.id === s.employeeId) || Object.values(window.gameState?.players || {}).find(p => p.id === s.employeeId);
           if(employee){ employee.employedAtShopId = null; employee.target = null; employee.targetRole = 'idle'; }
           s.hasEmployee = false; s.employeeId = null; s.wage = 0;
           toast("Empleado despedido.");
         } else {
-          const candidate = agents.find(a => a.id !== USER_ID && !a.employedAtShopId && !shops.some(shop => shop.ownerId === a.id));
+          const candidate = agents.find(a => a.id !== USER_ID && !a.employedAtShopId && !getVisibleShops().some(shop => shop.ownerId === a.id));
           if(candidate){
             s.hasEmployee = true; s.employeeId = candidate.id;
             s.wage = Math.ceil(CFG.EARN_PER_SHIFT * 1.25);
@@ -3466,7 +3407,9 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   btnGovPlace.onclick = ()=>{
     if(!STARTED){ toast('Inicia el mundo primero.'); return; }
     const typ = selectedGovType();
+    /*
     if(government.funds < typ.cost){ toast('Fondos insuficientes.'); return; }
+    */
     placingGov = {...typ};
     toast(`Modo colocación: ${typ.label}. Haz clic en el mapa.`);
   }
@@ -3488,7 +3431,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
 
   setInterval(()=>{if(!STARTED) return; if(hasNet()) return;
     for(const shop of shops){
-      if(shop.hasEmployee && shop.employeeId && shop.ownerId){
+      if(shop.hasEmployee && shop.employeeId && shop.ownerId && shop.wage > 0){
         const owner = agents.find(a => a.id === shop.ownerId);
         const employee = agents.find(a => a.id === shop.employeeId);
         if(!owner || !employee) continue;
@@ -3641,8 +3584,9 @@ function makeAgent(state, options = {}) {
     likes,
   // avatar seleccionado (del grid, preview o subida por el usuario)
   avatar: finalAvatar,
-    target: null,
-    targetRole: 'idle',
+    // Arrancar explorando para cubrir el mundo desde el primer segundo
+    target: nextUnvisitedTarget ? nextUnvisitedTarget() : null,
+    targetRole: 'explore',
     cooldownSocial: 0,
     parents: options.parents || null,
     spouseId: null
@@ -3783,61 +3727,6 @@ window.__onChatMessage = function(msg){
     const dock = document.getElementById('chatDock'); if(dock) dock.style.display='block';
     renderIncomingMsg(msg);
   }catch(_){ }
-}
-
-// --- Utilidades de NPC conectados ---
-function purgeNonPlayerAgents(){ agents = agents.filter(a => a && a.id === USER_ID); }
-
-function ensureHouseWithInitial(agent){
-  ensurePlayerHasHouse(agent);
-  if(typeof agent.houseIdx==='number' && houses[agent.houseIdx]){
-    const h = houses[agent.houseIdx];
-    const baseInitial = (agent.name||agent.code||'U').trim().charAt(0).toUpperCase() || 'U';
-    window.__houseInitialCounts = window.__houseInitialCounts || {};
-    const count = (window.__houseInitialCounts[baseInitial]||0)+1; window.__houseInitialCounts[baseInitial]=count;
-    h._markerInitial = baseInitial + (count>1?count:'');
-    h._highlightUntil = performance.now() + 4000;
-    // Cobro de arriendo inicial (50) al gobierno
-    const rentCost = 50;
-    if((agent.money||0) >= rentCost){ agent.money -= rentCost; try{ government.funds=(government.funds||0)+rentCost; if(govFundsEl) govFundsEl.textContent=`Fondo: ${Math.floor(government.funds)}`; }catch(_){ } }
-  }
-}
-
-function sendAgentToWork(agent){
-  try{
-    // Buscar una FÁBRICA primero (requisito: ir a trabajar a fábrica)
-    const pick = (arr)=> (arr && arr.length)? arr[(Math.random()*arr.length)|0] : null;
-    let target = pick(factories) || null;
-    if(!target){ target = pick(banks) || pick(shops); }
-    if(target){
-      agent.goingToWork = true;
-      agent.target = centerOf(target);
-      agent.targetRole = 'go_work';
-      agent.nextWorkAt = performance.now()/1000;
-      agent._firstJobForced = true; // marca para la primera vez
-    }
-  }catch(_){ }
-}
-
-function spawnConnectedLikeAgents(){
-  // Lista de 20 nombres (10 hombres -> avatar1/2, 10 mujeres -> avatar3/4)
-  const maleNames = ['Carlos','José','Luis','Miguel','Jorge','Andrés','Diego','Fernando','Ricardo','Pedro'];
-  const femaleNames = ['María','Ana','Lucía','Sofía','Carla','Elena','Valentina','Camila','Gabriela','Paula'];
-  const pick = (list)=> list[(Math.random()*list.length)|0];
-  const pickAvatar = (gender)=> gender==='M' ? (Math.random()<0.5?'/assets/avatar1.png':'/assets/avatar2.png')
-                                          : (Math.random()<0.5?'/assets/avatar3.png':'/assets/avatar4.png');
-  purgeNonPlayerAgents();
-  const want = 20;
-  for(let i=0;i<want;i++){
-    const isMale = i < 10; // primeros 10 hombres, siguientes 10 mujeres
-    const gender = isMale ? 'M' : 'F';
-    const name = isMale ? pick(maleNames) : pick(femaleNames);
-    const avatar = pickAvatar(gender);
-    const a = makeAgent('adult', { name, gender, ageYears: rand(20,55), startMoney: 400, avatar });
-    agents.push(a);
-  }
-  // Asignar casas con inicial, cobrar arriendo inicial, y enviarlos a trabajar
-  for(const a of agents){ if(a.id===USER_ID) continue; ensureHouseWithInitial(a); sendAgentToWork(a); }
 }
 
 // Función para asignar alquiler
