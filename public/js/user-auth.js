@@ -188,9 +188,16 @@
 					likesWrap.querySelectorAll('input[type="checkbox"]').forEach(cb=>{ cb.checked = set.has(cb.value); });
 					try{ const likesCount = document.getElementById('likesCount'); if(likesCount) likesCount.textContent = String(Math.min(5, prog.likes.length)); }catch(e){}
 				}
-				if(prog.avatar){
-					try{ localStorage.setItem('selectedAvatar', prog.avatar); }catch(e){}
-					try{ const uiAvatar = document.getElementById('uiAvatar'); if(uiAvatar) uiAvatar.src = prog.avatar; }catch(e){}
+				if (prog.avatar) {
+					try {
+						// Usar la función centralizada para asegurar que todas las vistas (incluida la de creación) se actualicen
+						if (typeof window.setAvatar === 'function') {
+							window.setAvatar(prog.avatar);
+						} else {
+							// Fallback por si setAvatar no está lista
+							localStorage.setItem('selectedAvatar', prog.avatar);
+						}
+					} catch (e) { console.warn('Failed to pre-fill avatar', e); }
 				}
 				// Si ya hay nombre y 5 gustos, habilitar el botón Comenzar de inmediato
 				try{ window.updateLikesUI && window.updateLikesUI(); }catch(e){}

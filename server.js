@@ -108,12 +108,13 @@ app.post('/api/login', (req, res) => {
   }catch(e){ return res.status(500).json({ ok:false, msg:'Error' }); }
 });
 
-app.post('/api/logout', (req, res) => {
+app.post('/api/logout', async (req, res) => {
   try {
     const uid = getSessionUserId(req);
     if (uid) {
       const { money, bank } = req.body || {};
-      brain.setMoney(uid, money, bank); // Usar setMoney para forzar el guardado del último estado
+      // Usar la nueva función de guardado síncrono para garantizar la persistencia antes de responder.
+      await brain.setMoneyAndPersist(uid, money, bank);
     }
     clearSession(res); return res.json({ ok: true });
   } catch (e) { return res.status(500).json({ ok: false }); }

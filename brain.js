@@ -421,6 +421,28 @@ function setMoney(userId, money, bank = undefined) {
 	}catch(e){}
 }
 
+async function setMoneyAndPersist(userId, money, bank) {
+	const p = ensureProgress(userId);
+	const prevMoney = p.money || 0;
+
+	// Asegurarse de que los valores son números válidos antes de asignarlos
+	if (typeof money === 'number' && !isNaN(money)) {
+		p.money = Math.max(0, Math.floor(money));
+	}
+	if (typeof bank === 'number' && !isNaN(bank)) {
+		p.bank = Math.max(0, Math.floor(bank));
+	}
+
+	// Registrar el cambio en el ledger
+	try {
+		const user = getUserById(userId);
+		recordMoneyChange(userId, user?.username || null, (p.money || 0) - prevMoney, p.money || 0, p.bank || 0, 'logout-save');
+	} catch (e) { }
+
+	// Forzar la persistencia inmediata de ambos archivos y esperar a que terminen
+	await Promise.all([persist(), persistLedger()]);
+}
+
 function setVehicle(userId, vehicle) {
 	const p = ensureProgress(userId);
 	p.vehicle = vehicle || null;
@@ -477,15 +499,6 @@ function addMoneyOnce(userId, delta, reasonKey){
 	return addMoney(userId, delta, reason);
 }
 
-function saveMoneySnapshot(userId, reason='logout'){
-	try{
-		if(!userId) return;
-		const user = getUserById(userId);
-		const p = ensureProgress(userId);
-		recordMoneyChange(userId, user?.username||null, 0, p.money||0, p.bank||0, reason);
-	}catch(e){ console.warn('saveMoneySnapshot error', e); }
-}
-
 function latestMoney(userId){
 	try{ return ledger.users[userId]?.lastMoney ?? null; }catch(e){ return null; }
 }
@@ -538,11 +551,11 @@ module.exports = {
 	getProgressHouses,
 	setMoney,
 	setVehicle,
+	setMoneyAndPersist,
 	addOwnedVehicle,
 	log,
 	// ledger API
 	recordMoneyChange,
-	saveMoneySnapshot,
 	latestMoney,
 	restoreMoneyFromLedger,
 	changePassword,

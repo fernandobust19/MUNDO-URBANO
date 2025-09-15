@@ -199,6 +199,7 @@
       }
     } catch(e) { console.warn('Error setting avatar', e); }
   }
+  try { window.setAvatar = setAvatar; } catch(e) {}
 
   if(avatarGrid){
     avatarGrid.addEventListener('click', (ev)=>{
