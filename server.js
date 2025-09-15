@@ -134,11 +134,11 @@ app.get('/api/gov', (req, res) => {
 });
 
 // Añadir fondos al gobierno (demo; en producción debería requerir admin)
-app.post('/api/gov/funds/add', (req, res) => {
+app.post('/api/gov/funds/add', async (req, res) => {
   try{
     const amount = Number(req.body?.amount||0);
     if(!Number.isFinite(amount) || amount===0) return res.status(400).json({ ok:false });
-    const out = brain.addGovernmentFunds(amount);
+    const out = await brain.addGovernmentFunds(amount);
     if(!(out && out.ok)) return res.status(400).json({ ok:false });
     return res.json({ ok:true, funds: out.funds });
   }catch(e){ return res.status(500).json({ ok:false }); }
@@ -508,7 +508,7 @@ setInterval(() => {
 const SALARY_INTERVAL = 2 * 60 * 1000; // Cada 2 minutos
 const SALARY_AMOUNT = 25; // Salario por ciclo
 
-setInterval(() => {
+setInterval(async () => {
   let totalPaidToGov = 0;
   for (const shop of state.shops) {
     if (!shop.employeeId) continue;
@@ -521,7 +521,7 @@ setInterval(() => {
 
     if ((shop.cashbox || 0) >= SALARY_AMOUNT) {
       shop.cashbox -= SALARY_AMOUNT;
-      brain.addGovernmentFunds(SALARY_AMOUNT);
+      await brain.addGovernmentFunds(SALARY_AMOUNT);
       // --- SOLUCIÓN: Persistir el cambio en la caja del negocio ---
       brain.updateShop(shop.id, { cashbox: shop.cashbox });
       totalPaidToGov += SALARY_AMOUNT;
@@ -550,7 +550,7 @@ setInterval(resetExplorationGrid, 15 * 60 * 1000); // Cada 15 minutos
 const RENT_INTERVAL = 10 * 60 * 1000; // cada 10 minutos
 const RENT_AMOUNT = 50;
 
-setInterval(() => {
+setInterval(async () => {
   // Usar las casas del estado persistente, que es la fuente de verdad
   const allHouses = brain.getProgressHouses() || [];
   if (allHouses.length === 0) return;
@@ -585,7 +585,7 @@ setInterval(() => {
   }
 
   if (totalRentCollected > 0) {
-    brain.addGovernmentFunds(totalRentCollected);
+    await brain.addGovernmentFunds(totalRentCollected);
     state.government = brain.getGovernment(); // Actualizar el estado local del servidor
     console.log(`[Rent] Se cobró un total de ${totalRentCollected} de arriendo.`);
   }
@@ -743,15 +743,15 @@ io.on('connection', (socket) => {
       if(ack) ack({ ok:true, shops: state.shops, houses: state.houses });
     }catch(e){ if(ack) ack({ ok:false }); }
   });
-
-  socket.on('placeGov', (payload, ack) => {
+  
+  socket.on('placeGov', async (payload, ack) => {
   /*
   if ((state.government.funds || 0) < (payload.cost || 0)) {
       if (ack) ack({ ok:false, msg: 'Fondos insuficientes' });
       return;
     }
   */
-  try{ brain.addGovernmentFunds(-Math.abs(payload.cost||0)); }catch(_){ }
+  try{ await brain.addGovernmentFunds(-Math.abs(payload.cost||0)); }catch(_){ }
   try{ brain.placeGovernment(payload); }catch(_){ }
   state.government = brain.getGovernment();
     io.emit('govPlaced', payload);

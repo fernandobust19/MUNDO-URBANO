@@ -215,12 +215,12 @@ function setGovernment(gov){
 	}catch(e){}
 	return { ok:false };
 }
-function addGovernmentFunds(delta){
+async function addGovernmentFunds(delta){
 	const g = getGovernment();
 	const add = Math.floor(delta||0);
 	if(!isFinite(add) || add===0) return { ok:false };
 	g.funds = Math.max(0, (g.funds||0) + add);
-	schedulePersist();
+	await persist();
 	log('gov_funds', null, { delta: add, funds: g.funds });
 	return { ok:true, funds: g.funds };
 }

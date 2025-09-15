@@ -1044,22 +1044,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
 
   function buildAvenidas(urbanArea, avoidRect = null){
     avenidas.length=0; roundabouts.length=0;
-    const avW=26;
-    // Más divisiones para un mapa más denso (más avenidas/calles)
-    const vDivs = Math.max(6, Math.floor((urbanArea.w/1200))); // vertical divisiones crecientes según ancho
-    const hDivs = Math.max(4, Math.floor((urbanArea.h/900)));  // horizontales según alto
-    const vPoints = [], hPoints = [];
-    for (let i = 1; i < vDivs; i++) vPoints.push(urbanArea.x + Math.floor(urbanArea.w * i / vDivs));
-    for (let i = 1; i < hDivs; i++) hPoints.push(urbanArea.y + Math.floor(urbanArea.h * i / hDivs));
-    for (const vx of vPoints) avenidas.push({x:vx-avW/2, y:urbanArea.y, w:avW, h:urbanArea.h});
-    for (const hy of hPoints) avenidas.push({x:urbanArea.x, y:hy-avW/2, w:urbanArea.w, h:avW});
-    for (const vx of vPoints) for (const hy of hPoints) {
-      if (Math.random() > 0.6) continue;
-      const rRadius = randi(50, 85);
-      const newRoundabout = {x:vx-rRadius, y:hy-rRadius, w:rRadius*2, h:rRadius*2, cx:vx, cy:hy};
-      if (avoidRect && rectsOverlap(newRoundabout, avoidRect)) continue;
-      roundabouts.push(newRoundabout);
-    }
+    // Se ha eliminado la lógica de creación de calles y redondeles por solicitud.
   }
 
   function regenInfrastructure(preserveHouses=false){
@@ -1086,9 +1071,10 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     try {
       const parkType = GOV_TYPES.find(t => t.k === 'parque');
       if (parkType) {
+        // Se crea una plaza de fondo, pero sin ícono y con un relleno sutil para que no distraiga.
         government.placed.push({
           ...parkType, ...govComplexRect,
-          label: 'Plaza Central', icon: '🏛️🌳', fill: 'rgba(12, 81, 58, 0.5)'
+          label: 'Plaza Gubernamental', icon: null, fill: 'rgba(80, 80, 90, 0.25)'
         });
       }
     } catch(e) { console.warn('Error creating central park area', e); }
@@ -1096,15 +1082,31 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     // Posicionar el gobierno
     government.x = govComplexRect.x + parkW + parkGap;
     government.y = govComplexRect.y + parkH + parkGap;
-    // Agregar el edificio de gobierno como imagen
-    government.placed.push({
+    // Agregar el edificio de gobierno como imagen y registrarlo en el servidor
+    const mainGovBuilding = {
       k: 'gobierno',
       label: 'Gobierno',
       x: government.x,
       y: government.y,
       w: government.w,
-      h: government.h
-    });
+      h: government.h,
+      isMain: true // Bandera para identificarlo como el edificio principal
+    };
+    government.placed.push(mainGovBuilding);
+
+    // --- SOLUCIÓN: Registrar el edificio principal del gobierno en el servidor ---
+    // Esto asegura que el edificio central sea persistente y visible para todos.
+    try {
+      if (hasNet()) {
+        const serverPlaced = window.gameState?.government?.placed || [];
+        const serverHasIt = serverPlaced.some(item => item.isMain);
+        if (!serverHasIt) {
+          window.sock?.emit('placeGov', mainGovBuilding, (res) => {
+            if (res.ok) console.log('Edificio principal del gobierno registrado en el servidor.');
+          });
+        }
+      }
+    } catch(e) { console.warn('Error registering main government building', e); }
     
   // Cementerio en la parte inferior céntrica del mapa (antes de distribuir otros edificios)
   const bottomMargin = 40;
@@ -2041,33 +2043,8 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     for(const inst of renderGovernmentPlaced){
       // Si los datos provienen del servidor, algunos campos (k/key/type) pueden faltar.
       // Asumir que los objetos dentro de government.placed del servidor son instituciones
-      // y forzar su tratamiento como 'gobierno' cuando falte la clave. Corregido para ser más específico.
-      const isGov = (inst.k === 'gobierno') || (inst.key === 'gobierno') || (inst.type === 'gobierno') || (inst.kind === 'gobierno');
-
-      if(isGov){
-        const iw = inst.w || (government.w || 240);
-        const ih = inst.h || (government.h || 140);
-        const p = toScreen(inst.x, inst.y);
-        const w = iw * 2 * ZOOM, h = ih * 2 * ZOOM;
-        // Centrar la imagen en el mismo punto central
-        const px = p.x + (iw * ZOOM)/2 - w/2;
-        const py = p.y + (ih * ZOOM)/2 - h/2;
-
-        // Usar la imagen del objeto BUILDING_IMAGES
-        const img = BUILDING_IMAGE_CACHE['gobierno'];
-
-        if (img && img.complete && img.naturalWidth !== 0 && !img.error) {
-          ctx.drawImage(img, px, py, w, h);
-        } else {
-          // Fallback si la imagen no está disponible
-          ctx.fillStyle = 'rgba(0, 82, 204, 0.8)';
-          ctx.fillRect(px, py, w, h);
-          ctx.strokeStyle = '#60a5fa';
-          ctx.lineWidth = 2;
-          ctx.strokeRect(px, py, w, h);
-          // No texto del edificio
-        } 
-      } else if(inst.k === 'carcel'){
+      // y forzar su tratamiento como 'gobierno' cuando falte la clave.
+      if(inst.k === 'carcel'){
         const p = toScreen(inst.x, inst.y);
         const w = inst.w * ZOOM, h = inst.h * ZOOM;
         ctx.fillStyle = 'rgba(20,20,20,0.9)';
@@ -2077,7 +2054,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         for(let i=0;i<bars;i++){ const bx = p.x + 4 + i*(w-8)/(bars-1); ctx.fillRect(bx, p.y+4, 2, h-8); }
         // Sin texto "CÁRCEL"
       } else {
-        // Usar drawBuildingWithImage en lugar de drawLabelIcon (sin textos)
+        // Lógica unificada para todas las instituciones, incluido el gobierno
         drawBuildingWithImage(inst, inst.k, inst.fill, inst.stroke);
       }
     }
