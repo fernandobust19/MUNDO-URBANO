@@ -4,9 +4,41 @@
 const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
+const { google } = require('googleapis');
 
 const DB_PATH = path.join(__dirname, 'brain.db.json');
 const LEDGER_PATH = path.join(__dirname, 'saldos.ledger.json');
+
+// --- Integración con Google Drive ---
+const GDRIVE_BRAIN_FILE_ID = process.env.GDRIVE_BRAIN_FILE_ID || null;
+const GDRIVE_LEDGER_FILE_ID = process.env.GDRIVE_LEDGER_FILE_ID || null;
+const GOOGLE_SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || null;
+const GOOGLE_PRIVATE_KEY = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
+
+let driveClient = null;
+
+function getDriveClient() {
+	if (driveClient) return driveClient;
+	if (!GDRIVE_BRAIN_FILE_ID || !GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY) {
+		// Si no está configurado, se usará el sistema de archivos local como fallback.
+		return null;
+	}
+
+	try {
+		const jwtClient = new google.auth.JWT(
+			GOOGLE_SERVICE_ACCOUNT_EMAIL,
+			null,
+			GOOGLE_PRIVATE_KEY,
+			['https://www.googleapis.com/auth/drive.file'] // Permiso para acceder a archivos creados/compartidos
+		);
+		driveClient = google.drive({ version: 'v3', auth: jwtClient });
+		console.log('[GDRIVE] Cliente de Google Drive inicializado.');
+		return driveClient;
+	} catch (e) {
+		console.error('[GDRIVE] Falló la inicialización del cliente de Google Drive:', e.message);
+		return null;
+	}
+}
 
 let db = {
 	users: [], // { id, username, passHash, createdAt, lastLoginAt, gender?, country?, email?, phone? }
@@ -23,19 +55,61 @@ let db = {
 // Ledger en un solo archivo: { users: { userId: { username, lastMoney, lastBank, updatedAt } }, movements: [ { ts, userId, username, delta, money, bank, reason } ] }
 let ledger = { users: {}, movements: [] };
 
-function saveAtomic(dataStr) {
-	const tmp = DB_PATH + '.tmp';
-	fs.writeFileSync(tmp, dataStr);
-	fs.renameSync(tmp, DB_PATH);
+async function saveAtomic(dataStr) {
+	const drive = getDriveClient();
+	if (drive && GDRIVE_BRAIN_FILE_ID) {
+		try {
+			await drive.files.update({
+				fileId: GDRIVE_BRAIN_FILE_ID,
+				media: {
+					mimeType: 'application/json',
+					body: dataStr,
+				},
+			});
+		} catch (e) {
+			console.error('[GDRIVE] Error al guardar brain.db.json:', e.message);
+		}
+	} else {
+		const tmp = DB_PATH + '.tmp';
+		fs.writeFileSync(tmp, dataStr);
+		fs.renameSync(tmp, DB_PATH);
+	}
 }
 
-function saveLedgerAtomic(dataStr){
-	const tmp = LEDGER_PATH + '.tmp';
-	fs.writeFileSync(tmp, dataStr);
-	fs.renameSync(tmp, LEDGER_PATH);
+async function saveLedgerAtomic(dataStr){
+	const drive = getDriveClient();
+	if (drive && GDRIVE_LEDGER_FILE_ID) {
+		try {
+			await drive.files.update({
+				fileId: GDRIVE_LEDGER_FILE_ID,
+				media: {
+					mimeType: 'application/json',
+					body: dataStr,
+				},
+			});
+		} catch (e) {
+			console.error('[GDRIVE] Error al guardar saldos.ledger.json:', e.message);
+		}
+	} else {
+		const tmp = LEDGER_PATH + '.tmp';
+		fs.writeFileSync(tmp, dataStr);
+		fs.renameSync(tmp, LEDGER_PATH);
+	}
 }
 
-function load() {
+async function load() {
+	const drive = getDriveClient();
+	if (drive && GDRIVE_BRAIN_FILE_ID) {
+		try {
+			console.log('[GDRIVE] Cargando brain.db.json desde Google Drive...');
+			const res = await drive.files.get({ fileId: GDRIVE_BRAIN_FILE_ID, alt: 'media' });
+			const parsed = JSON.parse(res.data);
+			if (parsed && typeof parsed === 'object') db = Object.assign(db, parsed);
+			console.log('[GDRIVE] brain.db.json cargado exitosamente.');
+		} catch (e) {
+			console.warn('[GDRIVE] No se pudo cargar brain.db.json, usando estado inicial.', e.message);
+		}
+	}
 	try {
 		if (fs.existsSync(DB_PATH)) {
 			const raw = fs.readFileSync(DB_PATH, 'utf8');
@@ -54,6 +128,17 @@ function load() {
 	}
 
 	// Cargar ledger
+	if (drive && GDRIVE_LEDGER_FILE_ID) {
+		try {
+			console.log('[GDRIVE] Cargando saldos.ledger.json desde Google Drive...');
+			const res = await drive.files.get({ fileId: GDRIVE_LEDGER_FILE_ID, alt: 'media' });
+			const parsed = JSON.parse(res.data);
+			if (parsed && typeof parsed === 'object') ledger = Object.assign(ledger, parsed);
+			console.log('[GDRIVE] saldos.ledger.json cargado exitosamente.');
+		} catch (e) {
+			console.warn('[GDRIVE] No se pudo cargar saldos.ledger.json, usando estado inicial.', e.message);
+		}
+	}
 	try{
 		if(fs.existsSync(LEDGER_PATH)){
 			const lr = fs.readFileSync(LEDGER_PATH, 'utf8');
@@ -66,23 +151,23 @@ function load() {
 }
 
 let _saveTimer = null;
-function persist() {
+async function persist() {
 	try {
 		const str = JSON.stringify(db, null, 2);
-		saveAtomic(str);
+		await saveAtomic(str);
 	} catch (e) {
 		console.warn('brain persist error', e);
 	}
 }
 
-function persistLedger(){
+async function persistLedger(){
 	try{
 		// Limitar tamaño del array de movimientos
 		if(Array.isArray(ledger.movements) && ledger.movements.length > 20000){
 			ledger.movements.splice(0, ledger.movements.length - 20000);
 		}
 		const str = JSON.stringify(ledger, null, 2);
-		saveLedgerAtomic(str);
+		await saveLedgerAtomic(str);
 	}catch(e){ console.warn('ledger persist error', e); }
 }
 
@@ -405,7 +490,7 @@ function restoreMoneyFromLedger(userId){
 }
 
 // Cargar al iniciar
-load();
+await load();
 
 function changePassword(userId, newPassword) {
 	const user = getUserById(userId);
