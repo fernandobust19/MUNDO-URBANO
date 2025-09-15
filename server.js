@@ -462,244 +462,28 @@ function ensureBots(n = 30) { // Aumentado a 30 agentes
   const existing = Object.values(state.players).filter(p => p.isBot);
   if (existing.length >= n) return;
 
-  // Buscar casas disponibles para asignar
-  const allHouses = brain.getProgressHouses() || [];
-  const availableHouses = allHouses.filter(h => h && !h.rentedBy && !h.ownerId);
-  let houseAssignIndex = 0;
-
-  const worldW = 2200;
-  const worldH = 1400;
-
-  const presetAvatars = ['/assets/avatar1.png','/assets/avatar2.png','/assets/avatar3.png','/assets/avatar4.png'];
-
-  for (let i = existing.length; i < n; i++) {
-    const id = 'B' + (i + 1);
-    const avatar = presetAvatars[Math.floor(Math.random()*presetAvatars.length)];
-    let gender, name;
-
-    // Asignar género y nombre según el avatar
-    if (avatar === '/assets/avatar1.png' || avatar === '/assets/avatar2.png') {
-      gender = 'M';
-      name = randomPersonName('M');
-    } else { // avatar3.png y avatar4.png
-      gender = 'F';
-      name = randomPersonName('F');
-    }
-
-    const agent = {
-      id,
-      socketId: null,
-      code: name,
-      x: Math.random() * worldW,
-      y: Math.random() * worldH,
-      money: 400,
-      gender,
-      avatar,
-      isBot: true, // isBot ahora significa "controlado por servidor"
-      vx: 0,
-      vy: 0,
-      speed: 100 + Math.random()*100, // Velocidad ligeramente reducida para movimiento más natural
-      targetX: Math.random()*1800+100,
-      targetY: Math.random()*1000+100,
-      // Estado para lógica de trabajo y compras
-      targetRole: 'idle',
-      workingUntil: 0,
-      pendingDeposit: 0,
-      state: 'single',
-      spouseId: null,
-      ownsHouse: false,
-      nextWorkAt: 0,
-      lastPurchaseAt: 0,
-      createdAt: now(),
-      updatedAt: now()
-    };
-    state.players[id] = agent;
-
-    // Asignar casa en arriendo si hay disponibles
-    if (houseAssignIndex < availableHouses.length) {
-      const house = availableHouses[houseAssignIndex];
-      
-      // Generar inicial para la casa
-      const baseInitial = (agent.code || 'A').trim().charAt(0).toUpperCase() || 'A';
-      const count = (houseInitialCounts[baseInitial] || 0) + 1;
-      houseInitialCounts[baseInitial] = count;
-      const marker = baseInitial + (count > 1 ? String(count) : '');
-
-      const patch = { rentedBy: agent.id, _markerInitial: marker };
-
-      // Actualizar en la base de datos persistente
-      brain.updateGlobalHouse(house.id, patch);
-
-      // Actualizar en el estado en memoria del servidor
-      const stateHouse = state.houses.find(h => h.id === house.id);
-      if (stateHouse) Object.assign(stateHouse, patch);
-
-      houseAssignIndex++;
-    }
-  }
-}
-
-// Movimiento para jugadores humanos inactivos, para que el mundo se sienta vivo.
-function tickIdlePlayers(bounds = { w: 2200, h: 1400 }) {
-  const dt = 0.12; // ~120ms por tick
-  const idleTimeout = 3000; // 3 segundos de inactividad para empezar a moverse
-  const currentTime = now();
-
-  for (const p of Object.values(state.players)) {
-    // Omitir jugadores humanos activos. Los agentes del servidor siempre se mueven.
-    if (!p.isBot && (currentTime - (p.lastUpdateFromClient || 0) < idleTimeout)) {
-      continue;
-    }
-
-    // Lógica de movimiento: si es un agente del servidor y está 'idle', usa la exploración.
-    if (p.isBot && p.targetRole === 'idle') {
-        if (typeof p.targetX !== 'number' || typeof p.targetY !== 'number' || Math.hypot(p.x - p.targetX, p.y - p.targetY) < 50 || Math.random() < 0.01) {
-            const newTarget = nextUnvisitedTarget(bounds.w, bounds.h);
-            p.targetX = newTarget.x;
-            p.targetY = newTarget.y;
-            markVisitedAt(p.x, p.y, bounds.w, bounds.h);
-        }
-    } else if (typeof p.targetX !== 'number' || typeof p.targetY !== 'number' || Math.random() < 0.02) {
-        // Movimiento aleatorio para jugadores humanos inactivos
-        p.targetX = Math.random() * bounds.w;
-        p.targetY = Math.random() * bounds.h;
-    }
-
-    const dx = p.targetX - p.x;
-    const dy = p.targetY - p.y;
-    const dist = Math.hypot(dx, dy);
-
-    if (dist < 20) {
-      p.targetX = Math.random() * bounds.w;
-      p.targetY = Math.random() * bounds.h;
-    }
-
-    const speed = p.speed || 100;
-    const nx = dx / (dist || 1);
-    const ny = dy / (dist || 1);
-    p.vx = (p.vx || 0) * 0.85 + nx * speed * 0.15;
-    p.vy = (p.vy || 0) * 0.85 + ny * speed * 0.15;
-    p.x = Math.max(0, Math.min((p.x || 0) + p.vx * dt, bounds.w));
-    p.y = Math.max(0, Math.min((p.y || 0) + p.vy * dt, bounds.h));
-    p.updatedAt = now();
-  }
+  // Esta función ya no crea bots, solo se asegura de que el array exista.
 }
 
 // Lógica de comportamiento para agentes del servidor (trabajar, comprar)
 function tickServerAgents() {
   const serverAgents = Object.values(state.players).filter(p => p.isBot);
   const nowS = Date.now() / 1000;
-  const { factories, banks, shops: allShops } = brain.getGameStructures();
 
   for (const agent of serverAgents) {
-    // 1. Lógica de trabajo
-    if (agent.targetRole === 'idle' && nowS >= (agent.nextWorkAt || 0)) {
-      if (factories && factories.length > 0) {        
-        // Lógica mejorada: buscar la fábrica más cercana para dispersar a los agentes.
-        let closestFactory = null;
-        let minDistance = Infinity;
-
-        for (const f of factories) {
-          const factoryCenter = { x: f.x + f.w / 2, y: f.y + f.h / 2 };
-          const distance = Math.hypot(agent.x - factoryCenter.x, agent.y - factoryCenter.y);
-          if (distance < minDistance) {
-            minDistance = distance;
-            closestFactory = f;
-          }
+    // Lógica de movimiento simple para los bots empleados
+    if (agent.employedAtShopId) {
+      const shop = state.shops.find(s => s.id === agent.employedAtShopId);
+      if (shop) {
+        const targetX = shop.x + shop.w / 2;
+        const targetY = shop.y + shop.h / 2;
+        const dx = targetX - agent.x;
+        const dy = targetY - agent.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist > 10) {
+          agent.x += (dx / dist) * (agent.speed || 60) * 0.1;
+          agent.y += (dy / dist) * (agent.speed || 60) * 0.1;
         }
-
-        if (closestFactory) {
-            agent.targetX = closestFactory.x + closestFactory.w / 2;
-            agent.targetY = closestFactory.y + closestFactory.h / 2;
-            agent.targetRole = 'go_work';
-        }
-      }
-    }
-
-    if (agent.targetRole === 'go_work' && Math.hypot(agent.x - agent.targetX, agent.y - agent.targetY) < 20) {
-      agent.targetRole = 'work';
-      agent.workingUntil = nowS + 6; // 6 segundos de trabajo
-    }
-
-    if (agent.targetRole === 'work' && nowS >= (agent.workingUntil || 0)) {
-      agent.pendingDeposit = (agent.pendingDeposit || 0) + 20;
-      agent.workingUntil = 0;
-      if (banks && banks.length > 0) {        
-        // Lógica mejorada: buscar el banco más cercano.
-        let closestBank = null;
-        let minDistance = Infinity;
-        for (const b of banks) {
-            const bankCenter = { x: b.x + b.w / 2, y: b.y + b.h / 2 };
-            const distance = Math.hypot(agent.x - bankCenter.x, agent.y - bankCenter.y);
-            if (distance < minDistance) {
-                minDistance = distance;
-                closestBank = b;
-            }
-        }
-        agent.targetX = closestBank.x + closestBank.w / 2;
-        agent.targetY = closestBank.y + closestBank.h / 2;
-        agent.targetRole = 'go_bank';
-      }
-    }
-
-    if (agent.targetRole === 'go_bank' && Math.hypot(agent.x - agent.targetX, agent.y - agent.targetY) < 20) {
-      agent.money = (agent.money || 0) + (agent.pendingDeposit || 0);
-      agent.pendingDeposit = 0;
-      agent.targetRole = 'idle';
-      agent.nextWorkAt = nowS + 45; // 45 segundos de descanso
-    }
-
-    // 2. Lógica de compras
-    if (agent.targetRole === 'idle' && Math.random() < 0.01) {
-       const ownedShops = (allShops || []).filter(s => s.ownerId);
-       if (ownedShops.length > 0) {
-         const shop = ownedShops[Math.floor(Math.random() * ownedShops.length)];
-         agent.targetX = shop.x + shop.w / 2;
-         agent.targetY = shop.y + shop.h / 2;
-         agent.targetRole = 'go_shop';
-         agent._shopTargetId = shop.id;
-       }
-    }
-
-    if (agent.targetRole === 'go_shop' && Math.hypot(agent.x - agent.targetX, agent.y - agent.targetY) < 20) {
-      const shop = (allShops || []).find(s => s.id === agent._shopTargetId);
-      if (shop && (nowS - (agent.lastPurchaseAt || 0) > 300)) {
-        const price = shop.price || 2;
-        if ((agent.money || 0) >= price) {
-          agent.money -= price;
-          shop.cashbox = (shop.cashbox || 0) + price;
-          agent.lastPurchaseAt = nowS;
-          // Persistir el cambio en la tienda
-          brain.updateShop(shop.id, { cashbox: shop.cashbox });
-        }
-      }
-      agent.targetRole = 'idle';
-      agent._shopTargetId = null;
-    }
-
-    // 3. Lógica de compra de casa
-    const HOUSE_BUY_COST = 3000;
-    const isPaired = agent.state === 'paired';
-
-    if (isPaired && !agent.ownsHouse && (agent.money || 0) >= HOUSE_BUY_COST) {
-      // Find an unowned, unrented house to buy
-      const allHouses = brain.getProgressHouses() || [];
-      const availableForPurchase = allHouses.filter(h => h && !h.ownerId && !h.rentedBy);
-      
-      if (availableForPurchase.length > 0) {
-          const houseToBuy = availableForPurchase[0];
-          
-          agent.money -= HOUSE_BUY_COST;
-          agent.ownsHouse = true;
-          
-          const patch = { ownerId: agent.id, rentedBy: null, _markerInitial: null };
-          brain.updateGlobalHouse(houseToBuy.id, patch);
-          brain.addHouse(agent.id, { ...houseToBuy, ...patch });
-
-          const stateHouse = state.houses.find(h => h.id === houseToBuy.id);
-          if (stateHouse) Object.assign(stateHouse, patch);
-
-          console.log(`[AgentLogic] Agent ${agent.code} (${agent.id}) bought house ${houseToBuy.id}`);
       }
     }
   }
@@ -707,11 +491,45 @@ function tickServerAgents() {
 
 // Tick de movimiento automático para todos los jugadores
 setInterval(() => {
-  ensureBots(0); // No se crean agentes controlados por el servidor
-  const w = 2200, h = 1400; // Usar tamaño fijo por ahora
+  ensureBots(0); // Ya no se crean bots automáticamente
   tickServerAgents();
-  tickIdlePlayers({ w, h });
 }, 120);
+
+const SALARY_INTERVAL = 2 * 60 * 1000; // Cada 2 minutos
+const SALARY_AMOUNT = 25; // Salario por ciclo
+
+setInterval(() => {
+  let totalPaidToGov = 0;
+  for (const shop of state.shops) {
+    if (!shop.employeeId) continue;
+
+    const employee = state.players[shop.employeeId];
+    if (!employee) {
+      shop.employeeId = null; // El empleado ya no existe
+      continue;
+    }
+
+    if ((shop.cashbox || 0) >= SALARY_AMOUNT) {
+      shop.cashbox -= SALARY_AMOUNT;
+      brain.addGovernmentFunds(SALARY_AMOUNT);
+      totalPaidToGov += SALARY_AMOUNT;
+    } else {
+      // No hay fondos, despedir al bot
+      delete state.players[shop.employeeId];
+      shop.employeeId = null;
+      io.emit('playerLeft', { id: employee.id }); // Notificar al cliente que el bot se fue
+      // Notificar al dueño de la tienda
+      const owner = state.players[shop.ownerId];
+      if (owner && owner.socketId) {
+        io.to(owner.socketId).emit('toast', `Empleado de ${shop.kind} despedido por falta de fondos.`);
+      }
+    }
+  }
+  if (totalPaidToGov > 0) {
+    console.log(`[Salaries] Se pagaron ${totalPaidToGov} en salarios al gobierno.`);
+    state.government = brain.getGovernment();
+  }
+}, SALARY_INTERVAL);
 
 // Resetear la grilla de exploración periódicamente para que los agentes sigan recorriendo
 setInterval(resetExplorationGrid, 15 * 60 * 1000); // Cada 15 minutos
@@ -926,6 +744,62 @@ io.on('connection', (socket) => {
   state.government = brain.getGovernment();
     io.emit('govPlaced', payload);
     if (ack) ack({ ok:true });
+  });
+
+  socket.on('hireEmployee', ({ shopId }, ack) => {
+    if (!socket.userId) return ack({ ok: false, msg: 'No autenticado' });
+    const shop = state.shops.find(s => s.id === shopId);
+    if (!shop || shop.ownerId !== socket.userId) return ack({ ok: false, msg: 'Tienda no encontrada o no eres el dueño' });
+    if (shop.employeeId) return ack({ ok: false, msg: 'La tienda ya tiene un empleado' });
+
+    // Crear un nuevo bot para ser el empleado
+    const botId = 'bot_' + crypto.randomUUID();
+    const gender = Math.random() < 0.5 ? 'M' : 'F';
+    const name = randomPersonName(gender);
+    const avatar = (gender === 'M') ? '/assets/avatar2.png' : '/assets/avatar4.png';
+
+    const bot = {
+      id: botId,
+      socketId: null,
+      code: name,
+      x: shop.x + shop.w / 2,
+      y: shop.y + shop.h / 2,
+      money: 0, // Los bots ya no manejan su propio dinero
+      gender,
+      avatar,
+      isBot: true,
+      speed: 80,
+      employedAtShopId: shop.id,
+      createdAt: now(),
+      updatedAt: now()
+    };
+
+    state.players[botId] = bot;
+    shop.employeeId = botId;
+
+    io.emit('playerJoined', bot); // Notificar a todos los clientes sobre el nuevo bot
+    ack({ ok: true, bot });
+    console.log(`[Hiring] Bot ${botId} hired for shop ${shopId}`);
+  });
+
+  socket.on('fireEmployee', ({ shopId }, ack) => {
+    if (!socket.userId) return ack({ ok: false, msg: 'No autenticado' });
+    const shop = state.shops.find(s => s.id === shopId);
+    if (!shop || shop.ownerId !== socket.userId) return ack({ ok: false, msg: 'Tienda no encontrada o no eres el dueño' });
+
+    const employeeId = shop.employeeId;
+    if (!employeeId) return ack({ ok: false, msg: 'La tienda no tiene empleado' });
+
+    const employee = state.players[employeeId];
+    if (employee) {
+      delete state.players[employeeId];
+      shop.employeeId = null;
+      io.emit('playerLeft', { id: employeeId });
+      ack({ ok: true });
+      console.log(`[Hiring] Bot ${employeeId} fired from shop ${shopId}`);
+    } else {
+      ack({ ok: false, msg: 'Empleado no encontrado' });
+    }
   });
 
   // Chat básico entre jugadores conectados

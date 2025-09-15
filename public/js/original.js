@@ -175,24 +175,38 @@
   const btnUploadAvatar = document.getElementById('btnUploadAvatar');
   const btnRemoveAvatar = document.getElementById('btnRemoveAvatar');
   function clearAvatarSelection(){ if(!avatarGrid) return; avatarGrid.querySelectorAll('.avatar-option').forEach(b=>b.classList.remove('selected')); }
+  
+  // Función centralizada para establecer y guardar el avatar
+  function setAvatar(src) {
+    if (!src) return;
+    // Actualizar vistas previas
+    try { if (fGenderPreview) fGenderPreview.src = src; } catch(e) {}
+    try { if (uiAvatarEl) uiAvatarEl.src = src; } catch(e) {}
+    // Persistir en localStorage y en el estado global
+    try {
+      localStorage.setItem('selectedAvatar', src);
+      window.__selectedAvatarCurrent = src;
+      window.__progress = Object.assign({}, window.__progress || {}, { avatar: src });
+      window.saveProgress && window.saveProgress({ avatar: src });
+      // Actualizar agente en el mundo si ya existe
+      if (typeof USER_ID !== 'undefined' && USER_ID) {
+        const me = agents.find(a => a.id === USER_ID);
+        if (me && me.avatar !== src) {
+          me.avatar = src;
+          try { AVATAR_CACHE && AVATAR_CACHE.delete && AVATAR_CACHE.delete(src); } catch(_) {}
+          try { window.sockApi?.update({ avatar: src }); } catch(_) {}
+        }
+      }
+    } catch(e) { console.warn('Error setting avatar', e); }
+  }
+
   if(avatarGrid){
     avatarGrid.addEventListener('click', (ev)=>{
       const btn = ev.target.closest('.avatar-option'); if(!btn) return;
       const src = btn.getAttribute('data-src');
       if(!src) return;
       clearAvatarSelection(); btn.classList.add('selected');
-  // set preview and UI avatar
-  try{ if(fGenderPreview) fGenderPreview.src = src; if(uiAvatarEl) uiAvatarEl.src = src; }catch(e){}
-      // set the select value too for form persistence (safe check if avatarSelect isn't declared)
-      try{ if(typeof avatarSelect !== 'undefined' && avatarSelect) avatarSelect.value = src; }catch(e){}
-      // persist selection so it survives reloads and is applied to UI avatar
-      try{
-        localStorage.setItem('selectedAvatar', src);
-        window.__selectedAvatarCurrent = src;
-        window.__progress = Object.assign({}, window.__progress||{}, { avatar: src });
-        window.saveProgress && window.saveProgress({ avatar: src });
-  if(typeof USER_ID !== 'undefined' && USER_ID){ const me = agents.find(a=>a.id===USER_ID); if(me){ if(me.avatar !== src){ me.avatar = src; try{ AVATAR_CACHE && AVATAR_CACHE.delete && AVATAR_CACHE.delete(src); }catch(_){} try{ window.sockApi?.update({ avatar: src }); }catch(_){} } } }
-      }catch(e){}
+      setAvatar(src);
     });
     // restore saved selection (if any). Si no hay, usar placeholder con '?'
     try{
@@ -234,39 +248,17 @@
       const reader = new FileReader();
       reader.onload = ()=>{
         try{
-          const src = reader.result; // data URL
-          try{ if(fGenderPreview) fGenderPreview.src = src; if(uiAvatarEl) uiAvatarEl.src = src; }catch(_){ }
-          try{ localStorage.setItem('selectedAvatar', src); }catch(_){ }
-          try{
-            window.__selectedAvatarCurrent = src;
-            window.__progress = Object.assign({}, window.__progress||{}, { avatar: src });
-            window.saveProgress && window.saveProgress({ avatar: src });
-            if(typeof USER_ID !== 'undefined' && USER_ID){ const me = agents.find(a=>a.id===USER_ID); if(me){ if(me.avatar !== src){ me.avatar = src; try{ AVATAR_CACHE && AVATAR_CACHE.delete && AVATAR_CACHE.delete(src); }catch(_){} try{ window.sockApi?.update({ avatar: src }); }catch(_){} } } }
-          }catch(_){ }
+          setAvatar(reader.result); // data URL
         }catch(_){ }
       };
       reader.onerror = ()=>{ toast('No se pudo leer la imagen.'); };
       reader.readAsDataURL(file);
     }, { passive:true });
   }
-  // Quitar foto y volver a avatar por defecto
   if(btnRemoveAvatar){
     btnRemoveAvatar.addEventListener('click', ()=>{
-      try{
-        const src = AVATAR_PLACEHOLDER;
-        // Actualizar vista previa y avatar del UI
-        try{ if(fGenderPreview) fGenderPreview.src = src; }catch(_){ }
-        try{ if(uiAvatarEl) uiAvatarEl.src = src; }catch(_){ }
-        // Persistir y notificar servidor
-        try{ localStorage.setItem('selectedAvatar', src); }catch(_){ }
-        try{
-          window.__selectedAvatarCurrent = src;
-          window.__progress = Object.assign({}, window.__progress||{}, { avatar: src });
-          window.saveProgress && window.saveProgress({ avatar: src });
-          try{ window.sockApi?.update({ avatar: src }); }catch(_){ }
-        }catch(_){ }
-        toast('Se quitó la foto. Vista previa con ?');
-      }catch(e){}
+      setAvatar(AVATAR_PLACEHOLDER);
+      toast('Se quitó la foto. Vista previa con ?');
     });
   }
   function updateGenderPreview(){
@@ -1087,6 +1079,18 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         h: govComplexH
     };
     buildAvenidas({x:0, y:0, w:WORLD.w, h:WORLD.h}, govComplexRect);
+
+    // --- SOLUCIÓN: Hacer visible el complejo gubernamental como un gran parque ---
+    // Esto evita que sea un "edificio fantasma" que bloquea la vista.
+    try {
+      const parkType = GOV_TYPES.find(t => t.k === 'parque');
+      if (parkType) {
+        government.placed.push({
+          ...parkType, ...govComplexRect,
+          label: 'Plaza Central', icon: '🏛️🌳', fill: 'rgba(12, 81, 58, 0.5)'
+        });
+      }
+    } catch(e) { console.warn('Error creating central park area', e); }
 
     // Posicionar el gobierno
     government.x = govComplexRect.x + parkW + parkGap;
@@ -2031,9 +2035,9 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     for(const inst of renderGovernmentPlaced){
       // Si los datos provienen del servidor, algunos campos (k/key/type) pueden faltar.
       // Asumir que los objetos dentro de government.placed del servidor son instituciones
-      // y forzar su tratamiento como 'gobierno' cuando falte la clave.
-      const heuristicsGov = (inst.k === 'gobierno') || (inst.key === 'gobierno') || (inst.type === 'gobierno') || (inst.label && typeof inst.label === 'string' && inst.label.toLowerCase().includes('gobierno'));
-      const isGov = heuristicsGov || (inst.kind && (inst.kind === 'gobierno' || inst.kind === 'government'));
+      // y forzar su tratamiento como 'gobierno' cuando falte la clave. Corregido para ser más específico.
+      const isGov = (inst.k === 'gobierno') || (inst.key === 'gobierno') || (inst.type === 'gobierno') || (inst.kind === 'gobierno');
+
       if(isGov){
         const iw = inst.w || (government.w || 240);
         const ih = inst.h || (government.h || 140);
@@ -2056,7 +2060,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
           ctx.lineWidth = 2;
           ctx.strokeRect(px, py, w, h);
           // No texto del edificio
-        }
+        } 
       } else if(inst.k === 'carcel'){
         const p = toScreen(inst.x, inst.y);
         const w = inst.w * ZOOM, h = inst.h * ZOOM;
@@ -3289,24 +3293,23 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
 
     for(const b of banks){ if(inside(pt,b)){const you = USER_ID? agents.find(a=>a.id===USER_ID) : null; if(you){ const your$ = Math.floor((you.money||0) + (you.pendingDeposit||0)); accBankBody.innerHTML = `Saldo de ${you.code}: <span class="balance-amount">${your$}</span>`; } else { accBankBody.textContent = 'Crea tu persona primero.'; } toast('Banco abierto');return;} }
     for(const s of getVisibleShops()){
-      if(inside(pt,s) && s.ownerId === USER_ID){
-        if(s.hasEmployee){
-          const employee = agents.find(a => a.id === s.employeeId) || Object.values(window.gameState?.players || {}).find(p => p.id === s.employeeId);
-          if(employee){ employee.employedAtShopId = null; employee.target = null; employee.targetRole = 'idle'; }
-          s.hasEmployee = false; s.employeeId = null; s.wage = 0;
-          toast("Empleado despedido.");
+      if(inside(pt, s) && s.ownerId === USER_ID) {
+        if (!hasNet()) {
+          toast('Necesitas estar conectado para gestionar empleados.');
+          return;
+        }
+        if (s.employeeId) {
+          // Despedir empleado
+          window.sock.emit('fireEmployee', { shopId: s.id }, (res) => {
+            if (res.ok) toast("Empleado despedido.");
+            else toast(res.msg || "Error al despedir.");
+          });
         } else {
-          const candidate = agents.find(a => a.id !== USER_ID && !a.employedAtShopId && !getVisibleShops().some(shop => shop.ownerId === a.id));
-          if(candidate){
-            s.hasEmployee = true; s.employeeId = candidate.id;
-            s.wage = Math.ceil(CFG.EARN_PER_SHIFT * 1.25);
-            candidate.employedAtShopId = s.id;
-            candidate.target = centerOf(s); candidate.targetRole = 'work_shop';
-            candidate.workingUntil = null; candidate.goingToBank = false;
-            toast(`Empleado ${candidate.code} contratado! 👔`);
-          } else {
-            toast("No hay personal disponible para contratar.");
-          }
+          // Contratar empleado
+          window.sock.emit('hireEmployee', { shopId: s.id }, (res) => {
+            if (res.ok) toast(`¡Empleado contratado! 👔`);
+            else toast(res.msg || "No se pudo contratar.");
+          });
         }
         return;
       }
@@ -3433,20 +3436,6 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     if(collected > 0){ govFundsEl.textContent = `Fondo: ${Math.floor(government.funds)} (+${Math.round(collected)})`; toast(`Gobierno recaudó ${Math.round(collected)} créditos (tasa ${(effRate*100).toFixed(1)}%).`); }
     updateGovDesc();
   }, CFG.GOV_TAX_EVERY*1000);
-
-  // (Intervalo de cobro de alquiler eliminado: ahora se procesa dentro del loop con processRent acumulando 1 hora real)
-
-  setInterval(()=>{if(!STARTED) return; if(hasNet()) return;
-    for(const shop of shops){
-      if(shop.hasEmployee && shop.employeeId && shop.ownerId && shop.wage > 0){
-        const owner = agents.find(a => a.id === shop.ownerId);
-        const employee = agents.find(a => a.id === shop.employeeId);
-        if(!owner || !employee) continue;
-        if(shop.cashbox >= shop.wage){ shop.cashbox -= shop.wage; employee.money += shop.wage; toast(`Nómina pagada en ${shop.kind}. Caja ahora: ${Math.floor(shop.cashbox)}.`); }
-        else { toast(`Caja insuficiente en ${shop.kind}. ¡El empleado ${employee.code} ha renunciado!`); shop.hasEmployee = false; shop.employeeId = null; shop.wage = 0; employee.employedAtShopId = null; employee.target = null; employee.targetRole = 'idle'; }
-      }
-    }
-  }, CFG.SALARY_PAY_EVERY * 1000);
 
   const carTypeSelect = $('#carTypeSelect'), btnBuyCar = $('#btnBuyCar'), carMsg = $('#carMsg');
   // Resaltar vehículos ya comprados en el menú del concesionario

@@ -259,6 +259,20 @@ function ensureProgress(userId) {
 	return p;
 }
 
+function registerBot(botId, defaults = {}) {
+	// No crea un "usuario", solo una entrada de progreso para un bot
+	if (db.progress[botId]) {
+		return { ok: true, progress: db.progress[botId] };
+	}
+	const p = ensureProgress(botId);
+	p.name = defaults.name || botId;
+	p.money = defaults.money || 400;
+	p.isBot = true; // Marcar como bot
+	log('bot_register', botId, { name: p.name });
+	schedulePersist();
+	return { ok: true, progress: p };
+}
+
 function registerUser(username, password, extra={}) {
 	const name = String(username || '').trim();
 	if (!name || name.length < 3) return { ok: false, msg: 'Nombre inválido' };
@@ -509,6 +523,7 @@ module.exports = {
 	load,
 	persist,
 	registerUser,
+	registerBot,
 	verifyLogin,
 	getUserById,
 	getProgress,
