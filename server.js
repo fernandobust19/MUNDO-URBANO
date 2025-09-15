@@ -738,6 +738,9 @@ setInterval(() => {
     if (player && (player.money || 0) >= RENT_AMOUNT) {
       player.money -= RENT_AMOUNT;
       totalRentCollected += RENT_AMOUNT;
+      // --- AÑADIR ESTA LÍNEA PARA PERSISTIR EL CAMBIO ---
+      brain.setMoney(renterId, player.money, player.bank);
+      // ----------------------------------------------------
       
       // Notificar al jugador específico con un "toast"
       if (player.socketId) {
