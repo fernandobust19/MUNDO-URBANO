@@ -490,8 +490,9 @@ function restoreMoneyFromLedger(userId){
 }
 
 // Cargar al iniciar
-await load();
-
+async function init() {
+	await load();
+}
 function changePassword(userId, newPassword) {
 	const user = getUserById(userId);
 	if (!user || typeof newPassword !== 'string' || newPassword.length < 8) return { ok: false, msg: 'Usuario no encontrado o contraseña inválida' };
