@@ -254,9 +254,18 @@
 		// Enviar con Enter: por defecto, intentar login
 		const form = document.getElementById('authForm');
 		if(form){ form.addEventListener('submit', (e)=>{ e.preventDefault(); handleLogin(); }); }
-		// Botón SALIR (el servidor hace snapshot de dinero en /api/logout)
+		// Botón SALIR: ahora envía el estado final del dinero para un guardado síncrono
 		const btnLogout = document.getElementById('btnLogout');
-		if(btnLogout){ btnLogout.addEventListener('click', async ()=>{ try{ await call('POST','/api/logout'); location.reload(); }catch(e){ location.reload(); } }); }
+		if (btnLogout) {
+			btnLogout.addEventListener('click', async () => {
+				try {
+					// Forzar el envío del último estado de dinero conocido en el cliente
+					const finalProgress = window.__progress || {};
+					await call('POST', '/api/logout', { money: finalProgress.money, bank: finalProgress.bank });
+				} catch (e) { console.warn('Logout save failed, proceeding anyway'); }
+				location.reload();
+			});
+		}
 		// Forzar mostrar la ventana de autenticación primero
 		const me = await checkMe().catch(()=>null);
 		showAuth(true);

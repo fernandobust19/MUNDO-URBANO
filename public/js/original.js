@@ -2425,6 +2425,8 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
                 const bonus = Math.round((s.buyCost || 0) * CFG.SHOP_PROFIT_FACTOR);
                 const saleProfit = price + bonus; s.cashbox = (s.cashbox || 0) + saleProfit; s._lastCashboxChange = performance.now();
                 a.lastPurchaseAt = nowS;
+                // --- SOLUCIÓN: Notificar al servidor del nuevo saldo ---
+                if (a.id === USER_ID) { try { window.saveProgress({ money: Math.floor(a.money) }); } catch(e) {} }
               }
             }
           }

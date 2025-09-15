@@ -108,7 +108,16 @@ app.post('/api/login', (req, res) => {
   }catch(e){ return res.status(500).json({ ok:false, msg:'Error' }); }
 });
 
-app.post('/api/logout', (req, res) => { try{ const uid = getSessionUserId(req); if(uid){ try{ brain.saveMoneySnapshot(uid, 'logout'); }catch(e){} } clearSession(res); return res.json({ ok:true }); }catch(e){ return res.status(500).json({ ok:false }); } });
+app.post('/api/logout', (req, res) => {
+  try {
+    const uid = getSessionUserId(req);
+    if (uid) {
+      const { money, bank } = req.body || {};
+      brain.setMoney(uid, money, bank); // Usar setMoney para forzar el guardado del último estado
+    }
+    clearSession(res); return res.json({ ok: true });
+  } catch (e) { return res.status(500).json({ ok: false }); }
+});
 
 app.get('/api/me', (req, res) => {
   const uid = getSessionUserId(req);
@@ -512,6 +521,8 @@ setInterval(() => {
     if ((shop.cashbox || 0) >= SALARY_AMOUNT) {
       shop.cashbox -= SALARY_AMOUNT;
       brain.addGovernmentFunds(SALARY_AMOUNT);
+      // --- SOLUCIÓN: Persistir el cambio en la caja del negocio ---
+      brain.updateShop(shop.id, { cashbox: shop.cashbox });
       totalPaidToGov += SALARY_AMOUNT;
     } else {
       // No hay fondos, despedir al bot
