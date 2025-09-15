@@ -102,8 +102,8 @@ app.post('/api/login', (req, res) => {
     const out = brain.verifyLogin(username, password);
     if(!out.ok) return res.status(401).json(out);
     setSession(res, out.user.id);
-  // Restaurar saldo desde ledger (si existe snapshot)
-  try{ brain.restoreMoneyFromLedger(out.user.id); }catch(e){}
+  // Restaurar saldo desde ledger (si existe snapshot) - DESACTIVADO: causaba sobreescritura del saldo correcto al iniciar sesión.
+  // try{ brain.restoreMoneyFromLedger(out.user.id); }catch(e){}
   return res.json({ ok:true, user: out.user, progress: brain.getProgress(out.user.id) });
   }catch(e){ return res.status(500).json({ ok:false, msg:'Error' }); }
 });
