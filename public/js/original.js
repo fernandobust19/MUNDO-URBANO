@@ -398,7 +398,7 @@ btnRandLikes.addEventListener('click', updateLikesUI);
   const btnGovClose = $("#btnGovClose");
   if(btnGovClose) btnGovClose.onclick = ()=> closeGovPanel();
   let placingGov = null, placingHouse = null, placingShop = null;
-  const ownedShopsEl = document.getElementById('ownedShops');
+  const ownedShopsEl = document.getElementById('ownedShops'); // eslint-disable-line
   function updateOwnedShopsUI(){
     try{
       if(!ownedShopsEl) return;
@@ -414,7 +414,7 @@ btnRandLikes.addEventListener('click', updateLikesUI);
   }
 
   const isMobile = ()=> innerWidth<=768;
-  let ZOOM=1.0, ZMIN=0.35, ZMAX=2.0, ZSTEP=0.15;
+  let ZOOM=1.0, ZMIN=0.6, ZMAX=2.2, ZSTEP=0.15;
   const WORLD={w:0,h:0}; const cam={x:0,y:0};
 
   // Cobertura de exploración GLOBAL (para que los agentes recorran TODO el mapa)
@@ -1821,9 +1821,13 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       const w = av.w * ZOOM, h = av.h * ZOOM;
       // Determinar orientación: vertical si es más alto que ancho
       const orientation = h > w ? 'v' : 'h';
-      const pat = getStreetPattern(ctx, orientation);
-      if(pat){
-        ctx.save(); ctx.translate(p.x, p.y); ctx.fillStyle = pat; ctx.fillRect(0,0,w,h); ctx.restore();
+      const pattern = getStreetPattern(ctx, orientation);
+      if(pattern){
+        const screenOrigin = toScreen(0, 0);
+        const matrix = new DOMMatrix().translate(screenOrigin.x, screenOrigin.y);
+        pattern.setTransform(matrix);
+        ctx.fillStyle = pattern;
+        ctx.fillRect(p.x, p.y, w, h);
       } else {
         ctx.fillStyle = '#555'; ctx.fillRect(p.x,p.y,w,h);
       }
@@ -1928,14 +1932,15 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     for(const r of roadRects){
       const p = toScreen(r.x, r.y);
       const w = r.w * ZOOM, h = r.h * ZOOM;
-      const pat = getStreetPattern(ctx);
-      if(pat){
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.fillStyle = pat;
-        ctx.fillRect(0, 0, w, h);
-        ctx.restore();
-      }else{
+      const orientation = h > w ? 'v' : 'h';
+      const pattern = getStreetPattern(ctx, orientation);
+      if(pattern){
+        const screenOrigin = toScreen(0, 0);
+        const matrix = new DOMMatrix().translate(screenOrigin.x, screenOrigin.y);
+        pattern.setTransform(matrix);
+        ctx.fillStyle = pattern;
+        ctx.fillRect(p.x, p.y, w, h);
+      } else {
         ctx.fillStyle='rgba(75,85,99,0.95)';
         ctx.fillRect(p.x, p.y, w, h);
       }
@@ -2900,7 +2905,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   try{ if(on){ uiDock.classList.remove('collapsed-left'); } }catch(e){}
     // Controles de zoom eliminados
     try{
-      const collapsed = document.getElementById('uiDock')?.classList.contains('collapsed-left');
+      const collapsed = document.getElementById('uiDock')?.classList.contains('collapsed-left'); // eslint-disable-line
       // Minimap siempre visible (debajo del UI por z-index)
       document.getElementById('mini').style.display = on ? 'block' : 'none';
   // Iconos gestionados por CSS; no cambiar texto
@@ -2910,7 +2915,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   }
 
   function startWorldWithUser({name,gender,age,likes,usd}){
-  // Al crear persona, ocultar el formulario y mostrar la UI del mundo
+  // Al crear persona, ocultar el formulario y mostrar la UI del mundo // eslint-disable-line
   try{ $("#formBar").style.display='none'; }catch(e){}
     setVisibleWorldUI(true); 
     STARTED=true; 
@@ -3505,6 +3510,8 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         u.money -= vehicle.cost;
         u.vehicle = vType;
         try{
+          // --- SOLUCIÓN: Actualizar el progreso global inmediatamente ---
+          if (window.__progress) window.__progress.money = Math.floor(u.money);
           const prog = (window.__progress || {});
           const list = Array.isArray(prog.vehicles) ? prog.vehicles.slice() : [];
           if(!list.includes(vType)) list.push(vType);
@@ -3522,7 +3529,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   });
 
   // Eventos para notificar cuando todas las imágenes estén cargadas
-window.addEventListener('load', () => {
+  window.addEventListener('load', () => {
   // Esperar un momento para asegurarse que las imágenes se procesen
   setTimeout(() => {
     console.log("Todas las imágenes de edificios han sido precargadas");
