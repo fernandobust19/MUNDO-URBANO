@@ -10,15 +10,19 @@ const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 const brain = require('./brain');
 
-const app = express();
-const server = http.createServer(app);
-const io = require('socket.io')(server, {
-  cors: { origin: '*' }
-});
-
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 // Cargar configuración centralizada
 const cfg = require('./server/config');
+
+async function main() {
+  // Inicializar el cerebro primero y esperar a que cargue los datos
+  await brain.init();
+  console.log('[Brain] Módulo de datos inicializado.');
+
+  const app = express();
+  const server = http.createServer(app);
+  const io = require('socket.io')(server, { cors: { origin: '*' } });
+
 // Directorio de comprobantes (configurable). En producción usa un disco persistente.
 const PAGOS_DIR = process.env.PAGOS_DIR || path.join(__dirname, 'pagos');
 // Pago sencillo: secret compartido para webhooks y generación de intents
@@ -943,6 +947,12 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`Server listening on http://localhost:${PORT}`);
+  server.listen(PORT, () => {
+    console.log(`Server listening on http://localhost:${PORT}`);
+  });
+}
+
+main().catch(err => {
+  console.error('Error al iniciar el servidor:', err);
+  process.exit(1);
 });

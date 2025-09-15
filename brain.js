@@ -502,6 +502,7 @@ function changePassword(userId, newPassword) {
 }
 
 module.exports = {
+	init,
 	load,
 	persist,
 	registerUser,
