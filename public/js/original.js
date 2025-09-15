@@ -2908,13 +2908,20 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     setVisibleWorldUI(true); 
     STARTED=true; 
     setWorldSize(); 
-    fitCanvas(); 
+    fitCanvas();
     regenInfrastructure(false);
   // Reubicar edificaciones iniciales a parches de arena si fuera necesario
   try{ relocateInitialBuildingsToSand(); }catch(e){ console.warn('relocateInitialBuildingsToSand error', e); }
   // Mantener las panaderías tal como vienen (no eliminar al iniciar)
     populateGovSelect(); // ← AÑADIR ESTA LÍNEA
     
+  // Usar el ID persistente del usuario que ha iniciado sesión
+  const persistentId = window.__user?.id;
+  if (!persistentId) {
+    toast('Error: no se encontró ID de usuario. Vuelve a iniciar sesión.');
+    setVisibleWorldUI(false); // Ocultar mundo, mostrar formulario de nuevo
+    return;
+  }
   const addCredits = Math.max(0, parseInt(usd||'0',10))*100;
   // Si hay progreso guardado (login), usar ese saldo en vez de reiniciar a 400
   const saved = (window.__progress || {});
@@ -2932,7 +2939,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     const pick = window.__selectedAvatarCurrent || localStorage.getItem('selectedAvatar') || (window.__progress && window.__progress.avatar) || (fGenderPreview && fGenderPreview.src) || '/assets/avatar1.png';
     chosenAvatar = (typeof pick === 'string' && pick.length) ? pick : '/assets/avatar1.png';
   }catch(e){ chosenAvatar = '/assets/avatar1.png'; }
-  const user=makeAgent('adult',{name, gender, ageYears:age, likes, startMoney: startMoney, avatar: chosenAvatar});
+  const user=makeAgent('adult',{id: persistentId, name, gender, ageYears:age, likes, startMoney: startMoney, avatar: chosenAvatar});
   // Restaurar casa rentada previa si existe en progreso
   try{
     if(typeof saved.rentedHouseIdx === 'number' && houses[saved.rentedHouseIdx]){
@@ -3039,7 +3046,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   // Registrar al jugador local en la simulación y fijar su ID
   try{
     agents.push(user);
-    USER_ID = user.id;
+    USER_ID = user.id; // Esto ahora es el ID persistente
     // También sincronizar el id local usado por el render de remotos
     window.playerId = user.id;
   }catch(e){}
@@ -3532,7 +3539,8 @@ window.addEventListener('load', () => {
 
 // Función para crear agentes (personas en el mundo)
 function makeAgent(state, options = {}) {
-  const id = 'A' + (Math.random() * 1000000 | 0);
+  // Usar el ID persistente si se proporciona; de lo contrario, generar uno para bots
+  const id = options.id || ('A' + (Math.random() * 1000000 | 0));
   const gender = options.gender || (Math.random() < 0.5 ? 'M' : 'F');
   const now = Date.now() / 1000;
   const ageYears = options.ageYears || (state === 'child' ? rand(1, 14) : rand(18, 65));

@@ -254,6 +254,8 @@ function ensureProgress(userId) {
 	if(!('age' in p)) p.age = null;
 	if(!('initialRentPaid' in p)) p.initialRentPaid = false;
 	if(!('rentedHouseIdx' in p)) p.rentedHouseIdx = null;
+	if(!('state' in p)) p.state = 'single';
+	if(!('spouseId' in p)) p.spouseId = null;
 	return p;
 }
 
@@ -303,7 +305,7 @@ function updateProgress(userId, patch) {
 	const p = ensureProgress(userId);
 	if (patch == null || typeof patch !== 'object') return { ok: false };
 	// Solo campos permitidos
-	const allowed = ['money', 'bank', 'vehicle', 'vehicles', 'shops', 'houses', 'name', 'avatar', 'likes', 'gender', 'age', 'country', 'email', 'phone', 'initialRentPaid', 'rentedHouseIdx'];
+	const allowed = ['money', 'bank', 'vehicle', 'vehicles', 'shops', 'houses', 'name', 'avatar', 'likes', 'gender', 'age', 'country', 'email', 'phone', 'initialRentPaid', 'rentedHouseIdx', 'state', 'spouseId'];
 	for (const k of allowed) {
 		if (k in patch) {
 			if (k === 'shops' || k === 'houses' || k === 'vehicles' || k === 'likes') {

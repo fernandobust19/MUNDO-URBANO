@@ -771,38 +771,49 @@ try {
 } catch(e) { console.warn('Error cleaning up initial bots', e); }
 
 io.on('connection', (socket) => {
-  console.log('socket connected', socket.id);
-  socket._lastUpdate = 0;
-  // Asociar sesión si existe (sólo lectura de cookies del handshake)
-  try{
-    const cookie = socket.handshake.headers.cookie || '';
-    const m = cookie.split(';').map(s=>s.trim()).find(s=>s.startsWith(SESS_COOKIE+'='));
-    if(m){
-      const raw = decodeURIComponent(m.split('=')[1]||'');
-      const uid = unsign(raw);
-      if(uid){ socket.userId = uid; }
-    }
-  }catch(e){}
+	console.log('socket connected', socket.id);
+	socket._lastUpdate = 0;
+	// Asociar sesión si existe (sólo lectura de cookies del handshake)
+	try {
+		const cookie = socket.handshake.headers.cookie || '';
+		const m = cookie.split(';').map(s => s.trim()).find(s => s.startsWith(SESS_COOKIE + '='));
+		if (m) {
+			const raw = decodeURIComponent(m.split('=')[1] || '');
+			const uid = unsign(raw);
+			if (uid) { socket.userId = uid; }
+		}
+	} catch (e) {}
 
   socket.on('createPlayer', (data, ack) => {
-    const id = 'P' + (Math.random().toString(36).slice(2,9));
-    const player = {
-      id,
-      socketId: socket.id,
-      code: data.code || ('Player' + id),
-      x: data.x || 100,
-      y: data.y || 100,
-      money: (data.startMoney != null) ? data.startMoney : 400,
-      gender: data.gender || 'M',
-      avatar: data.avatar || null,
-      createdAt: now(),
-      updatedAt: now(),
-      lastUpdateFromClient: now()
-    };
-    state.players[id] = player;
-    socket.playerId = id;
-    if (ack) ack({ ok: true, id });
-    io.emit('playerJoined', player);
+		const id = socket.userId; // Usar el ID persistente de la sesión
+		if (!id) { return ack && ack({ ok: false, msg: 'No autenticado' }); }
+
+		// Si el jugador ya existe (reconexión), solo actualizar su socketId
+		if (state.players[id]) {
+			state.players[id].socketId = socket.id;
+			state.players[id].lastUpdateFromClient = now();
+		} else {
+			// Crear nuevo jugador en memoria usando datos persistentes
+			const progress = brain.getProgress(id);
+			const user = brain.getUserById(id);
+			const player = {
+				id,
+				socketId: socket.id,
+				code: data.code || user.username,
+				x: data.x || 100, y: data.y || 100,
+				money: progress.money, bank: progress.bank,
+				gender: data.gender || user.gender,
+				avatar: data.avatar || progress.avatar,
+				vehicle: progress.vehicle,
+				state: progress.state || 'single',
+				spouseId: progress.spouseId || null,
+				createdAt: now(), updatedAt: now(), lastUpdateFromClient: now()
+			};
+			state.players[id] = player;
+			io.emit('playerJoined', player);
+		}
+		socket.playerId = id; // El ID del socket ahora es el ID persistente
+		if (ack) ack({ ok: true, id });
   });
 
   socket.on('marriage', (data) => {
@@ -815,6 +826,9 @@ io.on('connection', (socket) => {
         agentB.state = 'paired';
         agentB.spouseId = data.aId;
         console.log(`[Marriage] Registered marriage between ${data.aId} and ${data.bId}`);
+        // Persistir el matrimonio en la base de datos
+        brain.updateProgress(data.aId, { state: 'paired', spouseId: data.bId });
+        brain.updateProgress(data.bId, { state: 'paired', spouseId: data.aId });
     }
   });
 
@@ -829,7 +843,7 @@ io.on('connection', (socket) => {
     if ('y' in data) p.y = data.y;
     if ('money' in data) {
       p.money = data.money;
-  if(socket.userId){ try{ brain.setMoney(socket.userId, p.money, p.bank); brain.recordMoneyChange(socket.userId, brain.getUserById(socket.userId)?.username || null, 0, p.money, p.bank, 'tick'); }catch(e){} }
+  if(socket.userId){ try{ brain.setMoney(socket.userId, p.money, p.bank); }catch(e){} }
     }
   if ('bank' in data) p.bank = data.bank;
     if ('vehicle' in data) {
@@ -847,7 +861,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('placeShop', (payload, ack) => {
-    const id = 'S' + (state.shops.length + 1);
+    const id = 'S_' + crypto.randomUUID();
     const shop = Object.assign({}, payload, { id, cashbox: 0, createdAt: now() });
   state.shops.push(shop);
   // Persistir si el socket tiene usuario logueado
@@ -857,7 +871,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('placeHouse', (payload, ack) => {
-    const id = 'H' + (state.houses.length + 1);
+    const id = 'H_' + crypto.randomUUID();
     const house = Object.assign({}, payload, { id, createdAt: now() });
   state.houses.push(house);
   if(socket.userId){ try{ brain.addHouse(socket.userId, house); }catch(e){} }
