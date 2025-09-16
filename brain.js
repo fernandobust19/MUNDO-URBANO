@@ -9,11 +9,25 @@ const { google } = require('googleapis');
 const DB_PATH = path.join(__dirname, 'brain.db.json');
 const LEDGER_PATH = path.join(__dirname, 'saldos.ledger.json');
 
-// --- Integración con Google Drive ---
-const GDRIVE_BRAIN_FILE_ID = process.env.GDRIVE_BRAIN_FILE_ID || null;
-const GDRIVE_LEDGER_FILE_ID = process.env.GDRIVE_LEDGER_FILE_ID || null;
-const GOOGLE_SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || null;
-const GOOGLE_PRIVATE_KEY = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
+// --- Integración con Google Drive (Método Robusto) ---
+const CRED_PATH = process.env.GOOGLE_APPLICATION_CREDENTIALS || '/etc/secrets/key.json';
+const BRAIN_ID_ENV = (process.env.GDRIVE_BRAIN_FILE_ID || '').trim();
+const LEDGER_ID_ENV = (process.env.GDRIVE_LEDGER_FILE_ID || '').trim();
+const GDRIVE_FOLDER_ID = process.env.GDRIVE_FOLDER_ID || undefined;
+
+// IDs resueltos que se usarán después de la verificación inicial.
+let resolvedBrainId = BRAIN_ID_ENV;
+let resolvedLedgerId = LEDGER_ID_ENV;
+
+// Loguear la cuenta de servicio en uso para depuración
+try {
+  if (fs.existsSync(CRED_PATH)) {
+    const sa = JSON.parse(fs.readFileSync(CRED_PATH, 'utf8'));
+    console.log('[SA EN USO]', sa.client_email);
+  }
+} catch (e) {
+  console.log('[SA EN USO] No pude leer el keyfile:', e.message);
+}
 
 let driveClient = null;
 
@@ -21,7 +35,7 @@ function getDriveClient() {
 	if (driveClient) return driveClient;
 	
 	// En producción, es obligatorio que los IDs de los archivos de Drive estén definidos.
-	if (!GDRIVE_BRAIN_FILE_ID || !GDRIVE_LEDGER_FILE_ID) {
+	if (!BRAIN_ID_ENV || !LEDGER_ID_ENV) {
 		if (process.env.NODE_ENV === 'production') {
 			throw new Error('CRÍTICO: Los IDs de archivo de Google Drive (GDRIVE_BRAIN_FILE_ID, GDRIVE_LEDGER_FILE_ID) no están configurados en producción.');
 		}
@@ -44,6 +58,54 @@ function getDriveClient() {
 	}
 }
 
+async function resolveFileId(drive, fileId) {
+  // Soporta atajos y Shared Drives
+  const meta = await drive.files.get({
+    fileId,
+    fields: 'id,name,mimeType,shortcutDetails',
+    supportsAllDrives: true,
+  });
+  if (meta.data.mimeType === 'application/vnd.google-apps.shortcut' &&
+      meta.data.shortcutDetails?.targetId) {
+    console.log(`[GDRIVE] ${meta.data.name} es un atajo → usando targetId`);
+    return meta.data.shortcutDetails.targetId;
+  }
+  return fileId;
+}
+
+async function ensureJsonFile(drive, { name, fileId, data, folderId }) {
+  try {
+    // 1) Resolver atajo si aplica
+    const realId = await resolveFileId(drive, fileId);
+    // 2) Intentar leer metadata (si no existe, cae al catch 404)
+    const meta = await drive.files.get({
+      fileId: realId,
+      fields: 'id,name,mimeType,modifiedTime',
+      supportsAllDrives: true,
+    });
+    console.log(`[GDRIVE] OK, existe: ${meta.data.name} (${meta.data.id})`);
+    return realId;
+  } catch (e) {
+    const code = e?.response?.status || e?.code;
+    if (code === 404) {
+      console.log(`[GDRIVE] ${name} no existe (404) → creando...`);
+      const res = await drive.files.create({
+        requestBody: {
+          name,
+          mimeType: 'application/json',
+          parents: folderId ? [folderId] : undefined,
+        },
+        media: { mimeType: 'application/json', body: JSON.stringify(data ?? {}) },
+        fields: 'id,name',
+        supportsAllDrives: true,
+      });
+      console.log(`[GDRIVE] Creado ${name} con nuevo ID: ${res.data.id}`);
+      return res.data.id;
+    }
+    throw e;
+  }
+}
+
 async function checkDriveHealth() {
 	const drive = getDriveClient();
 	if (!drive) {
@@ -51,38 +113,28 @@ async function checkDriveHealth() {
 	}
 
 	try {
-		// 1) Chequeo de METADATA de ambos archivos en paralelo
-		const [brainMeta, ledgerMeta] = await Promise.all([
-			drive.files.get({
-				fileId: GDRIVE_BRAIN_FILE_ID,
-				fields: 'id,name,mimeType,size,modifiedTime',
-			}),
-			drive.files.get({
-				fileId: GDRIVE_LEDGER_FILE_ID,
-				fields: 'id,name,mimeType,size,modifiedTime',
-			}),
-		]);
-
-		// 2) Lectura de CONTENIDO del brain para confirmar acceso
-		const brainContentResp = await drive.files.get({
-			fileId: GDRIVE_BRAIN_FILE_ID,
-			alt: 'media',
-		}, { responseType: 'stream' });
-
-		const readFirstBytes = (stream, max = 500) => new Promise((resolve, reject) => {
-			let acc = Buffer.alloc(0);
-			stream.on('data', chunk => {
-				acc = Buffer.concat([acc, chunk]);
-				if (acc.length >= max) {
-					stream.destroy(); // Cortamos la lectura para no cargar todo
-				}
-			});
-			stream.on('close', () => resolve(acc.slice(0, max).toString('utf8')));
-			stream.on('end', () => resolve(acc.slice(0, max).toString('utf8')));
-			stream.on('error', reject);
+		// Asegura que los archivos existan (o los crea) y obtiene sus IDs reales.
+		resolvedBrainId = await ensureJsonFile(drive, {
+			name: 'brain.db.json',
+			fileId: BRAIN_ID_ENV,
+			data: { users: [], progress: {}, government: { funds: 0, placed: [] }, activityLog: [] },
+			folderId: GDRIVE_FOLDER_ID,
 		});
 
-		const brainPreview = await readFirstBytes(brainContentResp.data);
+		resolvedLedgerId = await ensureJsonFile(drive, {
+			name: 'saldos.ledger.json',
+			fileId: LEDGER_ID_ENV,
+			data: { users: {}, movements: [] },
+			folderId: GDRIVE_FOLDER_ID,
+		});
+
+		// Realizar una lectura de metadatos para confirmar
+		const [brainMeta, ledgerMeta] = await Promise.all([
+			drive.files.get({ fileId: resolvedBrainId, fields: 'id,name,modifiedTime', supportsAllDrives: true }),
+			drive.files.get({ fileId: resolvedLedgerId, fields: 'id,name,modifiedTime', supportsAllDrives: true }),
+		]);
+
+		const brainPreview = 'Lectura de contenido omitida en chequeo inicial para mayor rapidez.';
 
 		return {
 			ok: true,
@@ -95,10 +147,11 @@ async function checkDriveHealth() {
 	} catch (e) {
 		const error = e?.response?.data || e?.message || e;
 		let hint = 'Error desconocido.';
-		if (e.code === 403) {
+		const code = e?.response?.status || e?.code;
+		if (code === 403) {
 			hint = 'Falta compartir el archivo en Google Drive con el "client_email" (rol de Editor).';
-		} else if (e.code === 404) {
-			hint = 'FileId incorrecto. Verifica las variables de entorno GDRIVE_BRAIN_FILE_ID o GDRIVE_LEDGER_FILE_ID.';
+		} else if (code === 404) {
+			hint = 'FileId incorrecto o el archivo es un “atajo”. Verifica GDRIVE_BRAIN_FILE_ID y GDRIVE_LEDGER_FILE_ID. Si es atajo, usa el ID del archivo real.';
 		} else if (String(e.message).includes('Could not load the default credentials')) {
 			hint = 'No se encontraron las credenciales. Asegúrate de que la variable de entorno GOOGLE_APPLICATION_CREDENTIALS esté definida en Render y apunte a la ruta correcta del Secret File (ej: /etc/secrets/key.json).';
 		} else if (String(e.message).includes('ENOENT')) {
@@ -129,10 +182,10 @@ let ledger = { users: {}, movements: [] };
 
 async function saveAtomic(dataStr) {
 	const drive = getDriveClient();
-	if (drive && GDRIVE_BRAIN_FILE_ID) {
+	if (drive && resolvedBrainId) {
 		try {
 			await drive.files.update({
-				fileId: GDRIVE_BRAIN_FILE_ID,
+				fileId: resolvedBrainId,
 				media: {
 					mimeType: 'application/json',
 					body: dataStr,
@@ -157,10 +210,10 @@ async function saveAtomic(dataStr) {
 
 async function saveLedgerAtomic(dataStr){
 	const drive = getDriveClient();
-	if (drive && GDRIVE_LEDGER_FILE_ID) {
+	if (drive && resolvedLedgerId) {
 		try {
 			await drive.files.update({
-				fileId: GDRIVE_LEDGER_FILE_ID,
+				fileId: resolvedLedgerId,
 				media: {
 					mimeType: 'application/json',
 					body: dataStr,
@@ -187,10 +240,10 @@ async function load() {
 	const drive = getDriveClient();
 	let loadedFromDrive = false;
 
-	if (drive && GDRIVE_BRAIN_FILE_ID) {
+	if (drive && resolvedBrainId) {
 		try {
 			console.log('[GDRIVE] Cargando brain.db.json desde Google Drive...');
-			const res = await drive.files.get({ fileId: GDRIVE_BRAIN_FILE_ID, alt: 'media' });
+			const res = await drive.files.get({ fileId: resolvedBrainId, alt: 'media' });
 			const parsed = JSON.parse(res.data);
 			if (parsed && typeof parsed === 'object') {
 				db = Object.assign(db, parsed);
@@ -234,10 +287,10 @@ async function load() {
 
 async function loadLedger() {
 	const drive = getDriveClient();
-	if (drive && GDRIVE_LEDGER_FILE_ID) {
+	if (drive && resolvedLedgerId) {
 		try {
 			console.log('[GDRIVE] Cargando saldos.ledger.json desde Google Drive...');
-			const res = await drive.files.get({ fileId: GDRIVE_LEDGER_FILE_ID, alt: 'media' });
+			const res = await drive.files.get({ fileId: resolvedLedgerId, alt: 'media' });
 			const parsed = JSON.parse(res.data);
 			if (parsed && typeof parsed === 'object') ledger = Object.assign(ledger, parsed);
 			console.log('[GDRIVE] saldos.ledger.json cargado exitosamente.');
