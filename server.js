@@ -764,18 +764,25 @@ io.on('connection', (socket) => {
     if (!shop || shop.ownerId !== socket.userId) return ack({ ok: false, msg: 'Tienda no encontrada o no eres el dueño' });
     if (shop.employeeId) return ack({ ok: false, msg: 'La tienda ya tiene un empleado' });
 
+    // --- SOLUCIÓN: El bot aparece en el edificio del gobierno ---
+    const govBuilding = state.government.placed.find(g => g.isMain) || state.government;
+    const startX = govBuilding.x + govBuilding.w / 2;
+    const startY = govBuilding.y + govBuilding.h / 2;
+    // ---------------------------------------------------------
+
     // Crear un nuevo bot para ser el empleado
     const botId = 'bot_' + crypto.randomUUID();
     const gender = Math.random() < 0.5 ? 'M' : 'F';
     const name = randomPersonName(gender);
     const avatar = (gender === 'M') ? '/assets/avatar2.png' : '/assets/avatar4.png';
 
+
     const bot = {
       id: botId,
       socketId: null,
       code: name,
-      x: shop.x + shop.w / 2,
-      y: shop.y + shop.h / 2,
+      x: startX,
+      y: startY,
       money: 0, // Los bots ya no manejan su propio dinero
       gender,
       avatar,
@@ -812,6 +819,40 @@ io.on('connection', (socket) => {
     } else {
       ack({ ok: false, msg: 'Empleado no encontrado' });
     }
+  });
+
+  // --- SOLUCIÓN: El cliente notifica al servidor de una compra ---
+  socket.on('shop:purchase', ({ shopId, amount }) => {
+    try {
+      if (!shopId || !amount) return;
+      const shop = state.shops.find(s => s.id === shopId);
+      if (!shop) return;
+
+      shop.cashbox = (shop.cashbox || 0) + amount;
+      shop._lastCashboxChange = now();
+
+      // --- SOLUCIÓN: Liquidación automática al llegar a 100 créditos ---
+      if (shop.cashbox >= 100 && shop.ownerId) {
+        const ownerId = shop.ownerId;
+        const payoutAmount = Math.floor(shop.cashbox);
+        let ownerShare = payoutAmount;
+
+        // Si hay empleado, el gobierno cobra una comisión del 10%
+        if (shop.employeeId) {
+          const commission = Math.floor(payoutAmount * 0.10);
+          ownerShare = payoutAmount - commission;
+          brain.addGovernmentFunds(commission);
+        }
+
+        // Pagar al dueño y resetear la caja
+        brain.addMoney(ownerId, ownerShare, `payout:${shop.id}`);
+        shop.cashbox = 0;
+
+        // Notificar al dueño
+        const owner = state.players[ownerId];
+        if (owner && owner.socketId) io.to(owner.socketId).emit('toast', `¡+${ownerShare} de tu negocio ${shop.kind}!`);
+      }
+    } catch (e) { console.warn('shop:purchase error', e); }
   });
 
   // Chat básico entre jugadores conectados

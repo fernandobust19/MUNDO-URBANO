@@ -2071,15 +2071,11 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         const bars = Math.max(3, Math.floor(inst.w/10));
         for(let i=0;i<bars;i++){ const bx = p.x + 4 + i*(w-8)/(bars-1); ctx.fillRect(bx, p.y+4, 2, h-8); }
         // Sin texto "CÁRCEL"
-      } else if (inst.label === 'Plaza Gubernamental') {
-        // Dibujar la plaza de fondo, pero sin imagen
-        const p = toScreen(inst.x, inst.y);
-        ctx.fillStyle = inst.fill || 'rgba(80, 80, 90, 0.25)';
-        ctx.fillRect(p.x, p.y, inst.w * ZOOM, inst.h * ZOOM);
-      } else {
-        // Lógica unificada para todas las instituciones, incluido el gobierno
-        drawBuildingWithImage(inst, inst.k, inst.fill, inst.stroke);
       }
+      // --- SOLUCIÓN: Dibujar siempre la imagen del edificio, incluso si tiene etiqueta ---
+      // La lógica anterior con 'else if' impedía que se dibujara el edificio del gobierno.
+      drawBuildingWithImage(inst, inst.k, inst.fill, inst.stroke);
+      // ------------------------------------------------------------------------------------
     }
 
     // Dibujar casas con posible marcador de arriendo
@@ -2396,6 +2392,8 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         const c=a.target; if(Math.hypot(a.x-c.x,a.y-c.y)<14){
       a.money += a.pendingDeposit; a.pendingDeposit=0; a.goingToBank=false;
       a.target=null; a.targetRole='idle'; a.nextWorkAt = nowS + CFG.WORK_COOLDOWN;
+      // --- SOLUCIÓN: Guardar el nuevo saldo tras depositar en el banco ---
+      if (a.id === USER_ID) { try { window.saveProgress({ money: Math.floor(a.money) }); } catch(e) {} }
         }
       }
 
@@ -3300,20 +3298,21 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     }
 
     for(const b of banks){ if(inside(pt,b)){const you = USER_ID? agents.find(a=>a.id===USER_ID) : null; if(you){ const your$ = Math.floor((you.money||0) + (you.pendingDeposit||0)); accBankBody.innerHTML = `Saldo de ${you.code}: <span class="balance-amount">${your$}</span>`; } else { accBankBody.textContent = 'Crea tu persona primero.'; } toast('Banco abierto');return;} }
+    // --- SOLUCIÓN: Contratación/Despido manual al hacer clic en el negocio ---
     for(const s of getVisibleShops()){
       if(inside(pt, s) && s.ownerId === USER_ID) {
         if (!hasNet()) {
           toast('Necesitas estar conectado para gestionar empleados.');
           return;
         }
+        // Si ya tiene empleado, despedirlo.
         if (s.employeeId) {
-          // Despedir empleado
           window.sock.emit('fireEmployee', { shopId: s.id }, (res) => {
             if (res.ok) toast("Empleado despedido.");
             else toast(res.msg || "Error al despedir.");
           });
         } else {
-          // Contratar empleado
+          // Si no tiene, contratar uno.
           window.sock.emit('hireEmployee', { shopId: s.id }, (res) => {
             if (res.ok) toast(`¡Empleado contratado! 👔`);
             else toast(res.msg || "No se pudo contratar.");
@@ -3322,6 +3321,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         return;
       }
     }
+    // --------------------------------------------------------------------
   });
   console.log("Clic en canvas procesado");
 
