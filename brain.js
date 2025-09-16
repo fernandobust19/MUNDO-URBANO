@@ -66,8 +66,14 @@ async function saveAtomic(dataStr) {
 					body: dataStr,
 				},
 			});
+			// Si el guardado en Drive tiene éxito, no necesitamos hacer nada más.
 		} catch (e) {
 			console.error('[GDRIVE] Error al guardar brain.db.json:', e.message);
+			// --- SOLUCIÓN: Fallback a guardado local si Drive falla ---
+			console.log('[GDRIVE] Fallback: Guardando brain.db.json en el sistema de archivos local.');
+			const tmp = DB_PATH + '.tmp';
+			fs.writeFileSync(tmp, dataStr);
+			fs.renameSync(tmp, DB_PATH);
 		}
 	} else {
 		const tmp = DB_PATH + '.tmp';
@@ -87,8 +93,14 @@ async function saveLedgerAtomic(dataStr){
 					body: dataStr,
 				},
 			});
+			// Si el guardado en Drive tiene éxito, no necesitamos hacer nada más.
 		} catch (e) {
 			console.error('[GDRIVE] Error al guardar saldos.ledger.json:', e.message);
+			// --- SOLUCIÓN: Fallback a guardado local si Drive falla ---
+			console.log('[GDRIVE] Fallback: Guardando saldos.ledger.json en el sistema de archivos local.');
+			const tmp = LEDGER_PATH + '.tmp';
+			fs.writeFileSync(tmp, dataStr);
+			fs.renameSync(tmp, LEDGER_PATH);
 		}
 	} else {
 		const tmp = LEDGER_PATH + '.tmp';
