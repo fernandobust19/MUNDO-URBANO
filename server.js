@@ -389,6 +389,23 @@ app.get('/api/debug/asset', (req, res) => {
   }catch(e){ return res.status(500).json({ ok:false, msg: e.message }); }
 });
 
+// Endpoint para probar la conexión con Google Drive desde el navegador
+app.get('/api/health/drive', async (req, res) => {
+  try {
+    const health = await brain.checkDriveHealth();
+    if (health.ok) {
+      return res.json(health);
+    } else {
+      return res.status(500).json(health);
+    }
+  } catch (e) {
+    res.status(500).json({
+      ok: false,
+      error: e?.response?.data || e?.message || e,
+      hint: 'Error inesperado en el servidor al verificar la salud de Drive.'
+    });
+  }
+});
 // Debug: Google Sheets info (no escribe, sólo lee metadatos)
 
 const state = {
@@ -906,7 +923,8 @@ io.on('connection', (socket) => {
 });
 
   server.listen(PORT, () => {
-    console.log(`Server listening on http://localhost:${PORT}`);
+    // El servidor escucha en 0.0.0.0 por defecto, lo cual es correcto para Render.
+    console.log(`Servidor escuchando en el puerto ${PORT}`);
   });
 
   // --- Apagado Elegante (Graceful Shutdown) ---

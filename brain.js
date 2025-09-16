@@ -19,24 +19,94 @@ let driveClient = null;
 
 function getDriveClient() {
 	if (driveClient) return driveClient;
-	if (!GDRIVE_BRAIN_FILE_ID || !GOOGLE_SERVICE_ACCOUNT_EMAIL || !GOOGLE_PRIVATE_KEY) {
-		// Si no está configurado, se usará el sistema de archivos local como fallback.
+	
+	// En producción, es obligatorio que los IDs de los archivos de Drive estén definidos.
+	if (!GDRIVE_BRAIN_FILE_ID || !GDRIVE_LEDGER_FILE_ID) {
+		if (process.env.NODE_ENV === 'production') {
+			throw new Error('CRÍTICO: Los IDs de archivo de Google Drive (GDRIVE_BRAIN_FILE_ID, GDRIVE_LEDGER_FILE_ID) no están configurados en producción.');
+		}
 		return null;
 	}
 
 	try {
-		const jwtClient = new google.auth.JWT(
-			GOOGLE_SERVICE_ACCOUNT_EMAIL,
-			null,
-			GOOGLE_PRIVATE_KEY,
-			['https://www.googleapis.com/auth/drive.file'] // Permiso para acceder a archivos creados/compartidos
-		);
-		driveClient = google.drive({ version: 'v3', auth: jwtClient });
-		console.log('[GDRIVE] Cliente de Google Drive inicializado.');
+		// GoogleAuth encontrará y usará automáticamente el Secret File si la variable
+		// de entorno GOOGLE_APPLICATION_CREDENTIALS está configurada en Render.
+		const auth = new google.auth.GoogleAuth({
+			scopes: ['https://www.googleapis.com/auth/drive.file'],
+		});
+		driveClient = google.drive({ version: 'v3', auth });
 		return driveClient;
 	} catch (e) {
 		console.error('[GDRIVE] Falló la inicialización del cliente de Google Drive:', e.message);
+		// En producción, un fallo aquí es fatal.
+		if (process.env.NODE_ENV === 'production') throw e;
 		return null;
+	}
+}
+
+async function checkDriveHealth() {
+	const drive = getDriveClient();
+	if (!drive) {
+		return { ok: false, message: 'Drive client not initialized.' };
+	}
+
+	try {
+		// 1) Chequeo de METADATA de ambos archivos en paralelo
+		const [brainMeta, ledgerMeta] = await Promise.all([
+			drive.files.get({
+				fileId: GDRIVE_BRAIN_FILE_ID,
+				fields: 'id,name,mimeType,size,modifiedTime',
+			}),
+			drive.files.get({
+				fileId: GDRIVE_LEDGER_FILE_ID,
+				fields: 'id,name,mimeType,size,modifiedTime',
+			}),
+		]);
+
+		// 2) Lectura de CONTENIDO del brain para confirmar acceso
+		const brainContentResp = await drive.files.get({
+			fileId: GDRIVE_BRAIN_FILE_ID,
+			alt: 'media',
+		}, { responseType: 'stream' });
+
+		const readFirstBytes = (stream, max = 500) => new Promise((resolve, reject) => {
+			let acc = Buffer.alloc(0);
+			stream.on('data', chunk => {
+				acc = Buffer.concat([acc, chunk]);
+				if (acc.length >= max) {
+					stream.destroy(); // Cortamos la lectura para no cargar todo
+				}
+			});
+			stream.on('close', () => resolve(acc.slice(0, max).toString('utf8')));
+			stream.on('end', () => resolve(acc.slice(0, max).toString('utf8')));
+			stream.on('error', reject);
+		});
+
+		const brainPreview = await readFirstBytes(brainContentResp.data);
+
+		return {
+			ok: true,
+			message: '✅ Conexión con Drive OK',
+			brain: brainMeta.data,
+			ledger: ledgerMeta.data,
+			brainPreview: brainPreview.substring(0, 300),
+		};
+
+	} catch (e) {
+		const error = e?.response?.data || e?.message || e;
+		let hint = 'Error desconocido.';
+		if (e.code === 403) {
+			hint = 'Falta compartir el archivo en Google Drive con el "client_email" (rol de Editor).';
+		} else if (e.code === 404) {
+			hint = 'FileId incorrecto. Verifica las variables de entorno GDRIVE_BRAIN_FILE_ID o GDRIVE_LEDGER_FILE_ID.';
+		} else if (String(e.message).includes('ENOENT')) {
+			hint = 'Ruta del Secret File incorrecta. Verifica la variable GOOGLE_APPLICATION_CREDENTIALS.';
+		}
+		return {
+			ok: false,
+			error,
+			hint,
+		};
 	}
 }
 
@@ -69,11 +139,12 @@ async function saveAtomic(dataStr) {
 			// Si el guardado en Drive tiene éxito, no necesitamos hacer nada más.
 		} catch (e) {
 			console.error('[GDRIVE] Error al guardar brain.db.json:', e.message);
-			// --- SOLUCIÓN: Fallback a guardado local si Drive falla ---
-			console.log('[GDRIVE] Fallback: Guardando brain.db.json en el sistema de archivos local.');
-			const tmp = DB_PATH + '.tmp';
-			fs.writeFileSync(tmp, dataStr);
-			fs.renameSync(tmp, DB_PATH);
+			// En producción, no hacer fallback. Es mejor fallar que perder datos silenciosamente.
+			if (process.env.NODE_ENV === 'production') {
+				throw new Error(`Fallo crítico al guardar en Google Drive: ${e.message}`);
+			}
+			console.log('[GDRIVE] Fallback (dev): Guardando brain.db.json en el sistema de archivos local.');
+			const tmp = DB_PATH + '.tmp'; fs.writeFileSync(tmp, dataStr); fs.renameSync(tmp, DB_PATH);
 		}
 	} else {
 		const tmp = DB_PATH + '.tmp';
@@ -96,11 +167,12 @@ async function saveLedgerAtomic(dataStr){
 			// Si el guardado en Drive tiene éxito, no necesitamos hacer nada más.
 		} catch (e) {
 			console.error('[GDRIVE] Error al guardar saldos.ledger.json:', e.message);
-			// --- SOLUCIÓN: Fallback a guardado local si Drive falla ---
-			console.log('[GDRIVE] Fallback: Guardando saldos.ledger.json en el sistema de archivos local.');
-			const tmp = LEDGER_PATH + '.tmp';
-			fs.writeFileSync(tmp, dataStr);
-			fs.renameSync(tmp, LEDGER_PATH);
+			// En producción, no hacer fallback.
+			if (process.env.NODE_ENV === 'production') {
+				throw new Error(`Fallo crítico al guardar ledger en Google Drive: ${e.message}`);
+			}
+			console.log('[GDRIVE] Fallback (dev): Guardando saldos.ledger.json en el sistema de archivos local.');
+			const tmp = LEDGER_PATH + '.tmp'; fs.writeFileSync(tmp, dataStr); fs.renameSync(tmp, LEDGER_PATH);
 		}
 	} else {
 		const tmp = LEDGER_PATH + '.tmp';
@@ -563,6 +635,23 @@ function restoreMoneyFromLedger(userId){
 
 // Cargar al iniciar
 async function init() {
+	const drive = getDriveClient();
+	if (drive && process.env.NODE_ENV === 'production') {
+		console.log('[GDRIVE] Verificando conexión y permisos al arrancar...');
+		const health = await checkDriveHealth();
+		if (health.ok) {
+			console.log(`✅ Conexión con Drive OK`);
+			console.log('🧠 brain:', health.brain);
+			console.log('📒 ledger:', health.ledger);
+			console.log('🧪 Vista previa brain (primeros bytes):', health.brainPreview);
+		} else {
+			console.error(`❌ Drive check FAILED:`, health.error);
+			console.error(`Sugerencia: ${health.hint}`);
+			throw new Error('Fallo en la verificación inicial de Google Drive.');
+		}
+	} else if (drive) {
+		console.log('[GDRIVE] Cliente de Google Drive inicializado para desarrollo.');
+	}
 	await load();
 }
 function changePassword(userId, newPassword) {
@@ -600,6 +689,7 @@ module.exports = {
 	// ledger API
 	recordMoneyChange,
 	latestMoney,
+	checkDriveHealth,
 	restoreMoneyFromLedger,
 	changePassword,
 	// credits helpers
