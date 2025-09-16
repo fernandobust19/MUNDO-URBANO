@@ -77,7 +77,11 @@
 		sock.on('state', (payload) => {
 			try {
 				window.gameState = payload;
-				window.government = payload?.government || window.government;
+				// Fusionar el estado del gobierno del servidor con el local
+				// para no perder propiedades del cliente como x,y,w,h del edificio principal.
+				if (payload?.government && typeof payload.government === 'object') {
+					Object.assign(window.government, payload.government);
+				}
 				if (typeof window.updateGovDesc === 'function') window.updateGovDesc();
 				try{ if(typeof window.updateOwnedShopsUI === 'function') window.updateOwnedShopsUI(); }catch(e){}
 				try{ window.__dbgUpdate?.({ connected:sock.connected, players:Array.isArray(payload?.players)?payload.players.length:0, lastState:new Date().toLocaleTimeString() }); }catch(e){}

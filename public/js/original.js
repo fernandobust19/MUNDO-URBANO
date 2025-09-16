@@ -814,7 +814,8 @@ function relocateInitialBuildingsToSand(){
   CFG.SHOP_PROFIT_FACTOR = CFG.SHOP_PROFIT_FACTOR || 0.002;
 
   /* Áreas clave */
-  const builder={x:0,y:0,w:220,h:110}, cemetery={x:0,y:0,w:CFG.CEM_W,h:CFG.CEM_H}, government={x:0,y:0,w:240,h:140,funds:0, placed:[]};
+  const builder={x:0,y:0,w:220,h:110}, cemetery={x:0,y:0,w:CFG.CEM_W,h:CFG.CEM_H};
+  window.government={x:0,y:0,w:240,h:140,funds:0, placed:[]};
   const roadRects=[];
   const cityBlocks = [];
   let urbanZone = {x:0, y:0, w:0, h:0};
@@ -2330,6 +2331,38 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     }
   }
 
+  // ====== DIBUJO DE AGENTES LOCALES (nuevo) ======
+  function renderLocalAgents() {
+    if (!Array.isArray(agents)) return;
+
+    for(const ag of agents){
+      const pt = toScreen(ag.x, ag.y);
+      const baseR = (ag.state==='child'?CFG.R_CHILD:CFG.R_ADULT) * ZOOM;
+      const r = baseR;
+      let drew=false;
+      try{
+        if(ag.avatar){ const img=getAvatarImage(ag.avatar); if(img&&img.complete&&img.naturalWidth){ ctx.save(); ctx.beginPath(); ctx.arc(pt.x,pt.y,r*0.95,0,Math.PI*2); ctx.clip(); const d=r*1.8; ctx.drawImage(img, pt.x-d/2, pt.y-d/2, d, d); ctx.restore(); drew=true; } }
+      }catch(_){ }
+      if(!drew){
+        const nameLow=(ag.name||ag.code||'').toLowerCase(); const femaleHints=['a','as','ia','ía']; const seemsF=(ag.gender==='F')||femaleHints.some(s=>nameLow.endsWith(s));
+        ctx.beginPath(); ctx.arc(pt.x, pt.y, r*0.95, 0, Math.PI*2);
+        ctx.fillStyle= seemsF? 'rgba(255,105,180,0.85)':'rgba(64,132,255,0.85)'; ctx.fill();
+        ctx.lineWidth=2; ctx.strokeStyle=seemsF? 'rgba(255,182,210,0.9)':'rgba(120,180,255,0.9)'; ctx.stroke();
+      }
+      if (ag.justMarried && (performance.now() - ag.justMarried < 5000)){
+        ctx.font=`700 ${Math.max(12, 18*ZOOM)}px system-ui,Segoe UI,Arial,emoji`; ctx.textAlign='center'; ctx.fillText('💕', pt.x, pt.y - 25*ZOOM);
+      } else if (ag.justMarried) { ag.justMarried=null; }
+      const ageYrs=(yearsSince(ag.bornEpoch)|0);
+      // Etiqueta de nombre escala 1:1 con el zoom (y se oculta si es muy pequeña)
+      const namePx = CFG.NAME_FONT_PX * ZOOM;
+      const nameOffset = Math.max(6, 10 * ZOOM);
+      if (namePx >= 6) {
+        ctx.font = `700 ${namePx}px ui-monospace,monospace`; ctx.fillStyle='#fff'; ctx.textAlign='center';
+        ctx.fillText(`${ag.name||ag.code}·${ageYrs}`, pt.x, pt.y - (r + nameOffset));
+      }
+    }
+  }
+
   let __lastTime = performance.now();
   function loop(){
     if(!STARTED){ requestAnimationFrame(loop); return; }
@@ -2360,10 +2393,11 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
     }catch(_){ }
   drawWorld();
   if(!window.__gamePaused){ drawSocialLines(); }
-
-    // ======= Jugadores remotos con smoothing nuevo =======
-  try{ if(!window.__gamePaused) renderRemotePlayers(); }catch(e){}
-
+  
+    // DIBUJO DE JUGADORES: locales y luego remotos
+    if(!window.__gamePaused) renderLocalAgents();
+    if(!window.__gamePaused) renderRemotePlayers();
+    
     const nowS = performance.now()/1000;
 
   if(!window.__gamePaused) for(const a of agents){
@@ -2507,8 +2541,8 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         }
       }
       a.x += a.vx * dt; a.y += a.vy * dt;
-      if(a.x<4||a.x>WORLD.w-4){ a.vx*=-1; a.x=clamp(a.x,4,WORLD.w-4); }
-      if(a.y<4||a.y>WORLD.h-4){ a.vy*=-1; a.y=clamp(a.y,4,WORLD.h-4); }
+      if(a.x<0||a.x>WORLD.w){ a.vx*=-1; a.x=clamp(a.x,0,WORLD.w); }
+      if(a.y<0||a.y>WORLD.h){ a.vy*=-1; a.y=clamp(a.y,0,WORLD.h); }
 
       // Probabilidad configurable de entrar a modo explorar cuando está idle
       if (!a.target && a.targetRole === 'idle' && Math.random() < (CFG.EXPLORE_IDLE_PROB||0.02)) {
@@ -2533,38 +2567,6 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
               }
           }
       }
-
-  const p=toScreen(a.x,a.y);
-  const baseR = (a.state==='child'?CFG.R_CHILD:CFG.R_ADULT) * ZOOM;
-    // Dibujo unificado de todos los agentes (locales y remotos ya sincronizados en agents[] si aplica)
-    try{
-      for(const ag of agents){
-        const pt = toScreen(ag.x, ag.y);
-  const baseR = (ag.state==='child'?CFG.R_CHILD:CFG.R_ADULT) * ZOOM;
-  const r = baseR;
-        let drew=false;
-        try{
-          if(ag.avatar){ const img=getAvatarImage(ag.avatar); if(img&&img.complete&&img.naturalWidth){ ctx.save(); ctx.beginPath(); ctx.arc(pt.x,pt.y,r*0.95,0,Math.PI*2); ctx.clip(); const d=r*1.8; ctx.drawImage(img, pt.x-d/2, pt.y-d/2, d, d); ctx.restore(); drew=true; } }
-        }catch(_){ }
-        if(!drew){
-          const nameLow=(ag.name||ag.code||'').toLowerCase(); const femaleHints=['a','as','ia','ía']; const seemsF=(ag.gender==='F')||femaleHints.some(s=>nameLow.endsWith(s));
-          ctx.beginPath(); ctx.arc(pt.x, pt.y, r*0.95, 0, Math.PI*2);
-          ctx.fillStyle= seemsF? 'rgba(255,105,180,0.85)':'rgba(64,132,255,0.85)'; ctx.fill();
-          ctx.lineWidth=2; ctx.strokeStyle=seemsF? 'rgba(255,182,210,0.9)':'rgba(120,180,255,0.9)'; ctx.stroke();
-        }
-        if (ag.justMarried && (performance.now() - ag.justMarried < 5000)){
-          ctx.font=`700 ${Math.max(12, 18*ZOOM)}px system-ui,Segoe UI,Arial,emoji`; ctx.textAlign='center'; ctx.fillText('💕', pt.x, pt.y - 25*ZOOM);
-        } else if (ag.justMarried) { ag.justMarried=null; }
-  const ageYrs=(yearsSince(ag.bornEpoch)|0);
-  // Etiqueta de nombre escala 1:1 con el zoom (y se oculta si es muy pequeña)
-  const namePx = CFG.NAME_FONT_PX * ZOOM;
-  const nameOffset = Math.max(6, 10 * ZOOM);
-  if (namePx >= 6) {
-    ctx.font = `700 ${namePx}px ui-monospace,monospace`; ctx.fillStyle='#fff'; ctx.textAlign='center';
-    ctx.fillText(`${ag.name||ag.code}·${ageYrs}`, pt.x, pt.y - (r + nameOffset));
-  }
-      }
-    }catch(_){ }
     }
     const total$=Math.round(agents.reduce((s,x)=>s+(x.money||0),0));
     const instCount = government.placed.length;
@@ -3283,18 +3285,15 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       rectX.y = clamp(rectX.y, 10, WORLD.h - rectX.h - 10);
   // Restricción de arena eliminada
       if(allBuildings.some(r=>rectsOverlapWithMargin(r,rectX, 8))){ toast('No se puede colocar aquí (muy cerca).'); return; }
-      /*
       if(government.funds < placingGov.cost){ toast('Fondos insuficientes.'); placingGov=null; return; }
-      */
       if(hasNet()){
         const payload = { ...rectX, cost: placingGov.cost };
         window.sock?.emit('placeGov', payload, (res)=>{
-          if(res?.ok){ government.funds -= placingGov.cost; government.placed.push(rectX); updateGovDesc(); placingGov=null; toast('Construcción realizada ✅'); }
+          if(res?.ok){ /* El servidor se encarga de restar fondos y persistir. El cliente se actualizará con el evento 'state'. */ placingGov=null; toast('Construcción realizada ✅'); }
           else { toast(res?.msg||'No se pudo construir'); placingGov=null; }
         });
         return;
       }
-      government.funds -= placingGov.cost;
       government.placed.push(rectX);
       govFundsEl.textContent = `Fondo: ${Math.floor(government.funds)}`;
       placingGov=null; toast('Construcción realizada ✅');
@@ -3434,9 +3433,7 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
   btnGovPlace.onclick = ()=>{
     if(!STARTED){ toast('Inicia el mundo primero.'); return; }
     const typ = selectedGovType();
-    /*
     if(government.funds < typ.cost){ toast('Fondos insuficientes.'); return; }
-    */
     placingGov = {...typ};
     toast(`Modo colocación: ${typ.label}. Haz clic en el mapa.`);
   }

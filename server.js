@@ -745,13 +745,12 @@ io.on('connection', (socket) => {
   });
 
   socket.on('placeGov', async (payload, ack) => {
-  /*
-  if ((state.government.funds || 0) < (payload.cost || 0)) {
+  // Usar brain.getGovernment() para la validación más actualizada
+  if ((brain.getGovernment().funds || 0) < (payload.cost || 0)) {
       if (ack) ack({ ok:false, msg: 'Fondos insuficientes' });
       return;
     }
-  */
-  try{ await brain.addGovernmentFunds(-Math.abs(payload.cost||0)); }catch(_){ }
+  try{ await brain.addGovernmentFunds(-Math.abs(payload.cost||0)); }catch(_){ /* El addGovernmentFunds ya persiste */ }
   try{ brain.placeGovernment(payload); }catch(_){ }
   state.government = brain.getGovernment();
     io.emit('govPlaced', payload);
@@ -894,6 +893,22 @@ io.on('connection', (socket) => {
   server.listen(PORT, () => {
     console.log(`Server listening on http://localhost:${PORT}`);
   });
+
+  // --- Apagado Elegante (Graceful Shutdown) ---
+  // Asegura que el estado final se guarde antes de que el proceso termine.
+  const shutdown = async (signal) => {
+    console.log(`[${signal}] Apagando servidor...`);
+    try {
+      await brain.persist();
+      console.log('[Brain] Estado final guardado exitosamente.');
+    } catch (e) {
+      console.error('[Brain] Error al guardar estado final:', e);
+    }
+    process.exit(0);
+  };
+
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
 }
 
 main().catch(err => {
