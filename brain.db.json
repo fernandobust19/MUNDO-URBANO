@@ -10,11 +10,22 @@
       "email": "fernando2000b@hotmail.com",
       "phone": "0983801298",
       "gender": "M"
+    },
+    {
+      "id": "c3597557-d440-4fdd-bfef-0ceb991bfff2",
+      "username": "fernando1",
+      "passHash": "$2a$10$poOtmF8LM5OPb4rK3U4DF.seasla.lCbG5arCbBTAzG4DVglfcHV6",
+      "createdAt": 1757983460954,
+      "lastLoginAt": null,
+      "country": "El Salvador",
+      "email": "fernando2000b@hotmail.com",
+      "phone": "0983801298",
+      "gender": "M"
     }
   ],
   "progress": {
     "17dd87f7-cde6-4a46-a832-2bbf1612b018": {
-      "money": 300,
+      "money": 350,
       "bank": 0,
       "vehicle": "moto",
       "vehicles": [
@@ -56,6 +67,32 @@
       "age": null,
       "initialRentPaid": false,
       "rentedHouseIdx": null
+    },
+    "c3597557-d440-4fdd-bfef-0ceb991bfff2": {
+      "money": 350,
+      "bank": 0,
+      "vehicle": null,
+      "vehicles": [],
+      "shops": [],
+      "houses": [],
+      "name": "fer",
+      "avatar": "assets/avatar2.png",
+      "likes": [
+        "música",
+        "ciclismo",
+        "teatro",
+        "idiomas",
+        "helado"
+      ],
+      "gender": "M",
+      "age": 20,
+      "initialRentPaid": true,
+      "rentedHouseIdx": 0,
+      "state": "single",
+      "spouseId": null,
+      "country": "El Salvador",
+      "email": "fernando2000b@hotmail.com",
+      "phone": "0983801298"
     }
   },
   "government": {
@@ -264,6 +301,15 @@
         "stroke": "#93c5fd",
         "k": "universidad",
         "cost": 300
+      },
+      {
+        "k": "gobierno",
+        "label": "Gobierno",
+        "x": 7529.5,
+        "y": 1575.5,
+        "w": 240,
+        "h": 140,
+        "isMain": true
       }
     ]
   },
@@ -1054,124 +1100,272 @@
           "spouseId"
         ]
       }
+    },
+    {
+      "ts": 1757983460954,
+      "type": "register",
+      "userId": "c3597557-d440-4fdd-bfef-0ceb991bfff2",
+      "details": {
+        "username": "fernando1"
+      }
+    },
+    {
+      "ts": 1757983466209,
+      "type": "progress_update",
+      "userId": "c3597557-d440-4fdd-bfef-0ceb991bfff2",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "initialRentPaid",
+          "rentedHouseIdx",
+          "state",
+          "spouseId"
+        ]
+      }
+    },
+    {
+      "ts": 1757983466640,
+      "type": "progress_update",
+      "userId": "c3597557-d440-4fdd-bfef-0ceb991bfff2",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "initialRentPaid",
+          "rentedHouseIdx",
+          "state",
+          "spouseId"
+        ]
+      }
+    },
+    {
+      "ts": 1757983468736,
+      "type": "gov_place",
+      "userId": null,
+      "details": {
+        "k": "gobierno"
+      }
+    },
+    {
+      "ts": 1757983468763,
+      "type": "progress_update",
+      "userId": "c3597557-d440-4fdd-bfef-0ceb991bfff2",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "initialRentPaid",
+          "rentedHouseIdx",
+          "state",
+          "spouseId"
+        ]
+      }
+    },
+    {
+      "ts": 1757983468765,
+      "type": "progress_update",
+      "userId": "c3597557-d440-4fdd-bfef-0ceb991bfff2",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "initialRentPaid",
+          "rentedHouseIdx",
+          "state",
+          "spouseId",
+          "country",
+          "email",
+          "phone"
+        ]
+      }
+    },
+    {
+      "ts": 1757983472727,
+      "type": "progress_update",
+      "userId": "c3597557-d440-4fdd-bfef-0ceb991bfff2",
+      "details": {
+        "keys": [
+          "money",
+          "bank",
+          "vehicle",
+          "vehicles",
+          "shops",
+          "houses",
+          "name",
+          "avatar",
+          "likes",
+          "gender",
+          "age",
+          "initialRentPaid",
+          "rentedHouseIdx",
+          "state",
+          "spouseId",
+          "country",
+          "email",
+          "phone"
+        ]
+      }
     }
   ],
   "factories": [
     {
-      "x": 6934,
-      "y": 522,
-      "w": 140,
-      "h": 107
+      "x": 3458,
+      "y": 304,
+      "w": 164,
+      "h": 112
     },
     {
-      "x": 3416,
-      "y": 387,
-      "w": 167,
+      "x": 5362,
+      "y": 1019,
+      "w": 141,
+      "h": 112
+    },
+    {
+      "x": 399,
+      "y": 428,
+      "w": 161,
+      "h": 112
+    },
+    {
+      "x": 4780,
+      "y": 453,
+      "w": 140,
+      "h": 92
+    },
+    {
+      "x": 5422,
+      "y": 116,
+      "w": 163,
+      "h": 101
+    },
+    {
+      "x": 7262,
+      "y": 566,
+      "w": 161,
+      "h": 119
+    },
+    {
+      "x": 6011,
+      "y": 1234,
+      "w": 179,
       "h": 96
     },
     {
-      "x": 4782,
-      "y": 359,
-      "w": 151,
-      "h": 114
+      "x": 4022,
+      "y": 256,
+      "w": 157,
+      "h": 104
     },
     {
-      "x": 5515,
-      "y": 917,
-      "w": 166,
-      "h": 118
+      "x": 7040,
+      "y": 1055,
+      "w": 146,
+      "h": 111
     },
     {
-      "x": 2587,
-      "y": 403,
-      "w": 175,
-      "h": 112
-    },
-    {
-      "x": 5076,
-      "y": 860,
-      "w": 168,
-      "h": 103
-    },
-    {
-      "x": 6467,
-      "y": 1264,
-      "w": 154,
-      "h": 112
-    },
-    {
-      "x": 5900,
-      "y": 1174,
-      "w": 176,
+      "x": 1082,
+      "y": 355,
+      "w": 169,
       "h": 98
     },
     {
-      "x": 3161,
-      "y": 710,
-      "w": 157,
-      "h": 105
+      "x": 4819,
+      "y": 949,
+      "w": 153,
+      "h": 95
     },
     {
-      "x": 1770,
-      "y": 1348,
-      "w": 155,
-      "h": 94
-    },
-    {
-      "x": 4618,
-      "y": 835,
-      "w": 164,
-      "h": 94
+      "x": 5057,
+      "y": 1314,
+      "w": 172,
+      "h": 107
     }
   ],
   "banks": [
     {
-      "x": 9271,
-      "y": 336,
-      "w": 132,
-      "h": 79
+      "x": 9700,
+      "y": 1029,
+      "w": 129,
+      "h": 70
     },
     {
-      "x": 10959,
-      "y": 997,
-      "w": 137,
-      "h": 89
+      "x": 8692,
+      "y": 1155,
+      "w": 126,
+      "h": 85
     },
     {
-      "x": 10860,
-      "y": 1444,
-      "w": 112,
-      "h": 84
+      "x": 11328,
+      "y": 530,
+      "w": 139,
+      "h": 88
     },
     {
-      "x": 14361,
-      "y": 1215,
-      "w": 134,
-      "h": 87
+      "x": 13695,
+      "y": 332,
+      "w": 113,
+      "h": 74
     },
     {
-      "x": 9817,
-      "y": 259,
-      "w": 110,
+      "x": 14462,
+      "y": 1180,
+      "w": 114,
       "h": 75
     },
     {
-      "x": 11977,
-      "y": 554,
-      "w": 111,
-      "h": 89
+      "x": 8484,
+      "y": 593,
+      "w": 138,
+      "h": 72
     },
     {
-      "x": 13801,
-      "y": 189,
-      "w": 114,
-      "h": 89
+      "x": 15017,
+      "y": 636,
+      "w": 134,
+      "h": 72
     },
     {
-      "x": 9551,
-      "y": 653,
-      "w": 131,
-      "h": 77,
+      "x": 9013,
+      "y": 758,
+      "w": 126,
+      "h": 70,
       "isFuchsia": true
     }
   ],

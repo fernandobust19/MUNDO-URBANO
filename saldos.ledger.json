@@ -8,9 +8,9 @@
     },
     "17dd87f7-cde6-4a46-a832-2bbf1612b018": {
       "username": "fer",
-      "lastMoney": 300,
+      "lastMoney": 350,
       "lastBank": 0,
-      "updatedAt": 1757977046599
+      "updatedAt": 1757983488155
     }
   },
   "movements": [
@@ -13486,6 +13486,1059 @@
       "money": 300,
       "bank": 0,
       "reason": "login-restore"
+    },
+    {
+      "ts": 1757983472740,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 50,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983472873,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983473010,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983473142,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983473277,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983473409,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983473542,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983473675,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983473798,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983473926,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983474059,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983474193,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983474326,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983474448,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983474576,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983474710,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983474842,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983474975,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983475111,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983475242,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983475375,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983475509,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983475643,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983475776,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983475909,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983476042,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983476175,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983476308,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983476442,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983476576,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983476708,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983476841,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983476975,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983477109,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983477241,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983477375,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983477510,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983477642,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983477776,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983477908,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983478042,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983478175,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983478308,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983478441,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983478574,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983478707,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983478842,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983478974,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983479107,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983479241,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983479374,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983479508,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983479642,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983479775,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983479908,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983480041,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983480175,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983480308,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983480442,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983480575,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983480708,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983480841,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983480975,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983481108,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983481242,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983481374,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983481508,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983481641,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983481775,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983481908,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983482040,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983482175,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983482307,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983482441,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983482575,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983482709,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983482839,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983482973,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983483106,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983483240,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983483373,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983483506,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983483640,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983483773,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983483906,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983484039,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983484174,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983484306,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983484440,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983484574,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983484706,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983484841,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983484973,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983485106,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983485242,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983485375,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983485506,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983485639,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983485772,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983485893,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983486025,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983486155,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983486288,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983486422,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983486556,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983486689,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983486822,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983486955,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983487088,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983487222,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983487355,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983487488,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983487621,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983487755,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983487889,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983488021,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
+    },
+    {
+      "ts": 1757983488155,
+      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
+      "username": "fer",
+      "delta": 0,
+      "money": 350,
+      "bank": 0,
+      "reason": "update"
     }
   ]
 }

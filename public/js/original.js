@@ -552,7 +552,7 @@ const BUILDING_IMAGES = {
   shop: '/assets/20250827-071843.png',
   
   // Gobierno
-  gobierno: '/assets/Gobierno.png',
+  gobierno: '/assets/gobierno1.png',
   
   // Edificio principal solicitado
   gobierno_principal: '/assets/gobierno1.png',
