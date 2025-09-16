@@ -2071,11 +2071,16 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         const bars = Math.max(3, Math.floor(inst.w/10));
         for(let i=0;i<bars;i++){ const bx = p.x + 4 + i*(w-8)/(bars-1); ctx.fillRect(bx, p.y+4, 2, h-8); }
         // Sin texto "CÁRCEL"
+        continue; // Saltar al siguiente para no intentar dibujar imagen
       }
-      // --- SOLUCIÓN: Dibujar siempre la imagen del edificio, incluso si tiene etiqueta ---
-      // La lógica anterior con 'else if' impedía que se dibujara el edificio del gobierno.
-      drawBuildingWithImage(inst, inst.k, inst.fill, inst.stroke);
-      // ------------------------------------------------------------------------------------
+
+      // --- SOLUCIÓN: Dibujar primero el fondo de la plaza y luego la imagen del edificio ---
+      if (inst.label === 'Plaza Gubernamental') {
+        const p = toScreen(inst.x, inst.y);
+        ctx.fillStyle = inst.fill || 'rgba(80, 80, 90, 0.25)';
+        ctx.fillRect(p.x, p.y, inst.w * ZOOM, inst.h * ZOOM);
+      }
+      drawBuildingWithImage(inst, inst.k, inst.fill, inst.stroke); // Dibujar siempre la imagen
     }
 
     // Dibujar casas con posible marcador de arriendo

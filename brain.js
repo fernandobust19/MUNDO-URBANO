@@ -111,32 +111,33 @@ async function saveLedgerAtomic(dataStr){
 
 async function load() {
 	const drive = getDriveClient();
+	let loadedFromDrive = false;
+
 	if (drive && GDRIVE_BRAIN_FILE_ID) {
 		try {
 			console.log('[GDRIVE] Cargando brain.db.json desde Google Drive...');
 			const res = await drive.files.get({ fileId: GDRIVE_BRAIN_FILE_ID, alt: 'media' });
 			const parsed = JSON.parse(res.data);
-			if (parsed && typeof parsed === 'object') db = Object.assign(db, parsed);
-			console.log('[GDRIVE] brain.db.json cargado exitosamente.');
+			if (parsed && typeof parsed === 'object') {
+				db = Object.assign(db, parsed);
+				loadedFromDrive = true;
+				console.log('[GDRIVE] brain.db.json cargado exitosamente.');
+			}
 		} catch (e) {
-			console.warn('[GDRIVE] No se pudo cargar brain.db.json, usando estado inicial.', e.message);
+			console.warn('[GDRIVE] No se pudo cargar brain.db.json, intentando fallback local.', e.message);
 		}
 	}
-	try {
+
+	if (!loadedFromDrive) {
 		if (fs.existsSync(DB_PATH)) {
+			console.log('[FS] Cargando brain.db.json desde el sistema de archivos local...');
 			const raw = fs.readFileSync(DB_PATH, 'utf8');
 			const parsed = JSON.parse(raw);
 			if (parsed && typeof parsed === 'object') db = Object.assign(db, parsed);
-			// backfill gobierno
-			if(!db.government){ db.government = { funds: 0, placed: [] }; }
-			if(!Array.isArray(db.factories)) db.factories = [];
-			if(!Array.isArray(db.banks)) db.banks = [];
-			if(!Array.isArray(db.houses)) db.houses = [];
+			console.log('[FS] brain.db.json cargado exitosamente.');
 		} else {
 			persist();
 		}
-	} catch (e) {
-		console.warn('brain load error, starting fresh', e);
 	}
 
 	// Cargar ledger
