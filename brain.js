@@ -126,8 +126,21 @@ async function load() {
 				return await loadLedger();
 			}
 		} catch (e) {
-			console.error('[GDRIVE] CRÍTICO: No se pudo cargar brain.db.json. Abortando para prevenir pérdida de datos.', e.message);
-			throw new Error('No se pudo cargar la base de datos principal desde Google Drive.');
+			if (e.code === 404) { // Error "Not Found" de la API de Google
+				console.warn('[GDRIVE] brain.db.json no encontrado. Creando uno nuevo en Google Drive...');
+				try {
+					// Inicia con una base de datos vacía y la guarda inmediatamente.
+					db = { users: [], progress: {}, government: { funds: 0, placed: [] }, activityLog: [], factories: [], banks: [], houses: [] };
+					await persist();
+					console.log('[GDRIVE] Nuevo brain.db.json creado exitosamente.');
+					return await loadLedger(); // Continúa con la carga del ledger
+				} catch (createError) {
+					console.error('[GDRIVE] CRÍTICO: Falló la creación del nuevo brain.db.json. Abortando.', createError.message);
+					throw new Error('No se pudo crear el archivo de base de datos en Google Drive.');
+				}
+			}
+			console.error('[GDRIVE] CRÍTICO: No se pudo cargar brain.db.json. Abortando para prevenir la pérdida de datos.', e.message, e.code);
+			throw new Error('No se pudo cargar la base de datos principal desde Google Drive. Verifica los permisos del archivo.');
 		}
 	} else {
 		if (fs.existsSync(DB_PATH)) {
@@ -146,6 +159,7 @@ async function load() {
 }
 
 async function loadLedger() {
+	const drive = getDriveClient();
 	if (drive && GDRIVE_LEDGER_FILE_ID) {
 		try {
 			console.log('[GDRIVE] Cargando saldos.ledger.json desde Google Drive...');
@@ -154,8 +168,18 @@ async function loadLedger() {
 			if (parsed && typeof parsed === 'object') ledger = Object.assign(ledger, parsed);
 			console.log('[GDRIVE] saldos.ledger.json cargado exitosamente.');
 		} catch (e) {
-			console.warn('[GDRIVE] No se pudo cargar saldos.ledger.json, usando estado inicial.', e.message);
-			// Para el ledger, un fallo no es tan crítico como para la DB principal, podemos continuar.
+			if (e.code === 404) {
+				console.warn('[GDRIVE] saldos.ledger.json no encontrado. Creando uno nuevo...');
+				try {
+					ledger = { users: {}, movements: [] };
+					await persistLedger();
+					console.log('[GDRIVE] Nuevo saldos.ledger.json creado exitosamente.');
+				} catch (createError) {
+					console.error('[GDRIVE] Falló la creación de saldos.ledger.json.', createError.message);
+				}
+			} else {
+				console.warn('[GDRIVE] No se pudo cargar saldos.ledger.json, usando estado inicial.', e.message);
+			}
 		}
 	}
 	try{
