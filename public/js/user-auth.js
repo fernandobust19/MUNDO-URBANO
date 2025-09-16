@@ -291,20 +291,16 @@
 	// Guardar progreso con debounce para evitar ráfagas/recursión indirecta
 	let __saveTimer = null;
 	let __saveQueued = null;
-	window.saveProgress = function(patch){
-		try{
-			// Acumular cambios (merge superficial)
-			if (!__saveQueued) __saveQueued = Object.assign({}, window.__progress || {});
+	window.saveProgress = async function(patch) {
+		try {
+			// Actualizar el estado global inmediatamente
 			if (patch && typeof patch === 'object') {
-				Object.assign(__saveQueued, patch);
+				window.__progress = Object.assign({}, window.__progress || {}, patch);
 			}
-			clearTimeout(__saveTimer);
-			__saveTimer = setTimeout(async ()=>{
-				const payload = __saveQueued || (window.__progress || {});
-				__saveQueued = null;
-				try{ await call('POST', '/api/progress', payload); }catch(_){ /* ignorar */ }
-			}, 400);
-		}catch(_){ /* noop */ }
+			// Enviar al servidor sin retraso
+			const payload = window.__progress || {};
+			await call('POST', '/api/progress', payload);
+		} catch (_) { /* ignorar errores de red */ }
 	};
 
 	// Iniciar

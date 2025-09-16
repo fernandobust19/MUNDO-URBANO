@@ -743,7 +743,7 @@ io.on('connection', (socket) => {
       if(ack) ack({ ok:true, shops: state.shops, houses: state.houses });
     }catch(e){ if(ack) ack({ ok:false }); }
   });
-  
+
   socket.on('placeGov', async (payload, ack) => {
   /*
   if ((state.government.funds || 0) < (payload.cost || 0)) {

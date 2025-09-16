@@ -554,6 +554,9 @@ const BUILDING_IMAGES = {
   // Gobierno
   gobierno: '/assets/Gobierno.png',
   
+  // Edificio principal solicitado
+  gobierno_principal: '/assets/gobierno1.png',
+  
   // Tiendas específicas
   bar: '/assets/Bar.png',
   panadería: '/assets/panaderia.png',
@@ -1108,6 +1111,21 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       }
     } catch(e) { console.warn('Error registering main government building', e); }
     
+    // --- Añadir edificio gobierno1.png en el centro ---
+    try {
+      const gov1W = 250; // Ancho del nuevo edificio
+      const gov1H = 160; // Alto del nuevo edificio
+      const gov1Building = {
+        k: 'gobierno_principal',
+        label: 'Edificio Central',
+        x: govComplexRect.x + (govComplexW - gov1W) / 2, // Centrado en la plaza
+        y: govComplexRect.y + (govComplexH - gov1H) / 2,
+        w: gov1W,
+        h: gov1H
+      };
+      government.placed.push(gov1Building);
+    } catch(e) { console.warn('Error placing gobierno1.png', e); }
+
   // Cementerio en la parte inferior céntrica del mapa (antes de distribuir otros edificios)
   const bottomMargin = 40;
   cemetery.x = Math.round(WORLD.w / 2 - cemetery.w / 2);
@@ -2053,6 +2071,11 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         const bars = Math.max(3, Math.floor(inst.w/10));
         for(let i=0;i<bars;i++){ const bx = p.x + 4 + i*(w-8)/(bars-1); ctx.fillRect(bx, p.y+4, 2, h-8); }
         // Sin texto "CÁRCEL"
+      } else if (inst.label === 'Plaza Gubernamental') {
+        // Dibujar la plaza de fondo, pero sin imagen
+        const p = toScreen(inst.x, inst.y);
+        ctx.fillStyle = inst.fill || 'rgba(80, 80, 90, 0.25)';
+        ctx.fillRect(p.x, p.y, inst.w * ZOOM, inst.h * ZOOM);
       } else {
         // Lógica unificada para todas las instituciones, incluido el gobierno
         drawBuildingWithImage(inst, inst.k, inst.fill, inst.stroke);
@@ -3325,7 +3348,11 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         mctx.fillStyle = '#111'; mctx.fillRect(Math.max(0,r.x*sx), Math.max(0,r.y*sy), Math.max(1,r.w*sx), Math.max(1,r.h*sy));
         mctx.fillStyle = '#fff'; const bars = 3; const bx = Math.max(0,r.x*sx), by = Math.max(0,r.y*sy), bw = Math.max(1,r.w*sx), bh = Math.max(1,r.h*sy);
         for(let i=0;i<bars;i++){ const px = bx + 4 + i*(bw-8)/(bars-1); mctx.fillRect(px, by+4, 2, bh-8); }
-        ctx.fillStyle = '#fff'; ctx.font=`700 ${Math.max(10, 14*ZOOM)}px system-ui`; ctx.textAlign='center'; ctx.fillText('CÁRCEL', p.x + w/2, p.y + 18*ZOOM);
+      } else if (r.label === 'Plaza Gubernamental') {
+        // No dibujar el recuadro de la plaza en el minimapa
+      } else if (r.isMain || r.k === 'gobierno_principal') {
+        // Dibujar los edificios de gobierno con un color distintivo
+        mrect(r, '#60a5fa');
       } else { mrect(r, r.fill || '#94a3b8'); }
     });
     const vw = canvas.width/ZOOM, vh = canvas.height/ZOOM;
