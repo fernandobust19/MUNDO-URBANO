@@ -1,59 +1,45 @@
 {
   "users": [
     {
-      "id": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
-      "username": "fer",
-      "passHash": "$2a$10$kZ4G9z82nOPMkgL2EEYQgehhI2E2xenczZwr4bbK180msN78JsleW",
-      "createdAt": 1757812231529,
-      "lastLoginAt": 1757977046599,
-      "country": "México",
-      "email": "fernando2000b@hotmail.com",
-      "phone": "0983801298",
-      "gender": "M"
-    },
-    {
-      "id": "c3597557-d440-4fdd-bfef-0ceb991bfff2",
+      "id": "1f2cea7b-49f5-4a2c-a2b3-f9d0673414c0",
       "username": "fernando1",
-      "passHash": "$2a$10$poOtmF8LM5OPb4rK3U4DF.seasla.lCbG5arCbBTAzG4DVglfcHV6",
-      "createdAt": 1757983460954,
-      "lastLoginAt": 1757984003606,
-      "country": "El Salvador",
+      "passHash": "$2a$10$amRQBOaH.SIPBclycn5TRO7q0FM.4ivgjjxnEujASiuiKn7yI28ZG",
+      "createdAt": 1757984962385,
+      "lastLoginAt": null,
+      "country": "Ecuador",
       "email": "fernando2000b@hotmail.com",
-      "phone": "0983801298",
+      "phone": "0995986366",
       "gender": "M"
     }
   ],
   "progress": {
-    "17dd87f7-cde6-4a46-a832-2bbf1612b018": {
+    "1f2cea7b-49f5-4a2c-a2b3-f9d0673414c0": {
       "money": 350,
       "bank": 0,
-      "vehicle": "moto",
-      "vehicles": [
-        "moto",
-        "bicicleta"
-      ],
+      "vehicle": null,
+      "vehicles": [],
       "shops": [],
       "houses": [],
-      "name": "fer",
+      "name": "FERNANDO",
       "avatar": "assets/avatar1.png",
       "likes": [
-        "jardinería",
-        "fotografía",
-        "meditación",
-        "fútbol",
+        "animales",
+        "pintura",
+        "helado",
+        "pizza",
         "juguetes"
       ],
       "gender": "M",
       "age": 20,
       "initialRentPaid": true,
       "rentedHouseIdx": 0,
-      "country": "México",
-      "email": "fernando2000b@hotmail.com",
-      "phone": "0983801298",
       "state": "single",
-      "spouseId": null
+      "spouseId": null,
+      "country": "Ecuador",
+      "email": "fernando2000b@hotmail.com",
+      "phone": "0995986366"
     },
-    "74878ceb-7860-4854-9684-2d6903dab0ec": {
+    "c3597557-d440-4fdd-bfef-0ceb991bfff2": {
       "money": 350,
       "bank": 0,
       "vehicle": null,
@@ -66,242 +52,14 @@
       "gender": null,
       "age": null,
       "initialRentPaid": false,
-      "rentedHouseIdx": null
-    },
-    "c3597557-d440-4fdd-bfef-0ceb991bfff2": {
-      "money": 350,
-      "bank": 0,
-      "vehicle": null,
-      "vehicles": [],
-      "shops": [],
-      "houses": [],
-      "name": "fer",
-      "avatar": "assets/avatar2.png",
-      "likes": [
-        "música",
-        "ciclismo",
-        "teatro",
-        "idiomas",
-        "helado"
-      ],
-      "gender": "M",
-      "age": 20,
-      "initialRentPaid": true,
-      "rentedHouseIdx": 0,
+      "rentedHouseIdx": null,
       "state": "single",
-      "spouseId": null,
-      "country": "El Salvador",
-      "email": "fernando2000b@hotmail.com",
-      "phone": "0983801298"
+      "spouseId": null
     }
   },
   "government": {
     "funds": 0,
     "placed": [
-      {
-        "x": 1454.6507142857145,
-        "y": 517.8571428571429,
-        "w": 130,
-        "h": 90,
-        "label": "Parque",
-        "icon": "🌳",
-        "fill": "rgba(12,81,58,0.92)",
-        "stroke": "rgba(31,122,90,0.95)",
-        "k": "parque",
-        "cost": 80
-      },
-      {
-        "x": 2910.3650000000002,
-        "y": 562.8571428571429,
-        "w": 150,
-        "h": 80,
-        "label": "Policía",
-        "icon": "🚓",
-        "fill": "#3b82f6",
-        "stroke": "#dbeafe",
-        "k": "policia",
-        "cost": 200
-      },
-      {
-        "x": 2985.7142857142867,
-        "y": 1920.7142857142862,
-        "w": 160,
-        "h": 90,
-        "label": "Teatro",
-        "icon": "🎭",
-        "fill": "#1f2937",
-        "stroke": "#9ca3baf",
-        "k": "teatro",
-        "cost": 190
-      },
-      {
-        "x": 3339.3422245999436,
-        "y": 1650.8541944651192,
-        "w": 130,
-        "h": 90,
-        "label": "Parque",
-        "icon": "🌳",
-        "fill": "rgba(12,81,58,0.92)",
-        "stroke": "rgba(31,122,90,0.95)",
-        "k": "parque",
-        "cost": 80
-      },
-      {
-        "x": 3199.3422245999436,
-        "y": 1410.020861131786,
-        "w": 140,
-        "h": 95,
-        "label": "Escuela",
-        "icon": "📚",
-        "fill": "rgba(51,65,85,0.92)",
-        "stroke": "rgba(148,163,184,0.95)",
-        "k": "escuela",
-        "cost": 120
-      },
-      {
-        "x": 3898.175557933276,
-        "y": 1086.5446706555954,
-        "w": 150,
-        "h": 80,
-        "label": "Policía",
-        "icon": "🚓",
-        "fill": "#3b82f6",
-        "stroke": "#dbeafe",
-        "k": "policia",
-        "cost": 200
-      },
-      {
-        "x": 4499.842224599943,
-        "y": 1504.8780039889286,
-        "w": 200,
-        "h": 120,
-        "label": "Central Eléctrica",
-        "icon": "⚡",
-        "fill": "#475569",
-        "stroke": "#facc15",
-        "k": "central_electrica",
-        "cost": 350
-      },
-      {
-        "x": 8088.175557933275,
-        "y": 838.2113373222626,
-        "w": 320,
-        "h": 220,
-        "label": "Estadio",
-        "icon": "🏟️",
-        "fill": "#0b3a1e",
-        "stroke": "#10b981",
-        "k": "estadio",
-        "cost": 420
-      },
-      {
-        "x": 8506.508891266609,
-        "y": 569.8780039889293,
-        "w": 160,
-        "h": 90,
-        "label": "Teatro",
-        "icon": "🎭",
-        "fill": "#1f2937",
-        "stroke": "#9ca3baf",
-        "k": "teatro",
-        "cost": 190
-      },
-      {
-        "x": 8699.842224599943,
-        "y": 842.3780039889293,
-        "w": 170,
-        "h": 95,
-        "label": "Tribunal / Corte",
-        "icon": "⚖️",
-        "fill": "#111827",
-        "stroke": "#9ca3baf",
-        "k": "tribunal",
-        "cost": 260
-      },
-      {
-        "x": 7669.842224599942,
-        "y": 749.8780039889293,
-        "w": 200,
-        "h": 120,
-        "label": "Universidad Pública",
-        "icon": "🎓",
-        "fill": "#1e293b",
-        "stroke": "#93c5fd",
-        "k": "universidad",
-        "cost": 300
-      },
-      {
-        "x": 7734.842224599942,
-        "y": 924.044670655596,
-        "w": 160,
-        "h": 85,
-        "label": "Cuerpo de Bomberos",
-        "icon": "🚒",
-        "fill": "#7c2d12",
-        "stroke": "#fecaca",
-        "k": "bomberos",
-        "cost": 220
-      },
-      {
-        "x": 8059.842224599942,
-        "y": 568.2113373222626,
-        "w": 200,
-        "h": 120,
-        "label": "Central Eléctrica",
-        "icon": "⚡",
-        "fill": "#475569",
-        "stroke": "#facc15",
-        "k": "central_electrica",
-        "cost": 350
-      },
-      {
-        "x": 7869.842224599942,
-        "y": 1064.0446706555958,
-        "w": 170,
-        "h": 95,
-        "label": "Tribunal / Corte",
-        "icon": "⚖️",
-        "fill": "#111827",
-        "stroke": "#9ca3baf",
-        "k": "tribunal",
-        "cost": 260
-      },
-      {
-        "x": 8457.101483859202,
-        "y": 1043.6557817667072,
-        "w": 140,
-        "h": 90,
-        "label": "Biblioteca",
-        "icon": "📖",
-        "fill": "#a16207",
-        "stroke": "#fde047",
-        "k": "biblioteca",
-        "cost": 150
-      },
-      {
-        "x": 7882.879261636981,
-        "y": 365.37800398892944,
-        "w": 140,
-        "h": 95,
-        "label": "Escuela",
-        "icon": "📚",
-        "fill": "rgba(51,65,85,0.92)",
-        "stroke": "rgba(148,163,184,0.95)",
-        "k": "escuela",
-        "cost": 120
-      },
-      {
-        "x": 7406.212594970314,
-        "y": 544.5446706555961,
-        "w": 200,
-        "h": 120,
-        "label": "Universidad Pública",
-        "icon": "🎓",
-        "fill": "#1e293b",
-        "stroke": "#93c5fd",
-        "k": "universidad",
-        "cost": 300
-      },
       {
         "k": "gobierno",
         "label": "Gobierno",
@@ -315,804 +73,17 @@
   },
   "activityLog": [
     {
-      "ts": 1757812231529,
+      "ts": 1757984962385,
       "type": "register",
-      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
-      "details": {
-        "username": "fer"
-      }
-    },
-    {
-      "ts": 1757812238067,
-      "type": "progress_update",
-      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "initialRentPaid",
-          "rentedHouseIdx"
-        ]
-      }
-    },
-    {
-      "ts": 1757812240202,
-      "type": "progress_update",
-      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "initialRentPaid",
-          "rentedHouseIdx",
-          "country",
-          "email",
-          "phone"
-        ]
-      }
-    },
-    {
-      "ts": 1757812248727,
-      "type": "progress_update",
-      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "initialRentPaid",
-          "rentedHouseIdx",
-          "country",
-          "email",
-          "phone"
-        ]
-      }
-    },
-    {
-      "ts": 1757812276920,
-      "type": "gov_funds",
-      "userId": null,
-      "details": {
-        "delta": -80,
-        "funds": 0
-      }
-    },
-    {
-      "ts": 1757812276921,
-      "type": "gov_place",
-      "userId": null,
-      "details": {
-        "k": "parque"
-      }
-    },
-    {
-      "ts": 1757812294379,
-      "type": "gov_funds",
-      "userId": null,
-      "details": {
-        "delta": -200,
-        "funds": 0
-      }
-    },
-    {
-      "ts": 1757812294379,
-      "type": "gov_place",
-      "userId": null,
-      "details": {
-        "k": "policia"
-      }
-    },
-    {
-      "ts": 1757812307951,
-      "type": "gov_funds",
-      "userId": null,
-      "details": {
-        "delta": -190,
-        "funds": 0
-      }
-    },
-    {
-      "ts": 1757812307951,
-      "type": "gov_place",
-      "userId": null,
-      "details": {
-        "k": "teatro"
-      }
-    },
-    {
-      "ts": 1757976471595,
-      "type": "login",
-      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
-      "details": {
-        "username": "fer"
-      }
-    },
-    {
-      "ts": 1757976472013,
-      "type": "progress_update",
-      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "initialRentPaid",
-          "rentedHouseIdx",
-          "country",
-          "email",
-          "phone",
-          "state",
-          "spouseId"
-        ]
-      }
-    },
-    {
-      "ts": 1757976478218,
-      "type": "progress_update",
-      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "initialRentPaid",
-          "rentedHouseIdx",
-          "country",
-          "email",
-          "phone",
-          "state",
-          "spouseId"
-        ]
-      }
-    },
-    {
-      "ts": 1757976605218,
-      "type": "progress_update",
-      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "initialRentPaid",
-          "rentedHouseIdx",
-          "country",
-          "email",
-          "phone",
-          "state",
-          "spouseId"
-        ]
-      }
-    },
-    {
-      "ts": 1757976745954,
-      "type": "login",
-      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
-      "details": {
-        "username": "fer"
-      }
-    },
-    {
-      "ts": 1757976746369,
-      "type": "progress_update",
-      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "initialRentPaid",
-          "rentedHouseIdx",
-          "country",
-          "email",
-          "phone",
-          "state",
-          "spouseId"
-        ]
-      }
-    },
-    {
-      "ts": 1757976750126,
-      "type": "progress_update",
-      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "initialRentPaid",
-          "rentedHouseIdx",
-          "country",
-          "email",
-          "phone",
-          "state",
-          "spouseId"
-        ]
-      }
-    },
-    {
-      "ts": 1757976771703,
-      "type": "progress_update",
-      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "initialRentPaid",
-          "rentedHouseIdx",
-          "country",
-          "email",
-          "phone",
-          "state",
-          "spouseId"
-        ]
-      }
-    },
-    {
-      "ts": 1757976791049,
-      "type": "login",
-      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
-      "details": {
-        "username": "fer"
-      }
-    },
-    {
-      "ts": 1757976791460,
-      "type": "progress_update",
-      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "initialRentPaid",
-          "rentedHouseIdx",
-          "country",
-          "email",
-          "phone",
-          "state",
-          "spouseId"
-        ]
-      }
-    },
-    {
-      "ts": 1757976794112,
-      "type": "progress_update",
-      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "initialRentPaid",
-          "rentedHouseIdx",
-          "country",
-          "email",
-          "phone",
-          "state",
-          "spouseId"
-        ]
-      }
-    },
-    {
-      "ts": 1757976799060,
-      "type": "progress_update",
-      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "initialRentPaid",
-          "rentedHouseIdx",
-          "country",
-          "email",
-          "phone",
-          "state",
-          "spouseId"
-        ]
-      }
-    },
-    {
-      "ts": 1757976804892,
-      "type": "login",
-      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
-      "details": {
-        "username": "fer"
-      }
-    },
-    {
-      "ts": 1757976805308,
-      "type": "progress_update",
-      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "initialRentPaid",
-          "rentedHouseIdx",
-          "country",
-          "email",
-          "phone",
-          "state",
-          "spouseId"
-        ]
-      }
-    },
-    {
-      "ts": 1757976808931,
-      "type": "progress_update",
-      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "initialRentPaid",
-          "rentedHouseIdx",
-          "country",
-          "email",
-          "phone",
-          "state",
-          "spouseId"
-        ]
-      }
-    },
-    {
-      "ts": 1757976825537,
-      "type": "progress_update",
-      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "initialRentPaid",
-          "rentedHouseIdx",
-          "country",
-          "email",
-          "phone",
-          "state",
-          "spouseId"
-        ]
-      }
-    },
-    {
-      "ts": 1757976865996,
-      "type": "gov_funds",
-      "userId": null,
-      "details": {
-        "delta": -80,
-        "funds": 0
-      }
-    },
-    {
-      "ts": 1757976865996,
-      "type": "gov_place",
-      "userId": null,
-      "details": {
-        "k": "parque"
-      }
-    },
-    {
-      "ts": 1757976875076,
-      "type": "gov_funds",
-      "userId": null,
-      "details": {
-        "delta": -120,
-        "funds": 0
-      }
-    },
-    {
-      "ts": 1757976875076,
-      "type": "gov_place",
-      "userId": null,
-      "details": {
-        "k": "escuela"
-      }
-    },
-    {
-      "ts": 1757976888428,
-      "type": "gov_funds",
-      "userId": null,
-      "details": {
-        "delta": -200,
-        "funds": 0
-      }
-    },
-    {
-      "ts": 1757976888428,
-      "type": "gov_place",
-      "userId": null,
-      "details": {
-        "k": "policia"
-      }
-    },
-    {
-      "ts": 1757976898446,
-      "type": "gov_funds",
-      "userId": null,
-      "details": {
-        "delta": -350,
-        "funds": 0
-      }
-    },
-    {
-      "ts": 1757976898446,
-      "type": "gov_place",
-      "userId": null,
-      "details": {
-        "k": "central_electrica"
-      }
-    },
-    {
-      "ts": 1757976918077,
-      "type": "gov_funds",
-      "userId": null,
-      "details": {
-        "delta": -420,
-        "funds": 0
-      }
-    },
-    {
-      "ts": 1757976918077,
-      "type": "gov_place",
-      "userId": null,
-      "details": {
-        "k": "estadio"
-      }
-    },
-    {
-      "ts": 1757976925808,
-      "type": "gov_funds",
-      "userId": null,
-      "details": {
-        "delta": -190,
-        "funds": 0
-      }
-    },
-    {
-      "ts": 1757976925808,
-      "type": "gov_place",
-      "userId": null,
-      "details": {
-        "k": "teatro"
-      }
-    },
-    {
-      "ts": 1757976932949,
-      "type": "gov_funds",
-      "userId": null,
-      "details": {
-        "delta": -260,
-        "funds": 0
-      }
-    },
-    {
-      "ts": 1757976932949,
-      "type": "gov_place",
-      "userId": null,
-      "details": {
-        "k": "tribunal"
-      }
-    },
-    {
-      "ts": 1757976939845,
-      "type": "gov_funds",
-      "userId": null,
-      "details": {
-        "delta": -300,
-        "funds": 0
-      }
-    },
-    {
-      "ts": 1757976939845,
-      "type": "gov_place",
-      "userId": null,
-      "details": {
-        "k": "universidad"
-      }
-    },
-    {
-      "ts": 1757976947509,
-      "type": "gov_funds",
-      "userId": null,
-      "details": {
-        "delta": -220,
-        "funds": 0
-      }
-    },
-    {
-      "ts": 1757976947509,
-      "type": "gov_place",
-      "userId": null,
-      "details": {
-        "k": "bomberos"
-      }
-    },
-    {
-      "ts": 1757976958430,
-      "type": "gov_funds",
-      "userId": null,
-      "details": {
-        "delta": -350,
-        "funds": 0
-      }
-    },
-    {
-      "ts": 1757976958430,
-      "type": "gov_place",
-      "userId": null,
-      "details": {
-        "k": "central_electrica"
-      }
-    },
-    {
-      "ts": 1757976992546,
-      "type": "gov_funds",
-      "userId": null,
-      "details": {
-        "delta": -260,
-        "funds": 0
-      }
-    },
-    {
-      "ts": 1757976992546,
-      "type": "gov_place",
-      "userId": null,
-      "details": {
-        "k": "tribunal"
-      }
-    },
-    {
-      "ts": 1757977010059,
-      "type": "gov_funds",
-      "userId": null,
-      "details": {
-        "delta": -150,
-        "funds": 0
-      }
-    },
-    {
-      "ts": 1757977010059,
-      "type": "gov_place",
-      "userId": null,
-      "details": {
-        "k": "biblioteca"
-      }
-    },
-    {
-      "ts": 1757977020753,
-      "type": "gov_funds",
-      "userId": null,
-      "details": {
-        "delta": -120,
-        "funds": 0
-      }
-    },
-    {
-      "ts": 1757977020753,
-      "type": "gov_place",
-      "userId": null,
-      "details": {
-        "k": "escuela"
-      }
-    },
-    {
-      "ts": 1757977029525,
-      "type": "gov_funds",
-      "userId": null,
-      "details": {
-        "delta": -300,
-        "funds": 0
-      }
-    },
-    {
-      "ts": 1757977029525,
-      "type": "gov_place",
-      "userId": null,
-      "details": {
-        "k": "universidad"
-      }
-    },
-    {
-      "ts": 1757977046599,
-      "type": "login",
-      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
-      "details": {
-        "username": "fer"
-      }
-    },
-    {
-      "ts": 1757977047016,
-      "type": "progress_update",
-      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "initialRentPaid",
-          "rentedHouseIdx",
-          "country",
-          "email",
-          "phone",
-          "state",
-          "spouseId"
-        ]
-      }
-    },
-    {
-      "ts": 1757977050020,
-      "type": "progress_update",
-      "userId": "17dd87f7-cde6-4a46-a832-2bbf1612b018",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "initialRentPaid",
-          "rentedHouseIdx",
-          "country",
-          "email",
-          "phone",
-          "state",
-          "spouseId"
-        ]
-      }
-    },
-    {
-      "ts": 1757983460954,
-      "type": "register",
-      "userId": "c3597557-d440-4fdd-bfef-0ceb991bfff2",
+      "userId": "1f2cea7b-49f5-4a2c-a2b3-f9d0673414c0",
       "details": {
         "username": "fernando1"
       }
     },
     {
-      "ts": 1757983466209,
+      "ts": 1757984972499,
       "type": "progress_update",
-      "userId": "c3597557-d440-4fdd-bfef-0ceb991bfff2",
+      "userId": "1f2cea7b-49f5-4a2c-a2b3-f9d0673414c0",
       "details": {
         "keys": [
           "money",
@@ -1134,31 +105,7 @@
       }
     },
     {
-      "ts": 1757983466640,
-      "type": "progress_update",
-      "userId": "c3597557-d440-4fdd-bfef-0ceb991bfff2",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "initialRentPaid",
-          "rentedHouseIdx",
-          "state",
-          "spouseId"
-        ]
-      }
-    },
-    {
-      "ts": 1757983468736,
+      "ts": 1757984975452,
       "type": "gov_place",
       "userId": null,
       "details": {
@@ -1166,9 +113,9 @@
       }
     },
     {
-      "ts": 1757983468763,
+      "ts": 1757984975474,
       "type": "progress_update",
-      "userId": "c3597557-d440-4fdd-bfef-0ceb991bfff2",
+      "userId": "1f2cea7b-49f5-4a2c-a2b3-f9d0673414c0",
       "details": {
         "keys": [
           "money",
@@ -1190,9 +137,9 @@
       }
     },
     {
-      "ts": 1757983468765,
+      "ts": 1757984975478,
       "type": "progress_update",
-      "userId": "c3597557-d440-4fdd-bfef-0ceb991bfff2",
+      "userId": "1f2cea7b-49f5-4a2c-a2b3-f9d0673414c0",
       "details": {
         "keys": [
           "money",
@@ -1217,71 +164,9 @@
       }
     },
     {
-      "ts": 1757983472727,
+      "ts": 1757984979996,
       "type": "progress_update",
-      "userId": "c3597557-d440-4fdd-bfef-0ceb991bfff2",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "initialRentPaid",
-          "rentedHouseIdx",
-          "state",
-          "spouseId",
-          "country",
-          "email",
-          "phone"
-        ]
-      }
-    },
-    {
-      "ts": 1757984003606,
-      "type": "login",
-      "userId": "c3597557-d440-4fdd-bfef-0ceb991bfff2",
-      "details": {
-        "username": "fernando1"
-      }
-    },
-    {
-      "ts": 1757984003614,
-      "type": "progress_update",
-      "userId": "c3597557-d440-4fdd-bfef-0ceb991bfff2",
-      "details": {
-        "keys": [
-          "money",
-          "bank",
-          "vehicle",
-          "vehicles",
-          "shops",
-          "houses",
-          "name",
-          "avatar",
-          "likes",
-          "gender",
-          "age",
-          "initialRentPaid",
-          "rentedHouseIdx",
-          "state",
-          "spouseId",
-          "country",
-          "email",
-          "phone"
-        ]
-      }
-    },
-    {
-      "ts": 1757984007884,
-      "type": "progress_update",
-      "userId": "c3597557-d440-4fdd-bfef-0ceb991bfff2",
+      "userId": "1f2cea7b-49f5-4a2c-a2b3-f9d0673414c0",
       "details": {
         "keys": [
           "money",
@@ -1308,126 +193,126 @@
   ],
   "factories": [
     {
-      "x": 2512,
-      "y": 781,
-      "w": 177,
+      "x": 2271,
+      "y": 996,
+      "w": 171,
+      "h": 112
+    },
+    {
+      "x": 2899,
+      "y": 645,
+      "w": 173,
+      "h": 103
+    },
+    {
+      "x": 2085,
+      "y": 472,
+      "w": 169,
+      "h": 107
+    },
+    {
+      "x": 3388,
+      "y": 1333,
+      "w": 161,
+      "h": 115
+    },
+    {
+      "x": 909,
+      "y": 455,
+      "w": 155,
+      "h": 104
+    },
+    {
+      "x": 4413,
+      "y": 1243,
+      "w": 148,
+      "h": 115
+    },
+    {
+      "x": 1333,
+      "y": 1335,
+      "w": 178,
       "h": 119
     },
     {
-      "x": 4529,
-      "y": 685,
-      "w": 173,
-      "h": 111
+      "x": 5343,
+      "y": 323,
+      "w": 158,
+      "h": 115
     },
     {
-      "x": 2337,
-      "y": 537,
-      "w": 179,
-      "h": 101
+      "x": 2002,
+      "y": 1323,
+      "w": 158,
+      "h": 119
     },
     {
-      "x": 1164,
-      "y": 225,
-      "w": 156,
-      "h": 118
+      "x": 6820,
+      "y": 796,
+      "w": 148,
+      "h": 93
     },
     {
-      "x": 3571,
-      "y": 149,
-      "w": 167,
-      "h": 102
-    },
-    {
-      "x": 7325,
-      "y": 935,
-      "w": 165,
-      "h": 94
-    },
-    {
-      "x": 1531,
-      "y": 1194,
-      "w": 150,
-      "h": 90
-    },
-    {
-      "x": 4480,
-      "y": 1124,
-      "w": 165,
-      "h": 105
-    },
-    {
-      "x": 2688,
-      "y": 191,
-      "w": 156,
-      "h": 108
-    },
-    {
-      "x": 6343,
-      "y": 1216,
-      "w": 147,
-      "h": 113
-    },
-    {
-      "x": 345,
-      "y": 1054,
+      "x": 4927,
+      "y": 1212,
       "w": 164,
-      "h": 114
+      "h": 95
     },
     {
-      "x": 905,
-      "y": 710,
-      "w": 163,
-      "h": 96
+      "x": 4160,
+      "y": 719,
+      "w": 173,
+      "h": 115
     }
   ],
   "banks": [
     {
-      "x": 11445,
-      "y": 500,
-      "w": 118,
-      "h": 83
+      "x": 11499,
+      "y": 853,
+      "w": 111,
+      "h": 80
     },
     {
-      "x": 13727,
-      "y": 692,
-      "w": 112,
-      "h": 81
+      "x": 9448,
+      "y": 691,
+      "w": 129,
+      "h": 74
     },
     {
-      "x": 13351,
-      "y": 116,
-      "w": 125,
-      "h": 79
-    },
-    {
-      "x": 14645,
-      "y": 949,
-      "w": 127,
-      "h": 75
-    },
-    {
-      "x": 8131,
-      "y": 283,
-      "w": 114,
-      "h": 89
-    },
-    {
-      "x": 10700,
-      "y": 1137,
-      "w": 121,
-      "h": 81
-    },
-    {
-      "x": 10385,
-      "y": 638,
-      "w": 137,
-      "h": 76
-    },
-    {
-      "x": 8284,
-      "y": 1043,
+      "x": 8606,
+      "y": 691,
       "w": 117,
-      "h": 74,
+      "h": 84
+    },
+    {
+      "x": 14788,
+      "y": 164,
+      "w": 138,
+      "h": 73
+    },
+    {
+      "x": 13126,
+      "y": 599,
+      "w": 121,
+      "h": 80
+    },
+    {
+      "x": 9301,
+      "y": 1407,
+      "w": 130,
+      "h": 78
+    },
+    {
+      "x": 12381,
+      "y": 1407,
+      "w": 111,
+      "h": 85
+    },
+    {
+      "x": 14435,
+      "y": 597,
+      "w": 115,
+      "h": 85,
       "isFuchsia": true
     }
   ],
