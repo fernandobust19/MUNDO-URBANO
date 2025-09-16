@@ -1125,6 +1125,17 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
         h: gov1H
       };
       government.placed.push(gov1Building);
+      // --- SOLUCIÓN: Forzar el registro del edificio central en el servidor ---
+      // Esto asegura que el edificio sea persistente y visible para todos,
+      // incluso si la base de datos se reinicia o el edificio no existe.
+      try {
+        if (hasNet()) {
+          window.sock?.emit('placeGov', { ...gov1Building, cost: 0 }, (res) => {
+            if (res.ok) console.log('Edificio central (gobierno1.png) registrado en el servidor.');
+            else console.warn('No se pudo registrar el edificio central en el servidor:', res.msg);
+          });
+        }
+      } catch(e) { console.warn('Error registrando edificio gobierno1.png', e); }
     } catch(e) { console.warn('Error placing gobierno1.png', e); }
 
   // Cementerio en la parte inferior céntrica del mapa (antes de distribuir otros edificios)
@@ -3011,7 +3022,13 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
             const rentCost = 50;
             if(user.money >= rentCost){
               user.money -= rentCost; toast('Arriendo inicial pagado: -50');
-              try{ government.funds = (government.funds||0)+rentCost; if(govFundsEl) govFundsEl.textContent = `Fondo: ${Math.floor(government.funds)}`; }catch(_){ }
+              // --- SOLUCIÓN: Notificar al servidor para que sume los fondos al gobierno ---
+              try {
+                if (typeof hasNet === 'function' && hasNet()) {
+                  // Usamos el socket global para enviar el evento
+                  window.sock?.emit('rentPaid', { amount: rentCost });
+                }
+              } catch(e) { console.warn('Error al notificar al servidor del pago de arriendo', e); }
               // Guardar bandera de pago inicial en progreso persistente
               try{
                 window.__progress = Object.assign({}, window.__progress||{}, { initialRentPaid: true, money: Math.floor(user.money), rentedHouseIdx: user.houseIdx });
@@ -3366,9 +3383,9 @@ function distributeEvenly(n, widthRange, heightRange, avoid, zone, margin) {
       if(u){
         const playerX = u.x * sx;
         const playerY = u.y * sy;
-        mctx.fillStyle = 'rgba(255, 255, 0, 0.7)';
+        mctx.fillStyle = 'rgba(255, 165, 0, 0.7)';
         mctx.beginPath(); mctx.arc(playerX, playerY, 6, 0, Math.PI * 2); mctx.fill();
-        mctx.fillStyle = '#FFFF00';
+        mctx.fillStyle = '#FFA500';
         mctx.beginPath(); mctx.arc(playerX, playerY, 2.5, 0, Math.PI * 2); mctx.fill();
       }
     }

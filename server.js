@@ -757,6 +757,21 @@ io.on('connection', (socket) => {
     if (ack) ack({ ok:true });
   });
 
+  // --- SOLUCIÓN: Manejar el pago de arriendo inicial desde el cliente ---
+  socket.on('rentPaid', async (payload) => {
+    try {
+      const amount = Number(payload?.amount || 0);
+      // Asegurarse de que el pago es válido y viene de un usuario logueado
+      if (amount > 0 && socket.userId) {
+        await brain.addGovernmentFunds(amount);
+        state.government = brain.getGovernment(); // Actualizar el estado local del servidor
+        console.log(`[Rent] Gobierno recibió ${amount} de arriendo inicial del usuario ${socket.userId}`);
+      }
+    } catch (e) {
+      console.error('[rentPaid] Error procesando pago de arriendo:', e);
+    }
+  });
+
   socket.on('hireEmployee', ({ shopId }, ack) => {
     if (!socket.userId) return ack({ ok: false, msg: 'No autenticado' });
     const shop = state.shops.find(s => s.id === shopId);
