@@ -99,6 +99,8 @@ async function checkDriveHealth() {
 			hint = 'Falta compartir el archivo en Google Drive con el "client_email" (rol de Editor).';
 		} else if (e.code === 404) {
 			hint = 'FileId incorrecto. Verifica las variables de entorno GDRIVE_BRAIN_FILE_ID o GDRIVE_LEDGER_FILE_ID.';
+		} else if (String(e.message).includes('Could not load the default credentials')) {
+			hint = 'No se encontraron las credenciales. Asegúrate de que la variable de entorno GOOGLE_APPLICATION_CREDENTIALS esté definida en Render y apunte a la ruta correcta del Secret File (ej: /etc/secrets/key.json).';
 		} else if (String(e.message).includes('ENOENT')) {
 			hint = 'Ruta del Secret File incorrecta. Verifica la variable GOOGLE_APPLICATION_CREDENTIALS.';
 		}
