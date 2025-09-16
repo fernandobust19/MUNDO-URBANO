@@ -120,15 +120,16 @@ async function load() {
 			const parsed = JSON.parse(res.data);
 			if (parsed && typeof parsed === 'object') {
 				db = Object.assign(db, parsed);
-				loadedFromDrive = true;
 				console.log('[GDRIVE] brain.db.json cargado exitosamente.');
+				// Si se carga desde Drive, no intentar cargar desde local.
+				// Ahora cargamos el ledger y terminamos.
+				return await loadLedger();
 			}
 		} catch (e) {
-			console.warn('[GDRIVE] No se pudo cargar brain.db.json, intentando fallback local.', e.message);
+			console.error('[GDRIVE] CRÍTICO: No se pudo cargar brain.db.json. Abortando para prevenir pérdida de datos.', e.message);
+			throw new Error('No se pudo cargar la base de datos principal desde Google Drive.');
 		}
-	}
-
-	if (!loadedFromDrive) {
+	} else {
 		if (fs.existsSync(DB_PATH)) {
 			console.log('[FS] Cargando brain.db.json desde el sistema de archivos local...');
 			const raw = fs.readFileSync(DB_PATH, 'utf8');
@@ -141,6 +142,10 @@ async function load() {
 	}
 
 	// Cargar ledger
+	await loadLedger();
+}
+
+async function loadLedger() {
 	if (drive && GDRIVE_LEDGER_FILE_ID) {
 		try {
 			console.log('[GDRIVE] Cargando saldos.ledger.json desde Google Drive...');
@@ -150,6 +155,7 @@ async function load() {
 			console.log('[GDRIVE] saldos.ledger.json cargado exitosamente.');
 		} catch (e) {
 			console.warn('[GDRIVE] No se pudo cargar saldos.ledger.json, usando estado inicial.', e.message);
+			// Para el ledger, un fallo no es tan crítico como para la DB principal, podemos continuar.
 		}
 	}
 	try{
