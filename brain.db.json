@@ -10,6 +10,13 @@
       "email": "fernando2000b@hotmail.com",
       "phone": "0995986366",
       "gender": "M"
+    },
+    {
+      "id": "3febff61-5ea2-4683-b941-b4459c2879e5",
+      "username": "smoke_l03kk0",
+      "passHash": "$2a$10$y8XHtr0yUkT/V17VI3cT/uwMevlXk/8xbzQVglblOTWBf0klXWEkC",
+      "createdAt": 1758069396628,
+      "lastLoginAt": null
     }
   ],
   "progress": {
@@ -41,6 +48,23 @@
     },
     "c3597557-d440-4fdd-bfef-0ceb991bfff2": {
       "money": 350,
+      "bank": 0,
+      "vehicle": null,
+      "vehicles": [],
+      "shops": [],
+      "houses": [],
+      "name": null,
+      "avatar": null,
+      "likes": [],
+      "gender": null,
+      "age": null,
+      "initialRentPaid": false,
+      "rentedHouseIdx": null,
+      "state": "single",
+      "spouseId": null
+    },
+    "3febff61-5ea2-4683-b941-b4459c2879e5": {
+      "money": 400,
       "bank": 0,
       "vehicle": null,
       "vehicles": [],
@@ -188,6 +212,14 @@
           "email",
           "phone"
         ]
+      }
+    },
+    {
+      "ts": 1758069396628,
+      "type": "register",
+      "userId": "3febff61-5ea2-4683-b941-b4459c2879e5",
+      "details": {
+        "username": "smoke_l03kk0"
       }
     }
   ],
