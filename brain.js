@@ -73,39 +73,6 @@ async function resolveFileId(drive, fileId) {
   return fileId;
 }
 
-async function ensureJsonFile(drive, { name, fileId, data, folderId }) {
-  try {
-    // 1) Resolver atajo si aplica
-    const realId = await resolveFileId(drive, fileId);
-    // 2) Intentar leer metadata (si no existe, cae al catch 404)
-    const meta = await drive.files.get({
-      fileId: realId,
-      fields: 'id,name,mimeType,modifiedTime',
-      supportsAllDrives: true,
-    });
-    console.log(`[GDRIVE] OK, existe: ${meta.data.name} (${meta.data.id})`);
-    return realId;
-  } catch (e) {
-    const code = e?.response?.status || e?.code;
-    if (code === 404) {
-      console.log(`[GDRIVE] ${name} no existe (404) → creando...`);
-      const res = await drive.files.create({
-        requestBody: {
-          name,
-          mimeType: 'application/json',
-          parents: folderId ? [folderId] : undefined,
-        },
-        media: { mimeType: 'application/json', body: JSON.stringify(data ?? {}) },
-        fields: 'id,name',
-        supportsAllDrives: true,
-      });
-      console.log(`[GDRIVE] Creado ${name} con nuevo ID: ${res.data.id}`);
-      return res.data.id;
-    }
-    throw e;
-  }
-}
-
 async function checkDriveHealth() {
 	const drive = getDriveClient();
 	if (!drive) {
@@ -113,35 +80,21 @@ async function checkDriveHealth() {
 	}
 
 	try {
-		// Asegura que los archivos existan (o los crea) y obtiene sus IDs reales.
-		resolvedBrainId = await ensureJsonFile(drive, {
-			name: 'brain.db.json',
-			fileId: BRAIN_ID_ENV,
-			data: { users: [], progress: {}, government: { funds: 0, placed: [] }, activityLog: [] },
-			folderId: GDRIVE_FOLDER_ID,
-		});
-
-		resolvedLedgerId = await ensureJsonFile(drive, {
-			name: 'saldos.ledger.json',
-			fileId: LEDGER_ID_ENV,
-			data: { users: {}, movements: [] },
-			folderId: GDRIVE_FOLDER_ID,
-		});
-
 		// Realizar una lectura de metadatos para confirmar
 		const [brainMeta, ledgerMeta] = await Promise.all([
-			drive.files.get({ fileId: resolvedBrainId, fields: 'id,name,modifiedTime', supportsAllDrives: true }),
-			drive.files.get({ fileId: resolvedLedgerId, fields: 'id,name,modifiedTime', supportsAllDrives: true }),
+			drive.files.get({ fileId: BRAIN_ID_ENV, fields: 'id,name,modifiedTime', supportsAllDrives: true }),
+			drive.files.get({ fileId: LEDGER_ID_ENV, fields: 'id,name,modifiedTime', supportsAllDrives: true }),
 		]);
 
-		const brainPreview = 'Lectura de contenido omitida en chequeo inicial para mayor rapidez.';
+		// Actualizar los IDs resueltos que usará el resto de la aplicación
+		resolvedBrainId = brainMeta.data.id;
+		resolvedLedgerId = ledgerMeta.data.id;
 
 		return {
 			ok: true,
 			message: '✅ Conexión con Drive OK',
 			brain: brainMeta.data,
 			ledger: ledgerMeta.data,
-			brainPreview: brainPreview.substring(0, 300),
 		};
 
 	} catch (e) {
@@ -149,9 +102,9 @@ async function checkDriveHealth() {
 		let hint = 'Error desconocido.';
 		const code = e?.response?.status || e?.code;
 		if (code === 403) {
-			hint = 'Falta compartir el archivo en Google Drive con el "client_email" (rol de Editor).';
+			hint = 'Error de permisos (403). Asegúrate de haber compartido los archivos en Google Drive con el "client_email" y haberle dado el rol de "Editor". Si el error menciona "storage quota", significa que los archivos no existen y deben ser creados manualmente en tu Drive personal antes de compartirlos.';
 		} else if (code === 404) {
-			hint = 'FileId incorrecto o el archivo es un “atajo”. Verifica GDRIVE_BRAIN_FILE_ID y GDRIVE_LEDGER_FILE_ID. Si es atajo, usa el ID del archivo real.';
+			hint = 'Archivo no encontrado (404). Verifica que los IDs de archivo en las variables de entorno GDRIVE_BRAIN_FILE_ID y GDRIVE_LEDGER_FILE_ID sean correctos y que los archivos no hayan sido eliminados.';
 		} else if (String(e.message).includes('Could not load the default credentials')) {
 			hint = 'No se encontraron las credenciales. Asegúrate de que la variable de entorno GOOGLE_APPLICATION_CREDENTIALS esté definida en Render y apunte a la ruta correcta del Secret File (ej: /etc/secrets/key.json).';
 		} else if (String(e.message).includes('ENOENT')) {
@@ -253,21 +206,8 @@ async function load() {
 				return await loadLedger();
 			}
 		} catch (e) {
-			if (e.code === 404) { // Error "Not Found" de la API de Google
-				console.warn('[GDRIVE] brain.db.json no encontrado. Creando uno nuevo en Google Drive...');
-				try {
-					// Inicia con una base de datos vacía y la guarda inmediatamente.
-					db = { users: [], progress: {}, government: { funds: 0, placed: [] }, activityLog: [], factories: [], banks: [], houses: [] };
-					await persist();
-					console.log('[GDRIVE] Nuevo brain.db.json creado exitosamente.');
-					return await loadLedger(); // Continúa con la carga del ledger
-				} catch (createError) {
-					console.error('[GDRIVE] CRÍTICO: Falló la creación del nuevo brain.db.json. Abortando.', createError.message);
-					throw new Error('No se pudo crear el archivo de base de datos en Google Drive.');
-				}
-			}
 			console.error('[GDRIVE] CRÍTICO: No se pudo cargar brain.db.json. Abortando para prevenir la pérdida de datos.', e.message, e.code);
-			throw new Error('No se pudo cargar la base de datos principal desde Google Drive. Verifica los permisos del archivo.');
+			throw new Error('No se pudo cargar la base de datos principal desde Google Drive. Verifica los permisos y el ID del archivo.');
 		}
 	} else {
 		if (fs.existsSync(DB_PATH)) {
@@ -295,18 +235,7 @@ async function loadLedger() {
 			if (parsed && typeof parsed === 'object') ledger = Object.assign(ledger, parsed);
 			console.log('[GDRIVE] saldos.ledger.json cargado exitosamente.');
 		} catch (e) {
-			if (e.code === 404) {
-				console.warn('[GDRIVE] saldos.ledger.json no encontrado. Creando uno nuevo...');
-				try {
-					ledger = { users: {}, movements: [] };
-					await persistLedger();
-					console.log('[GDRIVE] Nuevo saldos.ledger.json creado exitosamente.');
-				} catch (createError) {
-					console.error('[GDRIVE] Falló la creación de saldos.ledger.json.', createError.message);
-				}
-			} else {
-				console.warn('[GDRIVE] No se pudo cargar saldos.ledger.json, usando estado inicial.', e.message);
-			}
+			console.warn('[GDRIVE] No se pudo cargar saldos.ledger.json, usando estado inicial.', e.message);
 		}
 	}
 	try{
@@ -696,9 +625,8 @@ async function init() {
 		const health = await checkDriveHealth();
 		if (health.ok) {
 			console.log(`✅ Conexión con Drive OK`);
-			console.log('🧠 brain:', health.brain);
-			console.log('📒 ledger:', health.ledger);
-			console.log('🧪 Vista previa brain (primeros bytes):', health.brainPreview);
+			console.log('   -> 🧠 brain:', health.brain.name, `(${health.brain.id})`);
+			console.log('   -> 📒 ledger:', health.ledger.name, `(${health.ledger.id})`);
 		} else {
 			console.error(`❌ Drive check FAILED:`, health.error);
 			console.error(`Sugerencia: ${health.hint}`);
