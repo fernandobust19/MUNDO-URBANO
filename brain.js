@@ -1,13 +1,8 @@
 // brain.js — almacenamiento persistente de usuarios y progreso
-// Guarda en un JSON local en la raíz del proyecto.
+// Se conecta exclusivamente a Google Drive para persistencia.
 
-const fs = require('fs');
-const path = require('path');
 const bcrypt = require('bcryptjs');
 const { google } = require('googleapis');
-
-const DB_PATH = path.join(__dirname, 'brain.db.json');
-const LEDGER_PATH = path.join(__dirname, 'saldos.ledger.json');
 
 // --- Integración con Google Drive (Método Robusto) ---
 const CRED_PATH = process.env.GOOGLE_APPLICATION_CREDENTIALS || '/etc/secrets/key.json';
@@ -21,12 +16,14 @@ let resolvedLedgerId = LEDGER_ID_ENV;
 
 // Loguear la cuenta de servicio en uso para depuración
 try {
-  if (fs.existsSync(CRED_PATH)) {
-    const sa = JSON.parse(fs.readFileSync(CRED_PATH, 'utf8'));
+  // En un entorno como Render, la variable de entorno puede contener el JSON directamente
+  const credsRaw = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON || require('fs').readFileSync(CRED_PATH, 'utf8');
+  if (credsRaw) {
+    const sa = JSON.parse(credsRaw);
     console.log('[SA EN USO]', sa.client_email);
   }
 } catch (e) {
-  console.log('[SA EN USO] No pude leer el keyfile:', e.message);
+  // No es crítico si falla, podría no estar definido en todos los entornos.
 }
 
 let driveClient = null;
@@ -36,10 +33,7 @@ function getDriveClient() {
 	
 	// En producción, es obligatorio que los IDs de los archivos de Drive estén definidos.
 	if (!BRAIN_ID_ENV || !LEDGER_ID_ENV) {
-		if (process.env.NODE_ENV === 'production') {
-			throw new Error('CRÍTICO: Los IDs de archivo de Google Drive (GDRIVE_BRAIN_FILE_ID, GDRIVE_LEDGER_FILE_ID) no están configurados en producción.');
-		}
-		return null;
+		throw new Error('CRÍTICO: Los IDs de archivo de Google Drive (GDRIVE_BRAIN_FILE_ID, GDRIVE_LEDGER_FILE_ID) no están configurados.');
 	}
 
 	try {
@@ -52,8 +46,7 @@ function getDriveClient() {
 		return driveClient;
 	} catch (e) {
 		console.error('[GDRIVE] Falló la inicialización del cliente de Google Drive:', e.message);
-		// En producción, un fallo aquí es fatal.
-		if (process.env.NODE_ENV === 'production') throw e;
+		// Un fallo aquí es fatal.
 		return null;
 	}
 }
@@ -81,10 +74,20 @@ async function checkDriveHealth() {
 
 	try {
 		// Realizar una lectura de metadatos para confirmar
-		const [brainMeta, ledgerMeta] = await Promise.all([
-			drive.files.get({ fileId: BRAIN_ID_ENV, fields: 'id,name,modifiedTime', supportsAllDrives: true }),
-			drive.files.get({ fileId: LEDGER_ID_ENV, fields: 'id,name,modifiedTime', supportsAllDrives: true }),
-		]);
+		let brainMeta, ledgerMeta;
+		try {
+			brainMeta = await drive.files.get({ fileId: BRAIN_ID_ENV, fields: 'id,name,modifiedTime', supportsAllDrives: true });
+		} catch (e) {
+			e.message = `[GDRIVE] Fallo al acceder a brain.db.json (ID: ${BRAIN_ID_ENV}). ${e.message}`;
+			throw e;
+		}
+
+		try {
+			ledgerMeta = await drive.files.get({ fileId: LEDGER_ID_ENV, fields: 'id,name,modifiedTime', supportsAllDrives: true });
+		} catch (e) {
+			e.message = `[GDRIVE] Fallo al acceder a saldos.ledger.json (ID: ${LEDGER_ID_ENV}). ${e.message}`;
+			throw e;
+		}
 
 		// Actualizar los IDs resueltos que usará el resto de la aplicación
 		resolvedBrainId = brainMeta.data.id;
@@ -135,65 +138,47 @@ let ledger = { users: {}, movements: [] };
 
 async function saveAtomic(dataStr) {
 	const drive = getDriveClient();
-	if (drive && resolvedBrainId) {
-		try {
-			await drive.files.update({
-				fileId: resolvedBrainId,
-				media: {
-					mimeType: 'application/json',
-					body: dataStr,
-				},
-			});
-			// Si el guardado en Drive tiene éxito, no necesitamos hacer nada más.
-		} catch (e) {
-			console.error('[GDRIVE] Error al guardar brain.db.json:', e.message);
-			// En producción, no hacer fallback. Es mejor fallar que perder datos silenciosamente.
-			if (process.env.NODE_ENV === 'production') {
-				throw new Error(`Fallo crítico al guardar en Google Drive: ${e.message}`);
-			}
-			console.log('[GDRIVE] Fallback (dev): Guardando brain.db.json en el sistema de archivos local.');
-			const tmp = DB_PATH + '.tmp'; fs.writeFileSync(tmp, dataStr); fs.renameSync(tmp, DB_PATH);
-		}
-	} else {
-		const tmp = DB_PATH + '.tmp';
-		fs.writeFileSync(tmp, dataStr);
-		fs.renameSync(tmp, DB_PATH);
+	if (!drive || !resolvedBrainId) {
+		throw new Error('No se puede guardar: el cliente de Drive no está disponible.');
+	}
+	try {
+		await drive.files.update({
+			fileId: resolvedBrainId,
+			media: {
+				mimeType: 'application/json',
+				body: dataStr,
+			},
+		});
+	} catch (e) {
+		console.error('[GDRIVE] Error al guardar brain.db.json:', e.message);
+		throw new Error(`Fallo crítico al guardar en Google Drive: ${e.message}`);
 	}
 }
 
 async function saveLedgerAtomic(dataStr){
 	const drive = getDriveClient();
-	if (drive && resolvedLedgerId) {
-		try {
-			await drive.files.update({
-				fileId: resolvedLedgerId,
-				media: {
-					mimeType: 'application/json',
-					body: dataStr,
-				},
-			});
-			// Si el guardado en Drive tiene éxito, no necesitamos hacer nada más.
-		} catch (e) {
-			console.error('[GDRIVE] Error al guardar saldos.ledger.json:', e.message);
-			// En producción, no hacer fallback.
-			if (process.env.NODE_ENV === 'production') {
-				throw new Error(`Fallo crítico al guardar ledger en Google Drive: ${e.message}`);
-			}
-			console.log('[GDRIVE] Fallback (dev): Guardando saldos.ledger.json en el sistema de archivos local.');
-			const tmp = LEDGER_PATH + '.tmp'; fs.writeFileSync(tmp, dataStr); fs.renameSync(tmp, LEDGER_PATH);
-		}
-	} else {
-		const tmp = LEDGER_PATH + '.tmp';
-		fs.writeFileSync(tmp, dataStr);
-		fs.renameSync(tmp, LEDGER_PATH);
+	if (!drive || !resolvedLedgerId) {
+		throw new Error('No se puede guardar el ledger: el cliente de Drive no está disponible.');
+	}
+	try {
+		await drive.files.update({
+			fileId: resolvedLedgerId,
+			media: {
+				mimeType: 'application/json',
+				body: dataStr,
+			},
+		});
+	} catch (e) {
+		console.error('[GDRIVE] Error al guardar saldos.ledger.json:', e.message);
+		throw new Error(`Fallo crítico al guardar ledger en Google Drive: ${e.message}`);
 	}
 }
 
 async function load() {
 	const drive = getDriveClient();
-	let loadedFromDrive = false;
-
-	if (drive && resolvedBrainId) {
+	if (!drive || !resolvedBrainId) {
+		throw new Error('No se puede cargar la base de datos: el cliente de Drive no está configurado.');
+	}
 		try {
 			console.log('[GDRIVE] Cargando brain.db.json desde Google Drive...');
 			const res = await drive.files.get({ fileId: resolvedBrainId, alt: 'media' });
@@ -201,25 +186,11 @@ async function load() {
 			if (parsed && typeof parsed === 'object') {
 				db = Object.assign(db, parsed);
 				console.log('[GDRIVE] brain.db.json cargado exitosamente.');
-				// Si se carga desde Drive, no intentar cargar desde local.
-				// Ahora cargamos el ledger y terminamos.
-				return await loadLedger();
 			}
 		} catch (e) {
 			console.error('[GDRIVE] CRÍTICO: No se pudo cargar brain.db.json. Abortando para prevenir la pérdida de datos.', e.message, e.code);
 			throw new Error('No se pudo cargar la base de datos principal desde Google Drive. Verifica los permisos y el ID del archivo.');
 		}
-	} else {
-		if (fs.existsSync(DB_PATH)) {
-			console.log('[FS] Cargando brain.db.json desde el sistema de archivos local...');
-			const raw = fs.readFileSync(DB_PATH, 'utf8');
-			const parsed = JSON.parse(raw);
-			if (parsed && typeof parsed === 'object') db = Object.assign(db, parsed);
-			console.log('[FS] brain.db.json cargado exitosamente.');
-		} else {
-			persist();
-		}
-	}
 
 	// Cargar ledger
 	await loadLedger();
@@ -227,7 +198,9 @@ async function load() {
 
 async function loadLedger() {
 	const drive = getDriveClient();
-	if (drive && resolvedLedgerId) {
+	if (!drive || !resolvedLedgerId) {
+		throw new Error('No se puede cargar el ledger: el cliente de Drive no está configurado.');
+	}
 		try {
 			console.log('[GDRIVE] Cargando saldos.ledger.json desde Google Drive...');
 			const res = await drive.files.get({ fileId: resolvedLedgerId, alt: 'media' });
@@ -237,16 +210,6 @@ async function loadLedger() {
 		} catch (e) {
 			console.warn('[GDRIVE] No se pudo cargar saldos.ledger.json, usando estado inicial.', e.message);
 		}
-	}
-	try{
-		if(fs.existsSync(LEDGER_PATH)){
-			const lr = fs.readFileSync(LEDGER_PATH, 'utf8');
-			const parsed = JSON.parse(lr);
-			if(parsed && typeof parsed === 'object') ledger = Object.assign(ledger, parsed);
-		} else {
-			persistLedger();
-		}
-	}catch(e){ console.warn('ledger load error', e); }
 }
 
 let _saveTimer = null;
@@ -628,9 +591,46 @@ async function init() {
 			console.log('   -> 🧠 brain:', health.brain.name, `(${health.brain.id})`);
 			console.log('   -> 📒 ledger:', health.ledger.name, `(${health.ledger.id})`);
 		} else {
-			console.error(`❌ Drive check FAILED:`, health.error);
-			console.error(`Sugerencia: ${health.hint}`);
-			throw new Error('Fallo en la verificación inicial de Google Drive.');
+			// Si el error es 404 y tenemos una carpeta destino, intentar crear los archivos.
+			const code = health.error?.code || health.error?.response?.status;
+			if (code === 404 && GDRIVE_FOLDER_ID) {
+				console.warn(`[GDRIVE] Archivos no encontrados (404). Intentando crearlos en la carpeta ${GDRIVE_FOLDER_ID}...`);
+				try {
+					const freshDb = { users: [], progress: {}, government: { funds: 0, placed: [] }, activityLog: [], factories: [], banks: [], houses: [] };
+					const freshLedger = { users: {}, movements: [] };
+
+					const brainFile = await drive.files.create({
+						requestBody: { name: 'brain.db.json', mimeType: 'application/json', parents: [GDRIVE_FOLDER_ID] },
+						media: { mimeType: 'application/json', body: JSON.stringify(freshDb, null, 2) },
+						fields: 'id',
+						supportsAllDrives: true
+					});
+					console.log(`[GDRIVE] Creado brain.db.json con ID: ${brainFile.data.id}`);
+
+					const ledgerFile = await drive.files.create({
+						requestBody: { name: 'saldos.ledger.json', mimeType: 'application/json', parents: [GDRIVE_FOLDER_ID] },
+						media: { mimeType: 'application/json', body: JSON.stringify(freshLedger, null, 2) },
+						fields: 'id',
+						supportsAllDrives: true
+					});
+					console.log(`[GDRIVE] Creado saldos.ledger.json con ID: ${ledgerFile.data.id}`);
+
+					console.log(`\n\n[ACCIÓN REQUERIDA] Se crearon nuevos archivos en Google Drive. Debes actualizar tus variables de entorno en Render:`);
+					console.log(`GDRIVE_BRAIN_FILE_ID=${brainFile.data.id}`);
+					console.log(`GDRIVE_LEDGER_FILE_ID=${ledgerFile.data.id}`);
+					console.log(`Después de actualizar, reinicia el servidor.\n\n`);
+
+					throw new Error('Nuevos archivos de DB creados. Actualiza las variables de entorno y reinicia.');
+
+				} catch (createError) {
+					console.error(`❌ Falló la creación automática de archivos:`, createError.message);
+					throw new Error('Fallo en la verificación y también en la creación automática de archivos de Google Drive.');
+				}
+			} else {
+				console.error(`❌ Drive check FAILED:`, health.error);
+				console.error(`Sugerencia: ${health.hint}`);
+				throw new Error('Fallo en la verificación inicial de Google Drive.');
+			}
 		}
 	} else if (drive) {
 		console.log('[GDRIVE] Cliente de Google Drive inicializado para desarrollo.');
